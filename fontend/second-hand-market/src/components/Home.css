@@ -1,0 +1,66 @@
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.dropdown:hover > .dropdown-menu {
+  display: block;
+  border-bottom: #ff0000;
+}
+
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu > .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+  display: block;
+}
+
+.dropdown-submenu > a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+
+.dropdown-item {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+}
+.forSale {
+  background-color: rgb(240, 92, 12) !important;
+}
+
+.card {
+  position: relative; /* Đảm bảo các phần tử con được kiểm soát trong card */
+  overflow: hidden; /* Ẩn phần phóng to ra ngoài card nếu cần */
+  transition: transform 0.3s ease; /* Hiệu ứng chuyển tiếp mượt mà */
+}
+
+.card:hover {
+  transform: scale(1.05); /* Phóng to card lên 10% khi hover */
+}

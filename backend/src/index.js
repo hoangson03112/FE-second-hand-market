@@ -2,9 +2,10 @@ const express = require("express");
 const route = require("./routes");
 const db = require("./config/db/index");
 const app = express();
-const cors = require('cors');
+const cors = require("cors");
 
 app.use(cors());
+app.use(express.json());
 db.connect();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ extended: true }));

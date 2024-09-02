@@ -1,0 +1,43 @@
+
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+}
+
+.rounded-circle {
+  border-radius: 50%;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+.btn-outline-orange {
+  border-color: rgb(240, 92, 12) !important;
+  color: rgb(240, 92, 12) !important;
+  background-color: rgb(255, 255, 255) !important;
+}
+.gradient-custom-2 {
+  /* fallback for old browsers */
+  background: #fccb90 !important;
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  background: linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+}
+
+.btn-press-effect:active {
+  transform: scale(0.95); /* Làm cho nút nhỏ lại một chút khi nhấn */
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Bóng đổ nhẹ khi nhấn */
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}

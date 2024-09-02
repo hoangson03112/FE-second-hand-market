@@ -1,11 +1,12 @@
 const express = require("express");
-
-const { getCategories, addCategory } = require("../handles/CategoryHandle");
-const { SubCategoryHandle } = require("../handles/SubCategoryHandle");
-
+const CategoryController = require("../controllers/CategoryController");
+const ProductController = require("../controllers/ProductController");
 const router = express.Router();
 
-router.get("/categories", getCategories);
-router.get("/subcategory", SubCategoryHandle);
-router.post("/categories", addCategory);
+router.get("/categories", CategoryController.getAllCategories);
+router.get("/productlist", ProductController.getProductList);
+router.get("/category", CategoryController.getCategory);
+router.get("/product", ProductController.getProduct);
+
 module.exports = router;
+

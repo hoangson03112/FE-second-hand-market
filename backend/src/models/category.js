@@ -1,15 +1,19 @@
-// models/Category.js
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const slug = require("mongoose-slug-generator");
+
+const SubCategorySchema = new Schema({
+  name: { type: String, required: true },
+  slug: { type: String, required: true },
+});
 
 const CategorySchema = new Schema(
   {
     name: { type: String, required: true },
-    slug: { type: String, slug: "name", unique: true },
-    url: { type: String }, // Thay { String } bằng { type: String }
+    slug: { type: String, required: true, unique: true },
+    image: { type: String, required: true },
+    subcategories: [SubCategorySchema], // Nhúng trực tiếp SubCategory vào Category
   },
-  { timestamps: true, collection: "category" } // Đặt tất cả tùy chọn trong một đối tượng
+  { timestamps: true, collection: "categories" }
 );
-mongoose.plugin(slug);
+
 module.exports = mongoose.model("Category", CategorySchema);

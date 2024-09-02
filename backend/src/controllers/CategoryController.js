@@ -1,27 +1,38 @@
-// controllers/CategoryController.js
 const Category = require("../models/category");
 
-async function getAllCategories() {
-  try {
-    const categories = await Category.find({});
-    return categories;
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    throw error;
+class CategoryController {
+  async getAllCategories(req, res) {
+    try {
+      const categories = await Category.find({});
+
+      res.json({
+        success: true,
+        data: categories,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error fetching categories",
+        error: error.message,
+      });
+    }
+  }
+  async getCategory(req, res) {
+    try {
+      const category = await Category.findById(req.query.categoryID);
+   
+      res.json({
+        success: true,
+        data: category,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error fetching categories",
+        error: error.message,
+      });
+    }
   }
 }
 
-async function addCate(data, res) {
-  try {
-    const category = new Category(data);
-    await category.save();
-    res.status(201).json({
-      success: true,
-      data: category,
-    }); // Gửi phản hồi thành công
-  } catch (error) {
-    console.error("Error storing category:", error);
-    res.status(500).send("Error storing category"); // Sử dụng res để gửi phản hồi lỗi
-  }
-}
-module.exports = { getAllCategories, addCate };
+module.exports = new CategoryController();

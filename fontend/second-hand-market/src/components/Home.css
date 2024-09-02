@@ -51,9 +51,6 @@
 .dropdown-item:hover {
   background-color: #f1f1f1;
 }
-.forSale {
-  background-color: rgb(240, 92, 12) !important;
-}
 
 .card {
   position: relative; /* Đảm bảo các phần tử con được kiểm soát trong card */

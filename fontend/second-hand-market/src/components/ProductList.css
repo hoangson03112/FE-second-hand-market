@@ -1,0 +1,9 @@
+.card {
+  position: relative; /* Đảm bảo các phần tử con được kiểm soát trong card */
+  overflow: hidden; /* Ẩn phần phóng to ra ngoài card nếu cần */
+  transition: transform 0.3s ease; /* Hiệu ứng chuyển tiếp mượt mà */
+}
+
+.card:hover {
+  transform: scale(1.05); /* Phóng to card lên 10% khi hover */
+}

@@ -1,21 +1,33 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./Header";
 import { Footer } from "./Footer";
 import "./Home.css";
+import axios from "axios";
+import { Loading } from "./Loading";
 
 export const Home = () => {
   const [categories, setCategories] = useState([]);
-  const [subcategory, setSubcategory] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get("http://localhost:2000/ecomarket/categories")
+      .then((response) => {
+        console.log("Data received:", response.data.data);
+        setCategories(response.data.data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+    setLoading(false);
+  }, []);
 
   return (
     <div>
-      <Header
-        categories={categories}
-        subcategory={subcategory}
-        setCategories={setCategories}
-        setSubcategory={setSubcategory}
-      ></Header>
+      <Loading loading={loading} />
+      <Header></Header>
       <div className="container-fluid p-0 text-white text-center">
         <div
           id="carouselExampleRide"
@@ -94,7 +106,7 @@ export const Home = () => {
                 style={{ width: "150px", height: "150px" }}
               >
                 <img
-                  src={category.url}
+                  src={category.image}
                   alt={category.name}
                   className=""
                   style={{

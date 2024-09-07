@@ -5,6 +5,7 @@ import ProductList from "./components/ProductList";
 import { Product } from "./components/Product";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import Verification from "./components/Verification";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/ecomarket/product" element={<Product />}></Route>
         <Route path="/ecomarket/login" element={<Login />}></Route>
         <Route path="/ecomarket/register" element={<Register />}></Route>
+        <Route path="/ecomarket/verifi" element={<Verification />}></Route>
       </Routes>
     </BrowserRouter>
   );

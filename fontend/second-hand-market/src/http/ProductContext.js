@@ -24,7 +24,7 @@ class ProductContext {
           params: { categoryID, subcategoryID },
         }
       );
-      if (response.data && Array.isArray(response.data.data)) {
+      if (response.data) {
         return response.data.data;
       } else {
         console.error("Unexpected response format:", response.data);
@@ -37,4 +37,5 @@ class ProductContext {
   }
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default new ProductContext();

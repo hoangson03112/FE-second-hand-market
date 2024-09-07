@@ -12,8 +12,8 @@ import {
   Table,
 } from "react-bootstrap";
 import "./Product.css";
-import ProductContext from "../DBContext/ProductContext";
-import CategoryContext from "../DBContext/CategoryContext";
+import ProductContext from "../http/ProductContext";
+import CategoryContext from "../http/CategoryContext";
 
 export const Product = () => {
   const location = useLocation();

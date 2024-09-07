@@ -20,9 +20,8 @@ class ProductController {
       if (subcategoryID) {
         query.subcategoryId = subcategoryID;
       }
-
       const products = await Product.find(query);
-
+  
       res.json({
         success: true,
         data: products,

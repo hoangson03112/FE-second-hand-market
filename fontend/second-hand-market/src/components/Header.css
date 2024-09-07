@@ -32,3 +32,22 @@
   transform: translateY(-50%);
   color: #6c757d; /* Optional: Set color for the icon */
 }
+.cart:hover {
+  color: white;
+  background: #fccb90 !important;
+
+  background: -webkit-linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  background: linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+}

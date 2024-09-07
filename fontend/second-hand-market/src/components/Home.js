@@ -6,16 +6,19 @@ import "./Home.css";
 import axios from "axios";
 import { Loading } from "./Loading";
 
+
 export const Home = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
+
   useEffect(() => {
+    
+  
     setLoading(true);
     axios
       .get("http://localhost:2000/ecomarket/categories")
       .then((response) => {
-        console.log("Data received:", response.data.data);
         setCategories(response.data.data);
       })
       .catch((error) => {

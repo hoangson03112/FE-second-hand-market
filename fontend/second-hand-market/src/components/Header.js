@@ -1,10 +1,32 @@
 import React, { useEffect, useState } from "react";
 import { Image } from "react-bootstrap";
-import CategoryContext from "../DBContext/CategoryContext";
+import CategoryContext from "../http/CategoryContext";
+import AccountContext from "../http/AccountContext";
+import { useNavigate } from "react-router-dom";
 import "./Header.css";
+
 const Header = () => {
   const [categories, setCategories] = useState([]);
+  const [account, setAccount] = useState({});
+  const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate();
+  const handleDropdownToggle = () => setShowDropdown(!showDropdown);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/ecomarket/home");
+    window.location.reload();
+  };
   useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const data = await AccountContext.Authentication();
+        setAccount(data.account);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
     const fetchCategories = async () => {
       try {
         const categories = await CategoryContext.getCatgories();
@@ -13,12 +35,12 @@ const Header = () => {
         console.error("Error fetching categories:", error);
       }
     };
-
+    checkAuthentication();
     fetchCategories();
   }, []);
 
   return (
-    <div>
+    <div className="">
       <nav className="navbar navbar-expand-lg navbar-light bg-while p-0">
         <div className="container d-flex justify-content-evenly h-25">
           <a className="navbar-brand" href="/">
@@ -44,24 +66,62 @@ const Header = () => {
           <div id="navbarNav" className="ms-5">
             <nav className="nav nav-pills flex-column flex-sm-row ">
               <a
-                id=""
-                className="text-black flex-sm-fill text-sm-center nav-link ms-2"
-                href="/ecomarket/register"
-              >
-                Đăng ký
-              </a>
-              <a
-                className="flex-sm-fill text-sm-center nav-link text-black mx-2"
-                href="/ecomarket/login"
-              >
-                Đăng nhập
-              </a>
-              <a
-                className="gradient-custom-2 flex-sm-fill ms-3 text-sm-center nav-link active px-5"
+                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
                 href="/"
               >
                 Đăng Bán
               </a>
+              {account ? (
+                <div className="d-flex align-items-center  ">
+                  <i
+                    className="bi bi-cart4 fs-3 mx-5 rounded-circle text-center cart shadow"
+                    style={{ cursor: "pointer", height: "45px", width: "45px" }}
+                  ></i>
+
+                  <div className="d-inline-block ms-2">
+                    <div
+                      className="d-flex align-items-center text-decoration-none"
+                      onClick={handleDropdownToggle}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <img
+                        src={
+                          account?.avatar ||
+                          "https://w7.pngwing.com/pngs/178/595/png-transparent-user-profile-computer-icons-login-user-avatars-thumbnail.png"
+                        }
+                        alt="User"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                        }}
+                        className="me-2"
+                      />
+                      <span>{account?.username}</span>
+                    </div>
+                    {showDropdown && (
+                      <div className="dropdown-menu show mt-2">
+                        <a className="dropdown-item" href="/">
+                          Hồ sơ
+                        </a>
+                        <a className="dropdown-item" href="/">
+                          Đơn Hàng
+                        </a>
+                        <span className="dropdown-item" onClick={handleLogout}>
+                          Đăng xuất
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <a
+                  className="flex-sm-fill text-sm-center shadow nav-link text-black mx-4"
+                  href="/ecomarket/login"
+                >
+                  Đăng nhập / Đăng ký
+                </a>
+              )}
             </nav>
           </div>
         </div>
@@ -88,7 +148,7 @@ const Header = () => {
                         <li key={index}>
                           <a
                             className="dropdown-item"
-                            href={`?subcategoryID=${subcategory._id}`}
+                            href={`/ecomarket?subcategoryID=${subcategory._id}`}
                           >
                             {subcategory?.name}
                           </a>
@@ -115,7 +175,7 @@ const Header = () => {
                     <li key={index}>
                       <a
                         className="dropdown-item"
-                        href={`?subcategoryID=${subcategory._id}`}
+                        href={`/ecomarket?subcategoryID=${subcategory._id}`}
                       >
                         {subcategory?.name}
                       </a>

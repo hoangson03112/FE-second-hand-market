@@ -1,0 +1,13 @@
+.error-message {
+  position: absolute;
+  bottom: -30px; /* Điều chỉnh khoảng cách từ dưới cùng của trường nhập liệu */
+  left: 0;
+  width: 100%;
+  color: red;
+  font-size: 0.95rem; /* Kích thước chữ nhỏ hơn cho thông báo lỗi */
+  text-align: center;
+}
+.input-container {
+  position: relative; /* Để cho phép tuyệt đối hóa thông báo lỗi */
+  margin-bottom: 2rem; /* Khoảng cách giữa các trường nhập liệu */
+}

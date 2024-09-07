@@ -4,9 +4,10 @@ import Header from "./Header";
 import { Footer } from "./Footer";
 import "./ProductList";
 import FilterSidebar from "./FilterSidebar";
-import ProductContext from "../DBContext/ProductContext";
-import CategoryContext from "../DBContext/CategoryContext";
+import ProductContext from "../http/ProductContext";
+import CategoryContext from "../http/CategoryContext";
 import { Link } from "react-router-dom";
+import SubCategoryContext from "../http/SubCategoryContext";
 
 function ProductList() {
   const location = useLocation();
@@ -15,6 +16,8 @@ function ProductList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [category, setCategory] = useState({});
+  const [subCategory, setSubCategory] = useState({});
+
   const [sortOption, setSortOption] = useState("Mặc định");
 
   useEffect(() => {
@@ -31,12 +34,24 @@ function ProductList() {
       }
     };
 
+    const fetchSubCategory = async () => {
+      try {
+        const Subcategory = await SubCategoryContext.getSubCategory(
+          subcategoryID
+        );
+        setSubCategory(Subcategory);
+      } catch (err) {
+        setError(err);
+      }
+    };
+
     const fetchProducts = async () => {
       try {
         const productsData = await ProductContext.getProductList(
           categoryID,
           subcategoryID
         );
+
         setProducts(productsData);
       } catch (err) {
         setError(err);
@@ -45,9 +60,16 @@ function ProductList() {
       }
     };
 
-    fetchCategory();
+    if (categoryID) {
+      fetchCategory();
+    }
+    if (subcategoryID) {
+      fetchSubCategory();
+    }
+
     fetchProducts();
   }, []);
+  console.log(products);
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
@@ -75,7 +97,7 @@ function ProductList() {
             </li>
             <li className="breadcrumb-item active mx-1" aria-current="page">
               <span>&nbsp;&gt;&nbsp;</span>
-              {category.name}
+              {category?.name}
             </li>
           </ol>
         </nav>
@@ -104,7 +126,7 @@ function ProductList() {
             </div>
 
             <div className="row mt-5">
-              {products.map((product, index) => (
+              {products?.map((product, index) => (
                 <div
                   key={index}
                   className="col-md-3 col-sm-6 col-12 card p-0 m-2"
@@ -119,9 +141,9 @@ function ProductList() {
                     className="text-decoration-none text-dark"
                   >
                     <img
-                      src={product.avatar}
+                      src={product?.avatar}
                       className="card-img-top"
-                      alt={product.name}
+                      alt={product?.name}
                       style={{
                         objectFit: "cover",
                         height: "200px",
@@ -129,12 +151,12 @@ function ProductList() {
                     />
                     <div className="card-body">
                       <p className="card-text text-truncate mt-1">
-                        {product.name}
+                        {product?.name}
                       </p>
                       <h5 className="card-title">{product.price}đ</h5>
                       <p className="m-0 mt-3 text-end">
                         <i className="bi bi-geo-alt-fill text-danger"></i>{" "}
-                        {product.location}
+                        {product?.location}
                       </p>
                     </div>
                   </Link>

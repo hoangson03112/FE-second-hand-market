@@ -10,6 +10,7 @@ import {
   Form,
   Badge,
   Table,
+  Toast,
 } from "react-bootstrap";
 import "./Product.css";
 import ProductContext from "../http/ProductContext";
@@ -56,9 +57,10 @@ export const Product = () => {
   ];
 
   const [product, setProduct] = useState({});
-  const [mainImage, setMainImage] = useState(product?.images?.[0]);
+  const [mainImage, setMainImage] = useState("");
   const [quantity, setQuantity] = useState(1); // State cho số lượng sản phẩm
   const [category, setCategory] = useState({});
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -96,10 +98,20 @@ export const Product = () => {
       setQuantity(newQuantity);
     }
   };
+  const handleAddToCart = async () => {
+    const messageAddToCart = await ProductContext.addToCart(
+      product._id,
+      quantity
+    );
+
+    if (messageAddToCart.status === "success") {
+      setShowToast(true); // Hiển thị thông báo
+      // setTimeout(() => setShowToast(false), 5000);
+    }
+  };
 
   return (
     <div>
-      <Header />
       <div className="bg-body-secondary">
         <Container className="pt-4">
           <Row className="mb-3">
@@ -188,7 +200,11 @@ export const Product = () => {
                       <Row className="me-5 mt-5">
                         <Col>
                           {" "}
-                          <Button className="btn btn-outline-orange me-2 w-75 p-3 float-end shadow btn-press-effect">
+                          <Button
+                            className="btn btn-outline-orange me-2 
+                          w-75 p-3 float-end shadow btn-press-effect"
+                            onClick={handleAddToCart}
+                          >
                             Thêm vào giỏ hàng
                           </Button>
                         </Col>
@@ -374,6 +390,28 @@ export const Product = () => {
           </Row>
         </Container>
       </div>
+      <Toast
+        className="border-danger p-2"
+        onClose={() => setShowToast(false)}
+        show={showToast}
+        // delay={5000}
+        autohide
+        style={{
+          position: "fixed",
+          bottom: "40px",
+          right: "20px",
+          zIndex: 1000,
+          minWidth: "350px", // Tăng kích thước
+        }}
+      >
+        <Toast.Header>
+          <div className="d-flex align-items-center w-100">
+            <i className="bi bi-bell fs-4 me-2"></i>
+            <strong className="text-success">Thông báo</strong>
+          </div>
+        </Toast.Header>
+        <Toast.Body>Thêm sản phẩm vào giỏ hàng thành công!</Toast.Body>
+      </Toast>
     </div>
   );
 };

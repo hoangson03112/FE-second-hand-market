@@ -21,9 +21,12 @@ const Header = () => {
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
-        setAccount(data.account);
+
+        if (data.account) {
+          setAccount(data.account);
+        }
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching", error);
       }
     };
 
@@ -71,7 +74,7 @@ const Header = () => {
               >
                 Đăng Bán
               </a>
-              {account ? (
+              {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center  ">
                   <i
                     className="bi bi-cart4 fs-3 mx-5 rounded-circle text-center cart shadow"

@@ -19,7 +19,7 @@ class ProductContext {
   async getProductList(categoryID, subcategoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/productlist",
+        "http://localhost:2000/ecomarket/product-list",
         {
           params: { categoryID, subcategoryID },
         }
@@ -30,6 +30,22 @@ class ProductContext {
         console.error("Unexpected response format:", response.data);
         return [];
       }
+    } catch (error) {
+      console.error("Error fetching product list:", error);
+      throw error; // Re-throw the error for proper error handling
+    }
+  }
+
+  async addToCart(productId, quantity) {
+    try {
+      const response = await axios.post(
+        "http://localhost:2000/ecomarket/add-to-cart",
+        {
+          productId,
+          quantity: quantity + "",
+        }
+      );
+      return response.data;
     } catch (error) {
       console.error("Error fetching product list:", error);
       throw error; // Re-throw the error for proper error handling

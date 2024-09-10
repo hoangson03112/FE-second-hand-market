@@ -99,7 +99,7 @@ function Register() {
 
   return (
     <div>
-      <Header />
+
       {showVerify && (
         <Verification setShowVerify={setShowVerify} userID={userID} />
       )}

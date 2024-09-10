@@ -9,14 +9,13 @@ class SubCategoryContext {
           params: { SubcategoryID },
         }
       );
-      console.log(response.data);
 
-      const Subcategory = response.data.data;
-      return Subcategory;
+      return response.data;
     } catch (error) {
       console.error("Error fetching data:", error);
       return;
     }
   }
 }
+// eslint-disable-next-line import/no-anonymous-default-export
 export default new SubCategoryContext();

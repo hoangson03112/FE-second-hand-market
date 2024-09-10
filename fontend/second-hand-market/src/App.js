@@ -5,19 +5,53 @@ import ProductList from "./components/ProductList";
 import { Product } from "./components/Product";
 import Login from "./components/Login";
 import Register from "./components/Register";
-import Verification from "./components/Verification";
+import Layout from "./components/Layout";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/ecomarket/home" />} />
-        <Route path="/ecomarket/home" element={<Home />}></Route>
-        <Route path="/ecomarket" element={<ProductList />}></Route>
-        <Route path="/ecomarket/product" element={<Product />}></Route>
-        <Route path="/ecomarket/login" element={<Login />}></Route>
-        <Route path="/ecomarket/register" element={<Register />}></Route>
-        <Route path="/ecomarket/verifi" element={<Verification />}></Route>
+        <Route
+          path="/ecomarket/home"
+          element={
+            <Layout>
+              <Home />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ecomarket"
+          element={
+            <Layout>
+              <ProductList />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ecomarket/product"
+          element={
+            <Layout>
+              <Product />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ecomarket/login"
+          element={
+            <Layout>
+              <Login />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/ecomarket/register"
+          element={
+            <Layout>
+              <Register />
+            </Layout>
+          }
+        ></Route>
       </Routes>
     </BrowserRouter>
   );

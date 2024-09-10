@@ -30,7 +30,6 @@ class AccountContext {
       );
       if (response.data.status === "success") {
         return response.data;
-        // localStorage.setItem("token", response.data.token);
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -42,8 +41,9 @@ class AccountContext {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error("No token found");
+        return { message: "Chưa đăng nhập", status: 401 };
       }
+
       const response = await axios.get(
         "http://localhost:2000/ecomarket/authentication",
         {
@@ -58,7 +58,7 @@ class AccountContext {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      return [];
+      return error;
     }
   }
   async Verify(userID, code) {

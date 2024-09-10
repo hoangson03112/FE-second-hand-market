@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Header from "./Header";
+
 import { Footer } from "./Footer";
 import "./ProductList";
 import FilterSidebar from "./FilterSidebar";
@@ -12,7 +12,6 @@ import SubCategoryContext from "../http/SubCategoryContext";
 function ProductList() {
   const location = useLocation();
   const [products, setProducts] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [category, setCategory] = useState({});
@@ -36,10 +35,11 @@ function ProductList() {
 
     const fetchSubCategory = async () => {
       try {
-        const Subcategory = await SubCategoryContext.getSubCategory(
-          subcategoryID
-        );
-        setSubCategory(Subcategory);
+        const data = await SubCategoryContext.getSubCategory(subcategoryID);
+        console.log(data);
+        setCategory(data.category);
+
+        setSubCategory(data.subcategory);
       } catch (err) {
         setError(err);
       }
@@ -59,7 +59,6 @@ function ProductList() {
         setLoading(false);
       }
     };
-
     if (categoryID) {
       fetchCategory();
     }
@@ -69,23 +68,21 @@ function ProductList() {
 
     fetchProducts();
   }, []);
-  console.log(products);
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
   return (
     <div className="h-100">
-      <Header />
       <div className="container h-100">
         <nav aria-label="breadcrumb">
           <ol className="breadcrumb d-flex align-items-center mt-4">
             <li className="mx-1">
-              <a href="#" className="text-decoration-none text-black">
+              <a
+                href="/ecomarket/home"
+                className="text-decoration-none text-black"
+              >
                 Trang chủ
               </a>
             </li>
@@ -95,10 +92,23 @@ function ProductList() {
                 Mua đồ cũ
               </a>
             </li>
-            <li className="breadcrumb-item active mx-1" aria-current="page">
+            <li className="breadcrumb-item  mx-1">
               <span>&nbsp;&gt;&nbsp;</span>
-              {category?.name}
+              <a
+                href={`/ecomarket?categoryID=${category._id}`}
+                className="text-decoration-none text-black"
+              >
+                {" "}
+                {category?.name}
+              </a>
             </li>
+            {subCategory?.name && (
+              <li className="mx-1 active" aria-current="page">
+                <span>&nbsp;&gt;&nbsp;</span>
+
+                {subCategory.name}
+              </li>
+            )}
           </ol>
         </nav>
 
@@ -108,7 +118,12 @@ function ProductList() {
           </div>
           <div className="col-9 ">
             <div className="d-flex justify-content-between">
-              <h3>Bán {category.name.toLowerCase()} cũ</h3>
+              {subCategory?.name ? (
+                <h3>{subCategory?.name} cũ</h3>
+              ) : (
+                <h3>{category?.name} cũ</h3>
+              )}
+
               <div className="d-flex align-items-center float-end">
                 <span className="me-2">Lọc theo:</span>
                 <select

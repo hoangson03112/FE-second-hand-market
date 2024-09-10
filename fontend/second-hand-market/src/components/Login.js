@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Login.css";
-import Header from "./Header";
+
 import AccountContext from "../http/AccountContext";
 
 function Login() {
@@ -18,10 +18,10 @@ function Login() {
     console.log(error);
 
     if (error.status === "inactive") {
-      setErrorMessage(error.message); // Cập nhật thông báo lỗi
+      setErrorMessage(error.message); 
     }
     if (error.status === "login") {
-      setErrorMessage(error.message); // Cập nhật thông báo lỗi
+      setErrorMessage(error.message); 
     }
   };
 
@@ -31,7 +31,6 @@ function Login() {
 
   return (
     <div>
-      <Header />
       <div
         style={{
           background:

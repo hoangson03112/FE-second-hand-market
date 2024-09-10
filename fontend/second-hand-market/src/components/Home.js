@@ -6,15 +6,11 @@ import "./Home.css";
 import axios from "axios";
 import { Loading } from "./Loading";
 
-
 export const Home = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
-
   useEffect(() => {
-    
-  
     setLoading(true);
     axios
       .get("http://localhost:2000/ecomarket/categories")
@@ -29,8 +25,6 @@ export const Home = () => {
 
   return (
     <div>
-      <Loading loading={loading} />
-      <Header></Header>
       <div className="container-fluid p-0 text-white text-center">
         <div
           id="carouselExampleRide"
@@ -89,36 +83,38 @@ export const Home = () => {
         <div className="row">
           <div className="col-2 text-center">
             <div
-              className="col-lg-3 col-md-6 m-4 d-flex justify-content-center align-items-center rounded-circle  shadow-lg "
+              className=" card col-lg-3 col-md-6 m-4 d-flex justify-content-center align-items-center rounded-circle  shadow "
               style={{ width: "150px", height: "150px" }} // Đảm bảo chiều rộng và chiều cao bằng nhau
             >
               <img
                 src="https://static.oreka.vn/d/_next/static/images/free-items-118b7d85f3dc69896f282b27ba4724a6.png"
                 alt="Đồ miễn phí"
                 className=""
-                style={{ width: "70px", height: "100px", objectFit: "cover" }} // Đảm bảo ảnh phủ đầy phần tử và giữ được hình tròn
+                style={{ width: "70px", height: "100px", objectFit: "cover" }}
               />
             </div>
             <span className="">Đồ miễn phí</span>
           </div>
 
           {categories?.map((category, index) => (
-            <div key={index} className="col-2 text-center">
-              <div
-                className="col-lg-3 col-md-6 m-4 d-flex justify-content-center align-items-center rounded-circle  shadow-lg "
-                style={{ width: "150px", height: "150px" }}
-              >
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className=""
-                  style={{
-                    width: "115px",
-                    height: "100px",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
+            <div key={index} className="col-2 text-center ">
+              <a href={`/ecomarket?categoryID=${category._id}`}>
+                <div
+                  className="card col-lg-3 col-md-6 m-4 d-flex justify-content-center align-items-center rounded-circle  shadow"
+                  style={{ width: "150px", height: "150px" }}
+                >
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className=""
+                    style={{
+                      width: "115px",
+                      height: "100px",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              </a>
               <span>{category.name}</span>
             </div>
           ))}

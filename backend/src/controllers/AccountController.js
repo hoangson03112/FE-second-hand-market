@@ -38,7 +38,6 @@ class AccountController {
         });
       }
     } catch (error) {
-      console.log(error);
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
@@ -106,10 +105,9 @@ class AccountController {
     }
   }
 
-  // Xác thực token
   async Authentication(req, res) {
     try {
-      const token = req.headers.authorization?.split(" ")[1]; // Ví dụ: "Bearer <token>"
+      const token = req.headers.authorization?.split(" ")[1];
       if (!token) {
         return res
           .status(401)
@@ -119,7 +117,10 @@ class AccountController {
       const data = jwt.verify(token, "sown");
       const account = await Account.findById(data._id);
 
-      return res.json({ status: "success", account });
+      return res.json({
+        status: "success",
+        account: { username: account.username, avatar: account?.avatar },
+      });
     } catch (error) {
       console.log(error);
       return res.status(500).json({ status: "error", message: "Server error" });

@@ -1,0 +1,121 @@
+/* From Uiverse.io by KhaledMatalkah */
+.custom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  font-size: 16px;
+  color: #333;
+  transition: color 0.3s;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.custom-checkbox .checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  transition: background-color 0.3s, border-color 0.3s, transform 0.3s;
+  transform-style: preserve-3d;
+}
+
+.custom-checkbox .checkmark::before {
+  content: "\2713";
+  font-size: 12px;
+  color: transparent;
+  transition: color 0.3s, transform 0.3s;
+}
+
+.custom-checkbox input[type="checkbox"]:checked + .checkmark {
+  /* fallback for old browsers */
+  background: #fccb90 !important;
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  background: linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  border-color: #333;
+  transform: scale(1.1) rotateZ(360deg) rotateY(360deg);
+}
+
+.custom-checkbox input[type="checkbox"]:checked + .checkmark::before {
+  color: #fff;
+}
+
+.custom-checkbox input[type="checkbox"]:focus + .checkmark {
+  box-shadow: 0 0 3px 2px rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.custom-checkbox .checkmark,
+.custom-checkbox input[type="checkbox"]:checked + .checkmark {
+  transition: background-color 1.3s, border-color 1.3s, color 1.3s,
+    transform 0.3s;
+}
+table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+th,
+td {
+  text-align: center;
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+  width: 5%; /* Checkbox column */
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  width: 50%; /* Product name column */
+}
+
+th:nth-child(3),
+td:nth-child(3) {
+  width: 15%; /* Price column */
+}
+
+th:nth-child(4),
+td:nth-child(4) {
+  width: 10%; /* Quantity column */
+}
+
+th:nth-child(5),
+td:nth-child(5) {
+  width: 20%; /* Total column */
+}
+
+th:nth-child(6),
+td:nth-child(6) {
+  width: 10%; /* Action column */
+}
+.container-fluid {
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+.bg-body-secondary {
+  width: 100vw;
+}
+* {
+  box-sizing: border-box;
+}

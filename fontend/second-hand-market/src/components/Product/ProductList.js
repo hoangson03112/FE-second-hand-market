@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { Footer } from "./Footer";
-import "./ProductList";
+import "./ProductList.css";
 import FilterSidebar from "./FilterSidebar";
-import ProductContext from "../http/ProductContext";
-import CategoryContext from "../http/CategoryContext";
+import ProductContext from "../../contexts/ProductContext";
+import CategoryContext from "../../contexts/CategoryContext";
 import { Link } from "react-router-dom";
-import SubCategoryContext from "../http/SubCategoryContext";
+import SubCategoryContext from "../../contexts/SubCategoryContext";
 
 function ProductList() {
   const location = useLocation();
@@ -16,7 +15,6 @@ function ProductList() {
   const [error, setError] = useState(null);
   const [category, setCategory] = useState({});
   const [subCategory, setSubCategory] = useState({});
-
   const [sortOption, setSortOption] = useState("Mặc định");
 
   useEffect(() => {
@@ -75,9 +73,9 @@ function ProductList() {
 
   return (
     <div className="h-100">
-      <div className="container h-100">
+      <div className="container">
         <nav aria-label="breadcrumb">
-          <ol className="breadcrumb d-flex align-items-center mt-4">
+          <ol className="breadcrumb d-flex align-items-center ">
             <li className="mx-1">
               <a
                 href="/ecomarket/home"
@@ -181,7 +179,6 @@ function ProductList() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Accordion, Form, Button } from "react-bootstrap";
+import AppContext from "../../contexts/AppContext";
 
 const FilterSidebar = ({ category }) => {
   const [showMoreCategories, setShowMoreCategories] = useState(false);
@@ -26,8 +27,10 @@ const FilterSidebar = ({ category }) => {
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
-        const response = await axios.get("https://provinces.open-api.vn/api/");
-        if (response.data) {
+        const response = await AppContext.fetchProvinces();
+        console.log(response);
+
+        if (response) {
           setProvinces(response.data);
         }
       } catch (err) {

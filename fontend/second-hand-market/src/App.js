@@ -1,11 +1,13 @@
 import * as React from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { Home } from "./components/Home";
-import ProductList from "./components/ProductList";
-import { Product } from "./components/Product";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import Layout from "./components/Layout";
+import { Home } from "./pages/Home/Home";
+import ProductList from "./components/Product/ProductList";
+import { Product } from "./components/Product/Product";
+import Login from "./pages/Login/Login";
+import Register from "./pages/Register/Register";
+import Layout from "./components/Layout/Layout";
+import Cart from "./pages/Cart/Cart";
+import Checkout from "./components/Checkout/Checkout";
 
 function App() {
   return (
@@ -49,6 +51,22 @@ function App() {
           element={
             <Layout>
               <Register />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/ecomarket/my-cart"
+          element={
+            <Layout>
+              <Cart />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/ecomarket/checkout"
+          element={
+            <Layout>
+              <Checkout />
             </Layout>
           }
         ></Route>

@@ -18,8 +18,19 @@ const AccountSchema = new Schema(
         quantity: { type: Number, required: true, default: 1 },
       },
     ],
-    verificationCode: { type: String }, // Trường để lưu mã xác thực
-    codeExpires: { type: Date }, // Trường để lưu thời gian hết hạn mã xác thực
+    verificationCode: { type: String },
+    codeExpires: { type: Date },
+    addresses: [
+      {
+        fullName: { type: String, required: true }, // Họ và tên
+        phoneNumber: { type: String, required: true }, // Số điện thoại
+        province: { type: String, required: true }, // Tỉnh/Thành phố
+        district: { type: String, required: true }, // Quận/Huyện
+        ward: { type: String, required: true }, // Phường/Xã
+        specificAddress: { type: String, required: true }, // Địa chỉ cụ thể
+        isDefault: { type: Boolean, required: true, default: false }, // Đặt làm địa chỉ mặc định
+      },
+    ],
   },
   { timestamps: true, collection: "accounts" }
 );

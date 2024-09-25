@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./Verification.css";
-import AccountContext from "../http/AccountContext";
-import { useNavigate } from "react-router-dom";
+import AccountContext from "../../contexts/AccountContext";
+
 
 const Verification = ({ setShowVerify, userID }) => {
   const [codes, setCodes] = useState(["", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 phút = 900 giây
   const inputsRef = useRef([]);
-  const navigate = useNavigate();
+
 
   useEffect(() => {
     // Cập nhật thời gian còn lại mỗi giây
@@ -45,7 +45,7 @@ const Verification = ({ setShowVerify, userID }) => {
       const data = await AccountContext.Verify(userID, code);
       if (data.status === "success") {
         setShowVerify(false);
-        navigate("/ecomarket/home");
+        window.location.href = "/ecomarket/home";
       }
     } catch (error) {
       console.error("Error verifying code:", error);

@@ -1,10 +1,8 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
-import Header from "./Header";
-import { Footer } from "./Footer";
+
 import "./Home.css";
 import axios from "axios";
-import { Loading } from "./Loading";
 
 export const Home = () => {
   const [categories, setCategories] = useState([]);
@@ -225,7 +223,6 @@ export const Home = () => {
           </div>
         </div>
       </div>
-      <Footer></Footer>
     </div>
   );
 };

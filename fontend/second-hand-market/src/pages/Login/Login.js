@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Login.css";
 
-import AccountContext from "../http/AccountContext";
+import AccountContext from "../../contexts/AccountContext";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -15,13 +15,12 @@ function Login() {
 
   const handleLogin = async () => {
     const error = await AccountContext.Login(username, password);
-    console.log(error);
 
     if (error.status === "inactive") {
-      setErrorMessage(error.message); 
+      setErrorMessage(error.message);
     }
     if (error.status === "login") {
-      setErrorMessage(error.message); 
+      setErrorMessage(error.message);
     }
   };
 

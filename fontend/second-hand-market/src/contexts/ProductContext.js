@@ -38,13 +38,20 @@ class ProductContext {
 
   async addToCart(productId, quantity) {
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         "http://localhost:2000/ecomarket/add-to-cart",
         {
           productId,
           quantity: quantity + "",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Gửi token trong header
+          },
         }
       );
+
       return response.data;
     } catch (error) {
       console.error("Error fetching product list:", error);

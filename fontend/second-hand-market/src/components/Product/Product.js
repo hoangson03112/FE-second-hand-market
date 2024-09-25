@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import Header from "./Header";
+
 import {
   Container,
   Row,
@@ -13,13 +13,17 @@ import {
   Toast,
 } from "react-bootstrap";
 import "./Product.css";
-import ProductContext from "../http/ProductContext";
-import CategoryContext from "../http/CategoryContext";
+import ProductContext from "../../contexts/ProductContext";
+import CategoryContext from "../../contexts/CategoryContext";
+import AccountContext from "../../contexts/AccountContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export const Product = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const productID = queryParams.get("productID");
+  const navigate = useNavigate();
 
   const products = [
     {
@@ -61,11 +65,25 @@ export const Product = () => {
   const [quantity, setQuantity] = useState(1); // State cho số lượng sản phẩm
   const [category, setCategory] = useState({});
   const [showToast, setShowToast] = useState(false);
+  const [account, setAccount] = useState({});
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    const fetchAccount = async (accountId) => {
+      try {
+        const response = await AccountContext.getAccount(accountId);
+
+        setAccount(response.data);
+      } catch (error) {
+        console.error("Error fetching account:", error);
+        setError("Error fetching account");
+      }
+    };
+
     const fetchProduct = async () => {
       try {
         const product = await ProductContext.getProduct(productID);
+        fetchAccount(product.accountId);
         setProduct(product);
         setMainImage(product.images?.[0]);
       } catch (err) {
@@ -99,21 +117,50 @@ export const Product = () => {
     }
   };
   const handleAddToCart = async () => {
-    const messageAddToCart = await ProductContext.addToCart(
-      product._id,
-      quantity
-    );
+    try {
+      const data = await AccountContext.Authentication();
 
-    if (messageAddToCart.status === "success") {
-      setShowToast(true); // Hiển thị thông báo
-      // setTimeout(() => setShowToast(false), 5000);
+      if (data.account) {
+        const messageAddToCart = await ProductContext.addToCart(
+          product._id,
+          quantity
+        );
+
+        if (messageAddToCart.status === "success") {
+          setShowToast(true); // Hiển thị thông báo
+        }
+      } else {
+        navigate("/ecomarket/login");
+      }
+    } catch (error) {
+      console.error("Error fetching", error);
+    }
+  };
+
+  const handlePurchaseNow = async () => {
+    try {
+      const data = await AccountContext.Authentication();
+
+      if (data.account) {
+        // const messageAddToCart = await ProductContext.addToCart(
+        //   product._id,
+        //   quantity
+        // );
+        navigate("/ecomarket/checkout", {
+          state: { selectedItems: { ...product, quantity } },
+        });
+      } else {
+        navigate("/ecomarket/login");
+      }
+    } catch (error) {
+      console.error("Error fetching", error);
     }
   };
 
   return (
     <div>
       <div className="bg-body-secondary">
-        <Container className="pt-4">
+        <Container className="">
           <Row className="mb-3">
             <Col>
               <small className="text-muted">
@@ -159,11 +206,16 @@ export const Product = () => {
                       </div>
                     </Col>
                     <Col md={6}>
-                      <p className="text-danger">
-                        Đã đăng lúc {product?.createdAt}
+                      <h4 className="mt-3">{product?.name}</h4>
+                      <p className="text-secondary text-end me-5 ">
+                        Đã đăng lúc{" "}
+                        {new Date(product?.createdAt).toLocaleDateString(
+                          "vi-VN"
+                        )}
                       </p>
-                      <h4>{product?.name}</h4>
-                      <h3 className="text-danger my-4">{product.price}đ</h3>
+                      <h2 className="text-danger my-4 ms-4">
+                        {product.price}đ
+                      </h2>
                       <p>Vận chuyển: Từ {product.location} tới</p>
                       <h5>Miễn phí vận chuyển</h5>
                       <Form.Group className="my-4">
@@ -210,7 +262,10 @@ export const Product = () => {
                         </Col>
                         <Col>
                           {" "}
-                          <Button className="forSale border-0 w-75 p-3 gradient-custom-2 btn-press-effect shadow">
+                          <Button
+                            onClick={handlePurchaseNow}
+                            className="forSale border-0 w-75 p-3 gradient-custom-2 btn-press-effect shadow"
+                          >
                             Mua ngay
                           </Button>
                         </Col>
@@ -230,23 +285,51 @@ export const Product = () => {
               >
                 <Card.Body>
                   <Row className="align-items-center">
-                    <Col md={2} className="text-center">
-                      <img
-                        src="/images/logo.png"
-                        alt="Shop Logo"
-                        className="img-fluid rounded-circle"
-                        style={{ width: "80px", height: "80px" }}
-                      />
+                    <Col md={1} className="text-center">
+                      {account?.avatar ? (
+                        <img
+                          src={account?.avatar}
+                          alt="Shop Logo"
+                          className="img-fluid rounded-circle "
+                          style={{ width: "80px", height: "80px" }}
+                        />
+                      ) : (
+                        <div
+                          className="d-flex justify-content-center align-items-center rounded-circle"
+                          style={{
+                            width: "80px",
+                            height: "80px",
+                            backgroundColor: "#ccc",
+                            color: "#fff",
+                            fontSize: "32px",
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {account?.username?.charAt(0)}{" "}
+                        </div>
+                      )}
                     </Col>
-                    <Col md={10}>
-                      <h5>ReU's Town - Xưởng Ký ...</h5>
-                      <p className="mb-1">
-                        <Badge bg="success">Đã xác minh</Badge> 4.67 (3 đánh
-                        giá) - 4 sản phẩm - 3 đã bán
-                      </p>
-                      <Button variant="outline-primary" size="sm">
-                        Xem shop
-                      </Button>
+                    <Col
+                      md={10}
+                      className="ms-3 d-flex align-items-center"
+                      style={{ flexGrow: 1 }}
+                    >
+                      <div style={{ flexGrow: 1 }}>
+                        <h5 className="text-black">{account?.fullName}</h5>
+                        <p className="mb-1">
+                          <Badge bg="success">Đã xác minh</Badge> 4.67 (3 đánh
+                          giá) - 4 sản phẩm - 3 đã bán
+                        </p>
+                      </div>
+
+                      <div className="d-flex justify-content-end">
+                        <Button variant="outline-primary" size="sm">
+                          Xem hồ sơ
+                        </Button>
+                        <Button variant="outline-danger mx-3" size="sm">
+                          Chat với người bán
+                        </Button>
+                      </div>
                     </Col>
                   </Row>
                 </Card.Body>
@@ -257,10 +340,13 @@ export const Product = () => {
                 <Table className="mb-0" hover>
                   <tbody>
                     <tr>
-                      <td className="text-muted" style={{ width: "30%" }}>
+                      <td
+                        className=" text-start text-muted"
+                        style={{ width: "30%" }}
+                      >
                         Danh mục
                       </td>
-                      <td>
+                      <td className="text-start">
                         <a href="#" className="text-primary">
                           Oreka
                         </a>{" "}
@@ -275,24 +361,24 @@ export const Product = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-muted">Phí vận chuyển</td>
-                      <td>
-                        <Badge bg="info" className="text-white">
+                      <td className="text-muted text-start">Phí vận chuyển</td>
+                      <td className="text-start">
+                        <Badge bg="info" className="text-white ">
                           Freeship
                         </Badge>
                       </td>
                     </tr>
                     <tr>
-                      <td className="text-muted">Tình trạng</td>
-                      <td>Mới</td>
+                      <td className="text-muted text-start">Tình trạng</td>
+                      <td className="text-start">Mới</td>
                     </tr>
                     <tr>
-                      <td className="text-muted">Thương hiệu</td>
-                      <td>{product.brand}</td>
+                      <td className="text-muted text-start">Thương hiệu</td>
+                      <td className="text-start">{product.brand}</td>
                     </tr>
                     <tr>
-                      <td className="text-muted">Màu sắc</td>
-                      <td>{product.color}</td>
+                      <td className="text-muted text-start">Màu sắc</td>
+                      <td className="text-start">{product.color}</td>
                     </tr>
                   </tbody>
                 </Table>

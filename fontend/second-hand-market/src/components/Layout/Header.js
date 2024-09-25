@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Image } from "react-bootstrap";
-import CategoryContext from "../http/CategoryContext";
-import AccountContext from "../http/AccountContext";
+import CategoryContext from "../../contexts/CategoryContext";
+import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
 import "./Header.css";
 
@@ -11,12 +11,14 @@ const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
+console.log(account);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/ecomarket/home");
     window.location.reload();
   };
+
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
@@ -29,7 +31,10 @@ const Header = () => {
         console.error("Error fetching", error);
       }
     };
+    checkAuthentication();
+  }, [account.cart]);
 
+  useEffect(() => {
     const fetchCategories = async () => {
       try {
         const categories = await CategoryContext.getCatgories();
@@ -38,7 +43,7 @@ const Header = () => {
         console.error("Error fetching categories:", error);
       }
     };
-    checkAuthentication();
+
     fetchCategories();
   }, []);
 
@@ -66,8 +71,8 @@ const Header = () => {
             <i className="bi bi-search input-icon" id="basic-addon1"></i>
           </div>
 
-          <div id="navbarNav" className="ms-5">
-            <nav className="nav nav-pills flex-column flex-sm-row ">
+          <div id="navbarNav" className="ms-5 ">
+            <nav className="nav nav-pills d-flex justify-content-evenly">
               <a
                 className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
                 href="/"
@@ -76,10 +81,39 @@ const Header = () => {
               </a>
               {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center  ">
-                  <i
-                    className="bi bi-cart4 fs-3 mx-5 rounded-circle text-center cart shadow"
-                    style={{ cursor: "pointer", height: "45px", width: "45px" }}
-                  ></i>
+                  <div
+                    className="position-relative mx-5"
+                    style={{ width: "45px", height: "45px" }}
+                  >
+                    <i
+                      className="bi bi-cart4 fs-4 rounded-circle text-center cart shadow"
+                      style={{
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100%",
+                        width: "100%",
+                      }}
+                      onClick={() => {
+                        navigate("/ecomarket/my-cart");
+                      }}
+                    />
+                    <sup
+                      style={{
+                        position: "absolute",
+                        top: "0",
+                        right: "0",
+                        backgroundColor: "red",
+                        color: "white",
+                        borderRadius: "50%",
+                        padding: "0.6rem 0.5rem",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {account.cart.length}
+                    </sup>
+                  </div>
 
                   <div className="d-inline-block ms-2">
                     <div
@@ -100,7 +134,7 @@ const Header = () => {
                         }}
                         className="me-2"
                       />
-                      <span>{account?.username}</span>
+                      <span>{account?.fullName}</span>
                     </div>
                     {showDropdown && (
                       <div className="dropdown-menu show mt-2">

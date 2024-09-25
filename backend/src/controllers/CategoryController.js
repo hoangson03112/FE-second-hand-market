@@ -17,6 +17,7 @@ class CategoryController {
       });
     }
   }
+
   async getCategory(req, res) {
     try {
       const category = await Category.findById(req.query.categoryID);

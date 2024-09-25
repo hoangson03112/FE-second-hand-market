@@ -7,7 +7,7 @@ mongoose.plugin(slug);
 const ProductSchema = new Schema(
   {
     name: { type: String, required: true },
-    slug: { type: String, slug: "name", unique: true },
+
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
@@ -22,6 +22,10 @@ const ProductSchema = new Schema(
     description: { type: String, required: false },
     images: { type: [String], required: false },
     avatar: { type: String, required: true },
+    accountId: {
+      type: mongoose.Schema.Types.ObjectId, // Tham chiếu đến tài khoản người bán
+      ref: "accounts",
+    },
   },
   { timestamps: true, collection: "products" }
 );

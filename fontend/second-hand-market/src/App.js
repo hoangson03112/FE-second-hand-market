@@ -8,6 +8,9 @@ import Register from "./pages/Register/Register";
 import Layout from "./components/Layout/Layout";
 import Cart from "./pages/Cart/Cart";
 import Checkout from "./components/Checkout/Checkout";
+import { ChatBox } from "./components/ChatBox/ChatBox";
+import OrderSuccess from "./pages/Order/OrderSuccess";
+import MyOrder from "./pages/Order/MyOrder";
 
 function App() {
   return (
@@ -67,6 +70,22 @@ function App() {
           element={
             <Layout>
               <Checkout />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/ecomarket/order-success"
+          element={
+            <Layout>
+              <OrderSuccess />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/ecomarket/my-order"
+          element={
+            <Layout>
+              <MyOrder />
             </Layout>
           }
         ></Route>

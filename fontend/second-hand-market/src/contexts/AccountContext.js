@@ -7,15 +7,16 @@ class AccountContext {
     }
 
     try {
-      const { data } = await axios.post(
-        "http://localhost:2000/ecomarket/login",
-        { username, password }
-      );
-      if (data.status === "success") {
-        localStorage.setItem("token", data.token);
+      const data = await axios.post("http://localhost:2000/ecomarket/login", {
+        username,
+        password,
+      });
+
+      if (data.data.status === "success") {
+        localStorage.setItem("token", data.data.token);
         window.location.href = "/ecomarket/home";
       } else {
-        return data;
+        return data.data;
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -58,7 +59,7 @@ class AccountContext {
         return { message: "Chưa đăng nhập", status: 401 };
       }
 
-      const { data } = await axios.get(
+      const data = await axios.get(
         "http://localhost:2000/ecomarket/authentication",
         {
           headers: {
@@ -72,10 +73,7 @@ class AccountContext {
       } else {
         return data;
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      return "Đã xảy ra lỗi khi xác thực.";
-    }
+    } catch (error) {}
   }
 
   async Verify(userID, code) {
@@ -102,12 +100,16 @@ class AccountContext {
     }
   }
   async getAccount(accountId) {
-    const response = await axios.get(
-      `http://localhost:2000/ecomarket/account/${accountId}`
-    );
-    console.log(response);
+    try {
+      const response = await axios.get(
+        `http://localhost:2000/ecomarket/account/${accountId}`
+      );
 
-    return response;
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching account:", error);
+      throw error;
+    }
   }
 }
 

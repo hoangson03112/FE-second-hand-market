@@ -17,7 +17,7 @@ import ProductContext from "../../contexts/ProductContext";
 import CategoryContext from "../../contexts/CategoryContext";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { ChatBox } from "../ChatBox/ChatBox";
 
 export const Product = () => {
   const location = useLocation();
@@ -62,18 +62,19 @@ export const Product = () => {
 
   const [product, setProduct] = useState({});
   const [mainImage, setMainImage] = useState("");
-  const [quantity, setQuantity] = useState(1); // State cho số lượng sản phẩm
+  const [quantity, setQuantity] = useState(1);
   const [category, setCategory] = useState({});
   const [showToast, setShowToast] = useState(false);
   const [account, setAccount] = useState({});
   const [error, setError] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchAccount = async (accountId) => {
       try {
         const response = await AccountContext.getAccount(accountId);
 
-        setAccount(response.data);
+        setAccount(response);
       } catch (error) {
         console.error("Error fetching account:", error);
         setError("Error fetching account");
@@ -83,51 +84,55 @@ export const Product = () => {
     const fetchProduct = async () => {
       try {
         const product = await ProductContext.getProduct(productID);
-        fetchAccount(product.accountId);
+        fetchAccount(product.sellerId);
         setProduct(product);
         setMainImage(product.images?.[0]);
       } catch (err) {
         console.error(err);
       }
     };
-
     fetchProduct();
   }, [productID]);
 
   useEffect(() => {
     const fetchCategory = async () => {
-      try {
-        const category = await CategoryContext.getCategory(product.categoryId);
-        setCategory(category);
-      } catch (err) {
-        console.error(err);
+      if (product.categoryId) {
+        try {
+          const category = await CategoryContext.getCategory(
+            product.categoryId
+          );
+          setCategory(category);
+        } catch (err) {
+          console.error(err);
+        }
       }
     };
 
     fetchCategory();
-  }, [product]); // Theo dõi sự thay đổi của product
+  }, [product.categoryId]);
 
   const handleThumbnailClick = (image) => {
     setMainImage(image);
   };
-
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity > 0 && newQuantity <= product.stock) {
       setQuantity(newQuantity);
     }
   };
+
   const handleAddToCart = async () => {
     try {
       const data = await AccountContext.Authentication();
+      if (data.data.account) {
+        console.log(product._id);
 
-      if (data.account) {
         const messageAddToCart = await ProductContext.addToCart(
           product._id,
-          quantity
+          quantity,
+          account._id
         );
-
         if (messageAddToCart.status === "success") {
-          setShowToast(true); // Hiển thị thông báo
+          setShowToast(true);
         }
       } else {
         navigate("/ecomarket/login");
@@ -141,7 +146,7 @@ export const Product = () => {
     try {
       const data = await AccountContext.Authentication();
 
-      if (data.account) {
+      if (data.data.account) {
         // const messageAddToCart = await ProductContext.addToCart(
         //   product._id,
         //   quantity
@@ -156,7 +161,7 @@ export const Product = () => {
       console.error("Error fetching", error);
     }
   };
-
+  const toggleChat = () => setIsOpen(!isOpen);
   return (
     <div>
       <div className="bg-body-secondary">
@@ -285,12 +290,12 @@ export const Product = () => {
               >
                 <Card.Body>
                   <Row className="align-items-center">
-                    <Col md={1} className="text-center">
+                    <Col md={2} className="text-center">
                       {account?.avatar ? (
                         <img
                           src={account?.avatar}
                           alt="Shop Logo"
-                          className="img-fluid rounded-circle "
+                          className="img-fluid rounded-circle float-end"
                           style={{ width: "80px", height: "80px" }}
                         />
                       ) : (
@@ -305,31 +310,29 @@ export const Product = () => {
                             textTransform: "uppercase",
                           }}
                         >
-                          {account?.username?.charAt(0)}{" "}
+                          {account?.username?.charAt(0)}
                         </div>
                       )}
                     </Col>
-                    <Col
-                      md={10}
-                      className="ms-3 d-flex align-items-center"
-                      style={{ flexGrow: 1 }}
-                    >
-                      <div style={{ flexGrow: 1 }}>
-                        <h5 className="text-black">{account?.fullName}</h5>
-                        <p className="mb-1">
-                          <Badge bg="success">Đã xác minh</Badge> 4.67 (3 đánh
-                          giá) - 4 sản phẩm - 3 đã bán
-                        </p>
-                      </div>
 
-                      <div className="d-flex justify-content-end">
-                        <Button variant="outline-primary" size="sm">
-                          Xem hồ sơ
-                        </Button>
-                        <Button variant="outline-danger mx-3" size="sm">
-                          Chat với người bán
-                        </Button>
-                      </div>
+                    <Col md={10}>
+                      <Row className="align-items-center">
+                        <Col md={7}>
+                          <h5 className="text-black mb-1">
+                            {account?.fullName}
+                          </h5>
+                          <p className="mb-1">{product.location}</p>
+                        </Col>
+
+                        <Col md={5} className="text-md-end">
+                          <Button variant="outline-primary" size="sm">
+                            Xem hồ sơ
+                          </Button>
+                          <Button variant="outline-danger mx-2" size="sm">
+                            Chat với người bán
+                          </Button>
+                        </Col>
+                      </Row>
                     </Col>
                   </Row>
                 </Card.Body>
@@ -498,6 +501,15 @@ export const Product = () => {
         </Toast.Header>
         <Toast.Body>Thêm sản phẩm vào giỏ hàng thành công!</Toast.Body>
       </Toast>
+      <span
+        onClick={toggleChat}
+        className=" position-fixed bottom-0 end-0 m-5 "
+        style={{ fontSize: "5rem" }}
+      >
+        <i class="bi bi-wechat"></i>
+      </span>
+
+      <ChatBox isOpen={isOpen} toggleChat={toggleChat} />
     </div>
   );
 };

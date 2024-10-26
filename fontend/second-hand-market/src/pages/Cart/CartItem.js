@@ -1,99 +1,123 @@
-import React, { memo, useEffect } from "react";
+import React, { memo } from "react";
 import { Button } from "react-bootstrap";
 import "./CartItem.css";
-import ProductContext from "../../contexts/ProductContext";
 
 const CartItem = memo(
   ({
-    item,
+    sellers,
+    products,
     updateQuantity,
-    isChecked,
+    checkedItems,
     onCheckboxChange,
     onDeleteItem,
-    setProduct,
-    product,
   }) => {
-    useEffect(() => {
-      const fetchProduct = async () => {
-        try {
-          const product = await ProductContext.getProduct(item.productId);
-          setProduct(product);
-        } catch (err) {
-          console.error(err);
-        }
-      };
-
-      fetchProduct();
-    }, []);
-
     return (
-      <tr className="text-center align-middle">
-        <td>
-          <label className="custom-checkbox ms-2">
-            <input
-              type="checkbox"
-              checked={isChecked}
-              onChange={(e) =>
-                onCheckboxChange(item.productId, e.target.checked)
-              }
-            />
-            <span className="checkmark" />
-          </label>
-        </td>
-        <td>
-          <div className="d-flex align-items-center ms-3 ">
-            <img
-              src="https://static.oreka.vn/250-250_c653f6a5-fffc-43f3-8131-84d3cf909bd6"
-              alt="Product"
-              style={{
-                width: "80px",
-                height: "80px",
-                objectFit: "cover",
-                borderRadius: "5px",
-              }}
-            />
-            <p className="mb-0 ms-3 font-weight-bold text-wrap">
-              {product.name}
-            </p>
-          </div>
-        </td>
-        <td>{product.price}₫</td>
-        <td>
-          <div className="d-flex  align-items-center">
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={() => updateQuantity(item.productId, -1)}
-              className="fs-7 px-2 btn-circle text-white"
-            >
-              -
-            </Button>
-            <div className=" quantity-span">{item.quantity}</div>
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={() => updateQuantity(item.productId, 1)}
-              className="fs-7 px-2 btn-circle text-white"
-            >
-              +
-            </Button>
-          </div>
-        </td>
-        <td>{(product.price * item.quantity).toLocaleString()}₫</td>
-        <td>
-          <Button
-            variant="link"
-            className="text-danger p-0 text-decoration-none"
-            onClick={() => onDeleteItem([item.productId])}
-          >
-            <i className="bi bi-trash "></i> Xóa
-          </Button>
-        </td>
-      </tr>
+      <tbody>
+        {sellers.map((seller) => {
+          // Lọc ra các sản phẩm thuộc về seller này
+          const sellerProducts = products.filter(
+            (product) => product.sellerId === seller._id
+          );
+
+          // Nếu không có sản phẩm nào thì không hiển thị seller
+          if (sellerProducts.length === 0) {
+            return null; // Bỏ qua seller này nếu không có sản phẩm
+          }
+
+          return (
+            <React.Fragment key={seller._id}>
+              <tr>
+                <td colSpan="6">
+                  <div className="d-flex align-items-center w-100 mb-2">
+                    <img
+                      src={seller.avatar}
+                      alt="Avatar"
+                      className="rounded-circle"
+                      width="50"
+                      height="50"
+                    />
+                    <span className="ms-3">
+                      {seller.fullName || "Loading..."}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              {sellerProducts.map((product) => (
+                <tr key={product._id} className="text-center align-middle">
+                  <td>
+                    <label className="custom-checkbox ms-2">
+                      <input
+                        type="checkbox"
+                        checked={checkedItems[product._id] || false}
+                        onChange={(e) =>
+                          onCheckboxChange(product._id, e.target.checked)
+                        }
+                      />
+                      <span className="checkmark" />
+                    </label>
+                  </td>
+                  <td>
+                    <div className="d-flex align-items-center ms-3">
+                      <img
+                        src={product.avatar}
+                        alt={product.name}
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          objectFit: "cover",
+                          borderRadius: "5px",
+                        }}
+                      />
+                      <p className="mb-0 ms-3 font-weight-bold text-wrap">
+                        {product.name || "Loading..."}
+                      </p>
+                    </div>
+                  </td>
+                  <td>{product.price?.toLocaleString()}₫</td>
+                  <td>
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => updateQuantity(product._id, -1)}
+                        className="fs-7 px-2 btn-circle text-white"
+                      >
+                        -
+                      </Button>
+                      <div className="quantity-span mx-2">
+                        {product.quantity || 0}
+                      </div>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => updateQuantity(product._id, 1)}
+                        className="fs-7 px-2 btn-circle text-white"
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </td>
+                  <td>
+                    {(product.price * product.quantity).toLocaleString()}₫
+                  </td>
+                  <td>
+                    <Button
+                      variant="link"
+                      className="text-danger p-0 text-decoration-none"
+                      onClick={() => onDeleteItem([product._id])}
+                    >
+                      <i className="bi bi-trash"></i> Xóa
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </tbody>
     );
   }
 );
 
 export default CartItem;
-
-

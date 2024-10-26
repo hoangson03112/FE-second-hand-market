@@ -1,42 +1,31 @@
 const Account = require("../models/Account");
-const jwt = require("jsonwebtoken");
-const Product = require("../models/Product");
 
 class CartController {
   async addToCart(req, res) {
-    const { productId, quantity } = req.body;
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res
-        .status(401)
-        .json({ status: "error", message: "No token provided" });
-    }
-
-    const data = jwt.verify(token, "sown");
-
+    const { productId, quantity } = req.body; // Lấy productId và quantity từ request
     try {
-      // Tìm Account theo userId
-      let account = await Account.findById(data);
-
+      let account = await Account.findById(req.accountID); // Tìm kiếm account theo ID
       if (!account) {
         return res.status(404).json({ message: "User not found" });
       }
 
+      // Tìm sản phẩm trong giỏ hàng dựa vào productId
       const productIndex = account.cart.findIndex(
-        (item) => item.productId.toString() === productId
+        (item) => item.productId.toString() === productId.toString()
       );
 
       if (productIndex > -1) {
-        // Nếu sản phẩm đã tồn tại, cập nhật số lượng
-        account.cart[productIndex].quantity =
-          parseInt(account.cart[productIndex].quantity, 10) +
-          parseInt(quantity, 10);
+        // Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng sản phẩm
+        account.cart[productIndex].quantity += Number(quantity);
       } else {
-        // Nếu sản phẩm chưa tồn tại, thêm sản phẩm mới vào giỏ hàng
-        account.cart.push({ productId, quantity });
+        // Nếu sản phẩm chưa có trong giỏ hàng, thêm sản phẩm mới
+        account.cart.push({
+          productId,
+          quantity: Number(quantity),
+        });
       }
 
-      // Lưu lại Account sau khi cập nhật giỏ hàng
+      // Lưu lại tài khoản sau khi cập nhật giỏ hàng
       await account.save();
 
       return res.status(200).json({
@@ -44,106 +33,191 @@ class CartController {
         message: "Đã thêm sản phẩm vào giỏ hàng thành công.",
       });
     } catch (err) {
+      console.error(err);
       return res.status(500).json({ error: err.message });
     }
   }
 
   async purchaseNow(req, res) {
-    const { productId, quantity } = req.body;
-    const userId = req.user.id; // assuming you have user authentication
+    try {
+      const { productId, quantity } = req.body;
 
-    // Xử lý việc mua ngay, có thể tạo một order và thanh toán luôn
-    Order.create({ userId, products: [{ productId, quantity }] })
-      .then((order) => {
-        // Sau khi tạo order có thể xử lý thanh toán và phản hồi lại trạng thái
-        res.status(200).json(order);
-      })
-      .catch((err) => res.status(500).json({ error: err.message }));
+      // Validate required fields
+      if (!productId || !quantity) {
+        return res.status(400).json({
+          status: "error",
+          message: "ProductId and quantity are required",
+        });
+      }
+
+      // Validate quantity is positive number
+      if (quantity <= 0 || !Number.isInteger(Number(quantity))) {
+        return res.status(400).json({
+          status: "error",
+          message: "Quantity must be a positive integer",
+        });
+      }
+
+      // Create new order
+      const order = await Order.create({
+        userId: req.accountID,
+        products: [
+          {
+            productId,
+            quantity: Number(quantity),
+          },
+        ],
+      });
+
+      // Populate product details if needed
+      const populatedOrder = await Order.findById(order._id).populate(
+        "products.productId"
+      );
+
+      res.status(200).json({
+        status: "success",
+        message: "Order created successfully",
+        order: populatedOrder,
+      });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error creating order",
+        error: error.message,
+      });
+    }
   }
 
   async deleteItem(req, res) {
-    const { ids } = req.body; // Mảng chứa các productId cần xóa
+    const { ids } = req.body;
+    console.log(ids);
 
-    // Kiểm tra token trong header của request
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res
-        .status(401)
-        .json({ status: "error", message: "No token provided" });
-    }
-
-    // Xác thực token và lấy thông tin người dùng
-    let data;
-    try {
-      data = jwt.verify(token, "sown"); // "sown" là secret key, hãy chắc chắn secret này được bảo mật
-    } catch (err) {
-      return res
-        .status(403)
-        .json({ status: "error", message: "Invalid token" });
+    // Validate ids array
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "Valid product ids array is required",
+      });
     }
 
     try {
-      // Tìm account và xóa các sản phẩm có productId nằm trong mảng idsToDeleted
-      const account = await Account.findOneAndUpdate(
-        { _id: data }, // Dựa trên userId từ token
-        { $pull: { cart: { productId: { $in: ids } } } }, // Xóa các mục trong cart có productId trong idsToDeleted
-        { new: true } // Trả về đối tượng đã cập nhật
+      // Remove items from cart in one operation
+      const updatedAccount = await Account.findByIdAndUpdate(
+        req.accountID,
+        {
+          $pull: {
+            cart: {
+              productId: { $in: ids },
+            },
+          },
+        },
+        {
+          new: true,
+        }
       );
 
-      if (!account) {
-        return res
-          .status(404)
-          .json({ status: "error", message: "User not found" });
+      if (!updatedAccount) {
+        return res.status(404).json({
+          status: "error",
+          message: "Account not found",
+        });
       }
 
-      // Phản hồi lại giỏ hàng đã được cập nhật sau khi xóa
       res.status(200).json({
         status: "success",
         message: "Items removed from cart",
-        cart: account.cart, // Trả lại giỏ hàng sau khi cập nhật
+        cart: updatedAccount.cart,
       });
-    } catch (err) {
-      res.status(500).json({ status: "error", message: err.message });
+    } catch (error) {
+      console.error("Error deleting items:", error);
+      res.status(500).json({
+        status: "error",
+        message: "Error removing items from cart",
+        error: error.message,
+      });
     }
   }
+
   async updateQuantity(req, res) {
     const { productId, quantity } = req.body;
 
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res
-        .status(401)
-        .json({ status: "error", message: "No token provided" });
+    // Validate input
+    if (!productId) {
+      return res.status(400).json({
+        message: "ProductId is required",
+        status: "error",
+      });
     }
 
-    const data = jwt.verify(token, "sown");
+    if (!Number.isInteger(Number(quantity))) {
+      return res.status(400).json({
+        message: "Quantity must be an integer",
+        status: "error",
+      });
+    }
 
-    if (quantity === 0) {
-      const account = await Account.findOneAndUpdate(
-        { _id: data }, // Dựa trên userId từ token
-        { $pull: { cart: { productId: { $in: productId } } } }, // Xóa các mục trong cart có productId trong idsToDeleted
-        { new: true } // Trả về đối tượng đã cập nhật
+    try {
+      // Update quantity for specific product in cart
+      const updatedAccount = await Account.findOneAndUpdate(
+        {
+          _id: req.accountID,
+          "cart.productId": productId,
+        },
+        {
+          $inc: {
+            "cart.$.quantity": Number(quantity),
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
       );
 
-      res.status(200).json({
-        status: "success",
-        message: "Items removed from cart",
-        cart: account.cart, // Trả lại giỏ hàng sau khi cập nhật
-      });
-    } else {
-      try {
-        // Giả sử bạn có mô hình giỏ hàng và cập nhật số lượng sản phẩm
-        await Account.findOneAndUpdate(
-          { _id: data, "cart.productId": productId }, // Tìm account với productId trong giỏ hàng
-          { $set: { "cart.$.quantity": quantity } }, // Cập nhật số lượng của sản phẩm trong giỏ hàng
+      if (!updatedAccount) {
+        return res.status(404).json({
+          message: "Account or product not found in cart",
+          status: "error",
+        });
+      }
+
+      // Find the updated cart item
+      const updatedCartItem = updatedAccount.cart.find(
+        (item) => item.productId.toString() === productId
+      );
+
+      // Remove item if quantity becomes 0 or negative
+      if (updatedCartItem.quantity <= 0) {
+        await Account.findByIdAndUpdate(
+          req.accountID,
+          {
+            $pull: {
+              cart: { productId: productId },
+            },
+          },
           { new: true }
         );
-
-        res.status(200).send({ message: "Quantity updated successfully" });
-      } catch (error) {
-        res.status(500).send({ message: "Error updating quantity" });
       }
+
+      // Get final account state after all updates
+      const finalAccount = await Account.findById(req.accountID);
+
+      res.status(200).json({
+        message: "Quantity updated successfully",
+        status: "success",
+        updatedQuantity: updatedCartItem ? updatedCartItem.quantity : 0,
+        cart: finalAccount.cart,
+      });
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+      res.status(500).json({
+        message: "Error updating quantity",
+        status: "error",
+        error: error.message,
+      });
     }
   }
 }
+
 module.exports = new CartController();

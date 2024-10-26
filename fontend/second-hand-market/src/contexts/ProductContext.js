@@ -12,7 +12,7 @@ class ProductContext {
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product:", error);
-      throw error; // Re-throw the error for proper error handling
+      throw error;
     }
   }
 
@@ -36,7 +36,7 @@ class ProductContext {
     }
   }
 
-  async addToCart(productId, quantity) {
+  async addToCart(productId, quantity, userId) {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
@@ -44,6 +44,7 @@ class ProductContext {
         {
           productId,
           quantity: quantity + "",
+          userId,
         },
         {
           headers: {

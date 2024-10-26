@@ -1,6 +1,8 @@
 const Account = require("../models/Account");
-const jwt = require("jsonwebtoken");
+
 const GenerateToken = require("../util/token");
+const bcrypt = require("bcrypt");
+
 const {
   generateVerificationCode,
   sendVerificationEmail,
@@ -12,10 +14,17 @@ class AccountController {
       let data = req.body;
       const account = await Account.findOne({
         username: data.username,
-        password: data.password,
       });
 
       if (account) {
+        const isMatch = await bcrypt.compare(data.password, account.password);
+
+        if (!isMatch) {
+          return res.json({
+            status: "password",
+            message: " mật khẩu không đúng",
+          });
+        }
         if (account.status === "active") {
           const token = GenerateToken(account._id);
           return res.json({
@@ -31,9 +40,9 @@ class AccountController {
           });
         }
       } else {
-        return res.status(401).json({
+        return res.json({
           status: "login",
-          message: "Sai tên đăng nhập hoặc mật khẩu",
+          message: "Sai tên đăng nhập",
         });
       }
     } catch (error) {
@@ -41,7 +50,6 @@ class AccountController {
     }
   }
 
-  // Xử lý đăng ký
   async Register(req, res) {
     try {
       const data = req.body;
@@ -66,8 +74,8 @@ class AccountController {
 
       const verificationCode = generateVerificationCode();
       await sendVerificationEmail(data.email, verificationCode);
-
-      const newAccount = new Account(data);
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      const newAccount = new Account({ ...data, password: hashedPassword });
       await newAccount.save();
 
       await Account.updateOne(
@@ -87,28 +95,24 @@ class AccountController {
   }
 
   async Authentication(req, res) {
-    try {
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token) {
+    if (req.accountID) {
+      try {
+        const account = await Account.findById(req.accountID);
+
+        return res.json({
+          status: "success",
+          account: {
+            fullName: account?.fullName,
+            avatar: account?.avatar,
+            cart: account?.cart,
+          },
+        });
+      } catch (error) {
+        console.log(error);
         return res
-          .status(401)
-          .json({ status: "error", message: "No token provided" });
+          .status(500)
+          .json({ status: "error", message: "Server error" });
       }
-
-      const data = jwt.verify(token, "sown");
-      const account = await Account.findById(data._id);
-
-      return res.json({
-        status: "success",
-        account: {
-          fullName: account?.fullName,
-          avatar: account?.avatar,
-          cart: account?.cart,
-        },
-      });
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
   async Verify(req, res) {
@@ -205,7 +209,6 @@ class AccountController {
         addresses,
       } = req.body;
 
-      // Tạo một đối tượng chứa các trường sẽ được cập nhật
       const updateFields = {};
 
       // Kiểm tra từng trường có được gửi trong body không, nếu có thì thêm vào đối tượng updateFields
@@ -248,12 +251,10 @@ class AccountController {
       // Lấy tất cả các tài khoản từ cơ sở dữ liệu
       const accounts = await Account.find();
 
-      // Nếu không tìm thấy tài khoản nào
       if (accounts.length === 0) {
         return res.status(404).json({ message: "No accounts found" });
       }
 
-      // Trả về danh sách tài khoản
       res.status(200).json({
         message: "Accounts retrieved successfully",
         accounts: accounts,
@@ -265,16 +266,13 @@ class AccountController {
   async getAccountById(req, res) {
     const accountId = req.params.id;
 
-    if (!accountId) {
-      return res.status(400).json({ message: "Account ID is required" });
-    }
-
     try {
       const account = await Account.findById(accountId).select("-password");
 
       if (!account) {
         return res.status(404).json({ message: "Account not found" });
       }
+
       return res.status(200).json(account);
     } catch (error) {
       console.error(error);

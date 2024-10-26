@@ -5,5 +5,6 @@ class AppContext {
     const data = await axios.get("https://provinces.open-api.vn/api/");
     return data;
   }
+  
 }
 export default new AppContext();

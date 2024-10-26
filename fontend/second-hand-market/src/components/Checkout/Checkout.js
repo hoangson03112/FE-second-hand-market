@@ -3,14 +3,17 @@ import { useLocation } from "react-router-dom";
 import { Button, Form, Modal } from "react-bootstrap";
 import ProductContext from "../../contexts/ProductContext";
 import "./Checkout.css";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Checkout = () => {
   const location = useLocation();
   const { selectedItems } = location.state || { selectedItems: [] };
   const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cashOnDelivery");
-  const [tempPaymentMethod, setTempPaymentMethod] = useState(paymentMethod);
+  const [shippingMethod, setShippingMethod] = useState("buyer");
+  const [tempShippingMethod, setTempShippingMethod] = useState(shippingMethod);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -35,7 +38,7 @@ const Checkout = () => {
   };
 
   const handleShowModal = () => {
-    setTempPaymentMethod(paymentMethod);
+    setTempShippingMethod(shippingMethod);
     setShowModal(true);
   };
   const handleCloseModal = () => {
@@ -43,12 +46,77 @@ const Checkout = () => {
   };
 
   const handlePaymentChange = (e) => {
-    setTempPaymentMethod(e.target.value);
+    setTempShippingMethod(e.target.value);
   };
 
   const handleSaveChanges = () => {
-    setPaymentMethod(tempPaymentMethod);
+    setShippingMethod(tempShippingMethod);
     handleCloseModal();
+  };
+  //Xoa san pham trong cart khi da tao order
+  const deleteItems = () => {
+    const ids = selectedItems.map((item) => item.productId);
+    console.log(ids);
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Vui lòng đăng nhập để tiếp tục.");
+      navigate("/login");
+      return;
+    }
+
+    axios
+      .delete("http://localhost:2000/ecomarket/delete-item", {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { ids },
+      })
+      .then((response) => {
+        console.log("Items deleted successfully:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error deleting items:", error);
+        alert("Có lỗi xảy ra khi xóa sản phẩm.");
+      });
+  };
+
+  const handlePlaceOrder = async () => {
+    const orderData = {
+      products: selectedItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+
+      totalAmount: getTotalAmount(),
+      shippingMethod,
+      shippingAddress: {
+        name: "Hoàng Sơn",
+        phone: "(+84) 332454556",
+        address:
+          "132/50, Mễ Trì Thượng, Phường Mễ Trì, Quận Nam Từ Liêm, Hà Nội",
+      },
+    };
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Vui lòng đăng nhập để tiếp tục.");
+        navigate("/login");
+        return;
+      }
+
+      await axios.post("http://localhost:2000/ecomarket/orders", orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      deleteItems();
+
+      navigate("/ecomarket/order-success");
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("Có lỗi xảy ra khi đặt hàng.");
+    }
   };
 
   return (
@@ -156,13 +224,9 @@ const Checkout = () => {
           <h5 className="mb-0">Phương thức thanh toán</h5>
           <div>
             <span className="text-primary me-2">
-              {paymentMethod === "creditCard"
-                ? "Thẻ tín dụng"
-                : paymentMethod === "bankTransfer"
-                ? "Chuyển khoản ngân hàng"
-                : paymentMethod === "cashOnDelivery"
-                ? "Thanh toán khi nhận hàng"
-                : "Ví điện tử"}
+              {shippingMethod === "buyer"
+                ? "Tôi sẽ đến lấy"
+                : "Người bán vận chuyển"}
             </span>
             <button
               className="btn btn-outline-danger "
@@ -175,7 +239,7 @@ const Checkout = () => {
 
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
-            <Modal.Title>Chọn phương thức thanh toán</Modal.Title>
+            <Modal.Title>Chọn phương thức vận chuyển</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -183,36 +247,18 @@ const Checkout = () => {
                 type="radio"
                 id="payment-method-creditCard"
                 name="paymentMethod"
-                label="Thẻ tín dụng"
-                value="creditCard"
-                checked={tempPaymentMethod === "creditCard"}
+                label="Tôi sẽ đến lấy"
+                value="buyer"
+                checked={tempShippingMethod === "buyer"}
                 onChange={handlePaymentChange}
               />
               <Form.Check
                 type="radio"
                 id="payment-method-bankTransfer"
                 name="paymentMethod"
-                label="Chuyển khoản ngân hàng"
-                value="bankTransfer"
-                checked={tempPaymentMethod === "bankTransfer"}
-                onChange={handlePaymentChange}
-              />
-              <Form.Check
-                type="radio"
-                id="payment-method-cashOnDelivery"
-                name="paymentMethod"
-                label="Thanh toán khi nhận hàng"
-                value="cashOnDelivery"
-                checked={tempPaymentMethod === "cashOnDelivery"}
-                onChange={handlePaymentChange}
-              />
-              <Form.Check
-                type="radio"
-                id="payment-method-eWallet"
-                name="paymentMethod"
-                label="Ví điện tử"
-                value="eWallet"
-                checked={tempPaymentMethod === "eWallet"}
+                label="Người bán vận chuyển"
+                value="seller"
+                checked={tempShippingMethod === "seller"}
                 onChange={handlePaymentChange}
               />
             </Form>
@@ -246,7 +292,12 @@ const Checkout = () => {
             Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo{" "}
             <span className="text-primary">Điều khoản EcoMarket</span>
           </label>
-          <Button className="btn btn-danger float-end">Đặt hàng</Button>
+          <Button
+            className="btn btn-danger float-end"
+            onClick={handlePlaceOrder}
+          >
+            Đặt hàng
+          </Button>
         </div>
       </div>
     </div>

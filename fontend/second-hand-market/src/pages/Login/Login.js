@@ -14,13 +14,11 @@ function Login() {
   };
 
   const handleLogin = async () => {
-    const error = await AccountContext.Login(username, password);
-
-    if (error.status === "inactive") {
-      setErrorMessage(error.message);
-    }
-    if (error.status === "login") {
-      setErrorMessage(error.message);
+    const data = await AccountContext.Login(username, password);
+    console.log(data);
+    
+    if (data.status !== "success") {
+      setErrorMessage(data.message);
     }
   };
 

@@ -5,159 +5,194 @@ import CartItem from "./CartItem";
 import axios from "axios";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
+import ProductContext from "../../contexts/ProductContext";
 
 const Cart = () => {
-  const [checkedItems, setCheckedItems] = useState(false);
+  const [checkedItems, setCheckedItems] = useState({});
   const [isCheckedAll, setIsCheckedAll] = useState(false);
   const [cart, setCart] = useState([]);
-  const [product, setProduct] = useState({});
+  const [totalAmount, setTotalAmount] = useState(0);
   const navigate = useNavigate();
-  useEffect(() => {
-    if (cart.length === 0) {
-      setIsCheckedAll(false);
-    } else {
-      const allChecked = cart.every((item) => checkedItems[item.productId]);
-      setIsCheckedAll(allChecked);
-    }
-  }, [checkedItems, cart]);
+  const [products, setProducts] = useState([]);
+  const [sellers, setSellers] = useState([]);
 
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
-        if (data.account) {
-          setCart(data.account.cart);
+        if (data.data) {
+          setCart(data.data.account.cart);
+          const initialCheckedItems = {};
+          data.data.account.cart.forEach((item) => {
+            initialCheckedItems[item.productId] = false;
+          });
+          setCheckedItems(initialCheckedItems);
         }
       } catch (error) {
-        console.error("Error fetching", error);
+        console.error("Error fetching cart:", error);
       }
     };
     checkAuthentication();
   }, []);
 
-  const handleCheckboxChange = (_id, isChecked) => {
-    setCheckedItems((prev) => ({
-      ...prev,
-      [_id]: isChecked,
-    }));
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        if (cart.length > 0) {
+          const productPromises = cart.map((item) =>
+            ProductContext.getProduct(item.productId)
+          );
+          const productsData = await Promise.all(productPromises);
+
+          const productsWithQuantity = productsData.map((product) => {
+            const cartItem = cart.find(
+              (item) => item.productId === product._id
+            );
+            return {
+              ...product,
+              quantity: cartItem ? cartItem.quantity : 0,
+            };
+          });
+
+          setProducts(productsWithQuantity);
+        } else {
+          setProducts([]); // Xóa hết sản phẩm khi giỏ hàng rỗng
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
+    };
+
+    fetchProducts();
+  }, [cart]);
+
+  useEffect(() => {
+    const fetchSellers = async () => {
+      try {
+        const uniqueSellerIds = Array.from(
+          new Set(products.map((product) => product.sellerId))
+        );
+
+        const sellerPromises = uniqueSellerIds.map((sellerId) =>
+          AccountContext.getAccount(sellerId)
+        );
+        const sellersData = await Promise.all(sellerPromises);
+        setSellers(sellersData);
+      } catch (err) {
+        console.error("Error fetching sellers:", err);
+      }
+    };
+
+    if (products.length > 0) {
+      fetchSellers();
+    }
+  }, [products]);
+
+  useEffect(() => {
+    const allChecked = Object.values(checkedItems).every(Boolean);
+    const anyChecked = Object.values(checkedItems).some(Boolean);
+    setIsCheckedAll(allChecked && anyChecked);
+  }, [checkedItems]);
+
+  useEffect(() => {
+    const calculateTotal = () => {
+      const total = products.reduce((sum, product) => {
+        if (checkedItems[product._id]) {
+          return sum + product.price * product.quantity;
+        }
+        return sum;
+      }, 0);
+      setTotalAmount(total);
+    };
+    calculateTotal();
+  }, [products, checkedItems]);
+
+  const handleCheckboxChange = (productId, isChecked) => {
+    setCheckedItems((prev) => ({ ...prev, [productId]: isChecked }));
   };
 
-  const handleCheckboxAllChange = (event) => {
-    setIsCheckedAll(!isCheckedAll);
-    setCheckedItems((prev) => {
-      const newCheckedItems = {};
-      cart.forEach((item) => {
-        newCheckedItems[item.productId] = !isCheckedAll;
-      });
-      return newCheckedItems;
+  const handleCheckboxAllChange = () => {
+    const newCheckedState = !isCheckedAll;
+    const newCheckedItems = {};
+    cart.forEach((item) => {
+      newCheckedItems[item.productId] = newCheckedState;
     });
+    setCheckedItems(newCheckedItems);
+    setIsCheckedAll(newCheckedState);
   };
 
   const handleDeleteSelected = () => {
-    const ids = Object.keys(checkedItems).filter(
-      (productId) => checkedItems[productId]
-    );
+    const selectedIds = Object.entries(checkedItems)
+      .filter(([, isChecked]) => isChecked)
+      .map(([productId]) => productId);
 
+    deleteItems(selectedIds);
+  };
+
+  const deleteItems = async (ids) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      return { message: "Chưa đăng nhập", status: 401 };
+      alert("Vui lòng đăng nhập để tiếp tục.");
+      navigate("/login");
+      return;
     }
 
-    axios
-      .delete("http://localhost:2000/ecomarket/delete-item", {
-        headers: {
-          Authorization: `Bearer ${token}`, // Thêm token vào header Authorization
-        },
-        data: {
-          ids, // Gửi id dưới dạng data trong request DELETE
-        },
-      })
-      .then((response) => {
+    try {
+      const response = await axios.delete(
+        "http://localhost:2000/ecomarket/delete-item",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { ids },
+        }
+      );
+      if (response.data.cart) {
         setCart(response.data.cart);
         setCheckedItems({});
         setIsCheckedAll(false);
-      })
-      .catch((error) => console.error(error));
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const updateQuantity = async (id, change) => {
-    setCart((prevItems) =>
-      prevItems.map((item) =>
-        item.productId === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
-    );
-    const updatedQuantity =
-      cart.find((item) => item.productId === id)?.quantity + change;
-
+  const updateQuantity = async (productId, change) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      return { message: "Chưa đăng nhập", status: 401 };
+      alert("Vui lòng đăng nhập để tiếp tục.");
+      navigate("/login");
+      return;
     }
-    await axios
-      .put(
+
+    try {
+      const response = await axios.put(
         "http://localhost:2000/ecomarket/update-item-quantity",
         {
-          productId: id,
-          quantity: updatedQuantity,
+          productId,
+          quantity: change,
         },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
-      )
-      .then((response) => {
-        if (response.data.status === "success") {
-          setCart(response.data.cart);
-        }
-      })
-      .catch((error) => {
-        console.error("Error updating quantity:", error);
-      });
-  };
+      );
 
-  const getTotalAmount = () => {
-    return cart.reduce(
-      (total, item) =>
-        checkedItems[item.productId]
-          ? total + product.price * item.quantity
-          : total,
-      0
-    );
-  };
-
-  const getSelectedCount = () => {
-    return Object.values(checkedItems).filter(Boolean).length;
-  };
-
-  const handleDeleteItem = (ids) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      return { message: "Chưa đăng nhập", status: 401 };
+      if (response.data.status === "success") {
+        setCart(response.data.cart);
+      }
+    } catch (error) {
+      console.error("Error updating quantity:", error);
     }
-
-    axios
-      .delete("http://localhost:2000/ecomarket/delete-item", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        data: {
-          ids,
-        },
-      })
-      .then((response) => setCart(response.data.cart))
-      .catch((error) => console.error(error));
   };
+
+  const getSelectedCount = () =>
+    Object.values(checkedItems).filter(Boolean).length;
+
   const handleCheckout = () => {
     const selectedItems = cart.filter((item) => checkedItems[item.productId]);
-
     if (selectedItems.length > 0) {
-      // Điều hướng sang trang thanh toán và gửi các sản phẩm đã chọn
       navigate("/ecomarket/checkout", { state: { selectedItems } });
     }
   };
+
   return (
     <div className="container vh-100">
       <nav aria-label="breadcrumb">
@@ -176,18 +211,14 @@ const Cart = () => {
           </li>
         </ol>
       </nav>
-      <div className="mx-3 ">
-        <div
-          className="card p-3 shadow"
-          style={{ transform: "none", boxShadow: "none" }}
-        >
+      <div className="mx-3">
+        <div className="card p-3 shadow" style={{ transform: "none" }}>
           <Table borderless className="table-hover">
             <thead>
               <tr className="text-center bg-light text-nowrap">
                 <th>
                   <label className="custom-checkbox">
                     <input
-                      name="dummy"
                       type="checkbox"
                       checked={isCheckedAll}
                       onChange={handleCheckboxAllChange}
@@ -203,26 +234,17 @@ const Cart = () => {
                 <th>Thao Tác</th>
               </tr>
             </thead>
-            <tbody>
-              {cart.map((item, index) => (
-                <CartItem
-                  product={product}
-                  key={index}
-                  item={item}
-                  updateQuantity={updateQuantity}
-                  isChecked={!!checkedItems[item.productId]}
-                  onCheckboxChange={handleCheckboxChange}
-                  onDeleteItem={handleDeleteItem}
-                  setProduct={setProduct}
-                />
-              ))}
-            </tbody>
+            <CartItem
+              sellers={sellers}
+              products={products}
+              updateQuantity={updateQuantity}
+              checkedItems={checkedItems}
+              onCheckboxChange={handleCheckboxChange}
+              onDeleteItem={deleteItems}
+            />
           </Table>
         </div>
-        <Card
-          className="shadow-sm sticky-bottom mt-4"
-          style={{ transform: "none", boxShadow: "none" }}
-        >
+        <Card className="shadow-sm sticky-bottom mt-4">
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
@@ -235,10 +257,10 @@ const Cart = () => {
                 </Button>
               </div>
               <div className="text-right">
-                <p className="mb-0 font-weight-bold  me-3">
+                <p className="mb-0 font-weight-bold me-3">
                   Tổng tiền ({getSelectedCount()} Sản phẩm):{" "}
                   <strong className="text-danger fs-5 ms-2">
-                    {getTotalAmount().toLocaleString()}₫
+                    {totalAmount.toLocaleString()}₫
                   </strong>
                 </p>
                 <Button

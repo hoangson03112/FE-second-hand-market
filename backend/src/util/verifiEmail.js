@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
-const Account = require("../models/Account");
+
+require("dotenv").config();
 
 const generateVerificationCode = () => {
   return Math.floor(1000 + Math.random() * 9000);
@@ -9,8 +10,8 @@ const generateVerificationCode = () => {
 const transporter = nodemailer.createTransport({
   service: "Gmail", // Hoặc dùng các dịch vụ email khác như Yahoo, Outlook
   auth: {
-    user: "rtwf0311@gmail.com", // Thay bằng email của bạn
-    pass: "xuwy ptin nsju noyu", // Thay bằng mật khẩu email của bạn
+    user: process.env.USERNAME_GMAIL, // Thay bằng email của bạn
+    pass: process.env.PASSWORD_GMAIL, // Thay bằng mật khẩu email của bạn
   },
 });
 

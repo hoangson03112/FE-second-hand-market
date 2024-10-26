@@ -7,7 +7,6 @@ const Layout = ({ children }) => {
     <div>
       <Header />
       <div className="bg-body-secondary pt-5">{children}</div>
-      <Footer />
     </div>
   );
 };

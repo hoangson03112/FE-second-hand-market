@@ -11,8 +11,8 @@ const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
-console.log(account);
 
+  // const { cart } = useCart();
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/ecomarket/home");
@@ -23,16 +23,15 @@ console.log(account);
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
-
-        if (data.account) {
-          setAccount(data.account);
+        if (data.data) {
+          setAccount(data.data.account);
         }
       } catch (error) {
         console.error("Error fetching", error);
       }
     };
     checkAuthentication();
-  }, [account.cart]);
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -141,7 +140,7 @@ console.log(account);
                         <a className="dropdown-item" href="/">
                           Hồ sơ
                         </a>
-                        <a className="dropdown-item" href="/">
+                        <a className="dropdown-item" href="/ecomarket/my-order">
                           Đơn Hàng
                         </a>
                         <span className="dropdown-item" onClick={handleLogout}>

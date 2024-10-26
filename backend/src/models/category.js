@@ -11,7 +11,7 @@ const CategorySchema = new Schema(
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
     image: { type: String, required: true },
-    subcategories: [SubCategorySchema], // Nhúng trực tiếp SubCategory vào Category
+    subcategories: [SubCategorySchema],
   },
   { timestamps: true, collection: "categories" }
 );

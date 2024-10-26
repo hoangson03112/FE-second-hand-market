@@ -13,7 +13,7 @@ class CategoryController {
       res.status(500).json({
         success: false,
         message: "Error fetching categories",
-        error: error.message,
+        error: error.message,cd 
       });
     }
   }

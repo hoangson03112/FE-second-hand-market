@@ -67,7 +67,6 @@ export const Product = () => {
   const [showToast, setShowToast] = useState(false);
   const [account, setAccount] = useState({});
   const [error, setError] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchAccount = async (accountId) => {
@@ -161,7 +160,7 @@ export const Product = () => {
       console.error("Error fetching", error);
     }
   };
-  const toggleChat = () => setIsOpen(!isOpen);
+
   return (
     <div>
       <div className="bg-body-secondary">
@@ -501,15 +500,6 @@ export const Product = () => {
         </Toast.Header>
         <Toast.Body>Thêm sản phẩm vào giỏ hàng thành công!</Toast.Body>
       </Toast>
-      <span
-        onClick={toggleChat}
-        className=" position-fixed bottom-0 end-0 m-5 "
-        style={{ fontSize: "5rem" }}
-      >
-        <i class="bi bi-wechat"></i>
-      </span>
-
-      <ChatBox isOpen={isOpen} toggleChat={toggleChat} />
     </div>
   );
 };

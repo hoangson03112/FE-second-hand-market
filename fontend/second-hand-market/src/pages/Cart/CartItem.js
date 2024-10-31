@@ -14,14 +14,12 @@ const CartItem = memo(
     return (
       <tbody>
         {sellers.map((seller) => {
-          // Lọc ra các sản phẩm thuộc về seller này
           const sellerProducts = products.filter(
             (product) => product.sellerId === seller._id
           );
 
-          // Nếu không có sản phẩm nào thì không hiển thị seller
           if (sellerProducts.length === 0) {
-            return null; // Bỏ qua seller này nếu không có sản phẩm
+            return null;
           }
 
           return (

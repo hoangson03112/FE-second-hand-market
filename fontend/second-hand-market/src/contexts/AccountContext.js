@@ -56,7 +56,7 @@ class AccountContext {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        return { message: "Chưa đăng nhập", status: 401 };
+        return { message: "Chưa đăng nhập", status: 401, type: "login" };
       }
 
       const data = await axios.get(

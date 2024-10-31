@@ -56,8 +56,6 @@ const Checkout = () => {
   //Xoa san pham trong cart khi da tao order
   const deleteItems = () => {
     const ids = selectedItems.map((item) => item.productId);
-    console.log(ids);
-
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Vui lòng đăng nhập để tiếp tục.");
@@ -85,7 +83,6 @@ const Checkout = () => {
         productId: item.productId,
         quantity: item.quantity,
       })),
-
       totalAmount: getTotalAmount(),
       shippingMethod,
       shippingAddress: {
@@ -104,18 +101,75 @@ const Checkout = () => {
         return;
       }
 
-      await axios.post("http://localhost:2000/ecomarket/orders", orderData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // Lấy dữ liệu sản phẩm
+      const productsData = await Promise.all(
+        orderData.products.map((product) =>
+          ProductContext.getProduct(product.productId)
+        )
+      );
 
+      // Lấy danh sách ID người bán duy nhất
+      const uniqueSellerIds = Array.from(
+        new Set(productsData.map((product) => product.sellerId).filter(Boolean))
+      );
+
+      // Nhóm sản phẩm theo người bán
+      const ordersBySeller = uniqueSellerIds
+        .map((sellerId) => {
+          const sellerProducts = productsData
+            .filter((product) => product.sellerId === sellerId)
+            .map((product) => {
+              const orderProduct = orderData.products.find(
+                (item) => item.productId === product._id
+              );
+              return {
+                productId: product._id, // Sử dụng _id từ sản phẩm
+                quantity: orderProduct ? orderProduct.quantity : 0, // Lấy số lượng tương ứng
+              };
+            })
+            .filter((product) => product.quantity > 0); // Lọc những sản phẩm có số lượng lớn hơn 0
+
+          return {
+            sellerId,
+            products: sellerProducts,
+          };
+        })
+        .filter((order) => order.products.length > 0); // Lọc các đơn hàng không có sản phẩm
+
+      // Gửi yêu cầu tạo đơn hàng cho mỗi người bán
+      for (const order of ordersBySeller) {
+        const orderPayload = {
+          totalAmount: getTotalAmount(), // Cần tính toán lại tổng số tiền cho từng người bán
+          shippingMethod,
+          shippingAddress: {
+            name: "Hoàng Sơn",
+            phone: "(+84) 332454556",
+            address:
+              "132/50, Mễ Trì Thượng, Phường Mễ Trì, Quận Nam Từ Liêm, Hà Nội",
+          },
+          products: order.products, // Gửi sản phẩm của người bán
+        };
+
+        // Gửi yêu cầu tạo đơn hàng
+        await axios.post(
+          "http://localhost:2000/ecomarket/orders",
+          orderPayload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+
+      // Xóa các sản phẩm đã chọn sau khi đặt hàng
       deleteItems();
 
+      // Điều hướng đến trang thành công
       navigate("/ecomarket/order-success");
     } catch (error) {
-      console.error("Error placing order:", error);
-      alert("Có lỗi xảy ra khi đặt hàng.");
+      console.error("Error creating order:", error);
+      alert("Đã có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
     }
   };
 

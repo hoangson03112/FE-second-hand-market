@@ -143,7 +143,7 @@ function ProductList() {
                 <div
                   key={index}
                   className="col-md-3 col-sm-6 col-12 card p-0 m-2"
-                  style={{ width: "auto", height: "21rem" }}
+                  style={{ width: "200px", height: "21rem" }}
                 >
                   <Link
                     to={{
@@ -158,7 +158,7 @@ function ProductList() {
                       className="card-img-top"
                       alt={product?.name}
                       style={{
-                        objectFit: "cover",
+                        objectFit: "object-cover",
                         height: "200px",
                       }}
                     />

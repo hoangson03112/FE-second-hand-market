@@ -91,7 +91,6 @@ class CartController {
 
   async deleteItem(req, res) {
     const { ids } = req.body;
-    console.log(ids);
 
     // Validate ids array
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
@@ -142,7 +141,6 @@ class CartController {
   async updateQuantity(req, res) {
     const { productId, quantity } = req.body;
 
-    // Validate input
     if (!productId) {
       return res.status(400).json({
         message: "ProductId is required",

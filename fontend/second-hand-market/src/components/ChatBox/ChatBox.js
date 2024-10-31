@@ -1,10 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Send } from "lucide-react";
-import ChatContext from "../../contexts/ChatContext";
 
 export const ChatBox = ({ isOpen, toggleChat }) => {
   const [hasScroll, setHasScroll] = useState(false);
   const chatRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+
   const users = [
     {
       name: "Marie Horwitz",
@@ -43,6 +45,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       unread: 0,
     },
   ];
+
   const messages = [
     {
       sender: "other",
@@ -56,22 +59,23 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       time: "12:05 PM | Aug 13",
     },
   ];
-  const [listUser, setListUser] = useState([]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const messagesEndRef = useRef(null);
-  const chatContainerRef = useRef(null);
-
-  useEffect(scrollToBottom, [messages.length]);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages.length]);
 
   useEffect(() => {
     const fetchMessage = async () => {
-      const data = await ChatContext.getChat();
-      data.data.forEach((user) => {
-        console.log(user.receiver);
-      });
+      try {
+        // Implement your chat fetching logic here
+        // const data = await ChatContext.getChat();
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
     };
 
     if (isOpen) {
@@ -110,10 +114,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                   style={{ borderRadius: "15px", position: "relative" }}
                 >
                   <h5 className="card-title text-end gradient-custom-2 py-3">
-                    <i
-                      className="bi bi-x-lg fs-3 me-4"
-                      onClick={toggleChat}
-                    ></i>
+                    <i className="bi bi-x-lg fs-3 me-4" onClick={toggleChat} />
                   </h5>
                   <div className="card-body pt-0">
                     <div className="row">
@@ -131,7 +132,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                               className="input-group-text border-0"
                               id="search-addon"
                             >
-                              <i className="bi bi-search"></i>
+                              <i className="bi bi-search" />
                             </span>
                           </div>
                           <div style={{ height: "400px", overflowY: "auto" }}>
@@ -268,3 +269,5 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     </>
   );
 };
+
+export default ChatBox;

@@ -25,11 +25,17 @@ router.get("/messages", verifyToken, ChatController.getAllChat);
 router.post("/orders", verifyToken, OrderController.createOrder);
 router.get("/my-orders", verifyToken, OrderController.getOrderByAccount);
 
+router.patch("/update-order", verifyToken, OrderController.updateOrder);
+
 router.post("/add-to-cart", verifyToken, CartController.addToCart);
 router.post("/purchase-now", verifyToken, CartController.purchaseNow);
 router.delete("/delete-item", verifyToken, CartController.deleteItem);
 router.put("/update-item-quantity", verifyToken, CartController.updateQuantity);
-router.post("/admin/create-account", AccountController.createAccountByAdmin);
+router.post(
+  "/admin/create-account",
+  verifyToken,
+  AccountController.createAccountByAdmin
+);
 router.put(
   "/admin/update-account/:userId",
   AccountController.updateAccountByAdmin

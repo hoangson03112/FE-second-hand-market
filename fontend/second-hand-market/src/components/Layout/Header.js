@@ -12,7 +12,6 @@ const Header = () => {
   const navigate = useNavigate();
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
 
-  // const { cart } = useCart();
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/ecomarket/home");

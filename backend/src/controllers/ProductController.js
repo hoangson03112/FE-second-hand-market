@@ -34,7 +34,7 @@ class ProductController {
   async getProduct(req, res) {
     try {
       const { productID } = req.query;
-      console.log(productID);
+
       const product = await Product.findById({ _id: productID });
 
       res.json({

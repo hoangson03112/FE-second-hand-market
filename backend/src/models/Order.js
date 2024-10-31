@@ -21,7 +21,7 @@ const OrderSchema = new Schema(
         },
       },
     ],
-    
+
     totalAmount: { type: Number, required: true },
     shippingMethod: { type: String, required: true },
     shippingAddress: {
@@ -29,7 +29,7 @@ const OrderSchema = new Schema(
       phone: { type: String, required: true },
       address: { type: String, required: true },
     },
-    status: { type: String, default: "Pending" },
+    status: { type: String, default: "PENDING" },
     createdAt: {
       type: Date,
       default: Date.now,

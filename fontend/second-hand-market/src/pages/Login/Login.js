@@ -15,15 +15,14 @@ function Login() {
 
   const handleLogin = async () => {
     const data = await AccountContext.Login(username, password);
-    console.log(data);
-    
-    if (data.status !== "success") {
-      setErrorMessage(data.message);
+
+    if (data?.status !== "success") {
+      setErrorMessage(data?.message);
     }
   };
 
   const handleCloseModal = () => {
-    setErrorMessage(""); // Đóng modal
+    setErrorMessage(""); 
   };
 
   return (
@@ -48,7 +47,7 @@ function Login() {
                     alt="logo"
                   />
                   <h4 className="mt-1 mb-3 pb-1">
-                    Chào mừng bạn đến với EcoMarket
+                    Chào mừng bạn đến với eco-market
                   </h4>
                 </div>
                 <p className="text-center">
@@ -154,7 +153,7 @@ function Login() {
                 <div className="d-flex flex-row align-items-center justify-content-center pb-4 mb-4">
                   <p className="mb-0">Bạn chưa có tài khoản?</p>
                   <a
-                    href="/ecomarket/register"
+                    href="/eco-market/register"
                     className="btn btn-outline-danger mx-2"
                   >
                     Đăng kí

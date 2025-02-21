@@ -7,14 +7,14 @@ class AccountContext {
     }
 
     try {
-      const data = await axios.post("http://localhost:2000/ecomarket/login", {
+      const data = await axios.post("http://localhost:2000/eco-market/login", {
         username,
         password,
       });
 
       if (data.data.status === "success") {
         localStorage.setItem("token", data.data.token);
-        window.location.href = "/ecomarket/home";
+        window.location.href = "/eco-market/home";
       } else {
         return data.data;
       }
@@ -34,7 +34,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/ecomarket/register",
+        "http://localhost:2000/eco-market/register",
         { username, password, email, phoneNumber, fullName }
       );
 
@@ -60,7 +60,7 @@ class AccountContext {
       }
 
       const data = await axios.get(
-        "http://localhost:2000/ecomarket/authentication",
+        "http://localhost:2000/eco-market/authentication",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -83,7 +83,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/ecomarket/verify",
+        "http://localhost:2000/eco-market/verify",
         {
           userID,
           code,
@@ -102,7 +102,7 @@ class AccountContext {
   async getAccount(accountId) {
     try {
       const response = await axios.get(
-        `http://localhost:2000/ecomarket/account/${accountId}`
+        `http://localhost:2000/eco-market/account/${accountId}`
       );
 
       return response.data;

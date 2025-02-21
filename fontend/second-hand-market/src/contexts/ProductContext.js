@@ -4,7 +4,7 @@ class ProductContext {
   async getProduct(productID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/product",
+        "http://localhost:2000/eco-market/product",
         {
           params: { productID },
         }
@@ -19,7 +19,7 @@ class ProductContext {
   async getProductList(categoryID, subcategoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/product-list",
+        "http://localhost:2000/eco-market/product-list",
         {
           params: { categoryID, subcategoryID },
         }
@@ -40,7 +40,7 @@ class ProductContext {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:2000/ecomarket/add-to-cart",
+        "http://localhost:2000/eco-market/add-to-cart",
         {
           productId,
           quantity: quantity + "",
@@ -56,7 +56,29 @@ class ProductContext {
       return response.data;
     } catch (error) {
       console.error("Error fetching product list:", error);
-      throw error; // Re-throw the error for proper error handling
+      throw error;
+    }
+  }
+
+  async postProduct(product) {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        "http://localhost:2000/eco-market/product/create",
+        {
+          product
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Gửi token trong header
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product list:", error);
+      throw error;
     }
   }
 }

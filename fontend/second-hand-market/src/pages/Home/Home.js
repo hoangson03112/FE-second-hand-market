@@ -11,7 +11,7 @@ export const Home = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get("http://localhost:2000/ecomarket/categories")
+      .get("http://localhost:2000/eco-market/categories")
       .then((response) => {
         setCategories(response.data.data);
       })
@@ -96,7 +96,7 @@ export const Home = () => {
 
           {categories?.map((category, index) => (
             <div key={index} className="col-2 text-center ">
-              <a href={`/ecomarket?categoryID=${category._id}`}>
+              <a href={`/eco-market?categoryID=${category._id}`}>
                 <div
                   className="card col-lg-3 col-md-6 m-4 d-flex justify-content-center align-items-center rounded-circle  shadow"
                   style={{ width: "150px", height: "150px" }}

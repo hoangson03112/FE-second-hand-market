@@ -9,7 +9,7 @@ class OrderContext {
       }
 
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/my-orders",
+        "http://localhost:2000/eco-market/my-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -29,7 +29,7 @@ class OrderContext {
       }
 
       const response = await axios.patch(
-        "http://localhost:2000/ecomarket/update-order",
+        "http://localhost:2000/eco-market/update-order",
         {
           orderId,
           reason,

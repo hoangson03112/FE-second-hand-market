@@ -12,25 +12,27 @@ const io = new Server(server);
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  // Gửi lại danh sách tin nhắn khi có người kết nối
+
   socket.emit("loadMessages", messages);
 
-  // Lắng nghe sự kiện gửi tin nhắn
+
   socket.on("sendMessage", (message) => {
-    messages.push(message); // Lưu tin nhắn vào array
-    io.emit("newMessage", message); // Gửi tin nhắn đến tất cả người dùng
+    messages.push(message);
+    io.emit("newMessage", message);
   });
 
-  
+
   socket.on("disconnect", () => {
     console.log("A user disconnected");
   });
 });
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use(cors());
-app.use(express.json());
+
 db.connect();
-app.use(express.urlencoded({ extended: true }));
+
 app.use(express.json({ extended: true }));
 app.use(cookieParser());
 

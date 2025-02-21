@@ -119,7 +119,7 @@ function Register() {
                     alt="logo"
                   />
                   <h4 className="mt-1 mb-5 pb-1">
-                    Chào mừng bạn đến với EcoMarket
+                    Chào mừng bạn đến với eco-market
                   </h4>
                 </div>
                 <p className="text-center">
@@ -261,7 +261,7 @@ function Register() {
 
                   <p className="text-muted">
                     Đã có tài khoản?{" "}
-                    <a href="/ecomarket/login" className="text-decoration-none">
+                    <a href="/eco-market/login" className="text-decoration-none">
                       Đăng nhập ngay
                     </a>
                   </p>

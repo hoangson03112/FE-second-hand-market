@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button, Card } from "react-bootstrap";
 import "./Cart.css";
-import CartItem from "./CartItem";
+import CartItem from "../../components/specific/CartItem";
 import axios from "axios";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
@@ -139,7 +139,7 @@ const Cart = () => {
 
     try {
       const response = await axios.delete(
-        "http://localhost:2000/ecomarket/delete-item",
+        "http://localhost:2000/eco-market/delete-item",
         {
           headers: { Authorization: `Bearer ${token}` },
           data: { ids },
@@ -165,7 +165,7 @@ const Cart = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:2000/ecomarket/update-item-quantity",
+        "http://localhost:2000/eco-market/update-item-quantity",
         {
           productId,
           quantity: change,
@@ -189,7 +189,7 @@ const Cart = () => {
   const handleCheckout = () => {
     const selectedItems = cart.filter((item) => checkedItems[item.productId]);
     if (selectedItems.length > 0) {
-      navigate("/ecomarket/checkout", { state: { selectedItems } });
+      navigate("/eco-market/checkout", { state: { selectedItems } });
     }
   };
 
@@ -199,7 +199,7 @@ const Cart = () => {
         <ol className="breadcrumb d-flex align-items-center mt-4">
           <li className="ms-3">
             <a
-              href="/ecomarket/home"
+              href="/eco-market/home"
               className="text-decoration-none text-black"
             >
               Trang chủ

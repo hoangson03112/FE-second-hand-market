@@ -8,17 +8,34 @@ import Register from "./pages/Register/Register";
 import Layout from "./components/Layout/Layout";
 import Cart from "./pages/Cart/Cart";
 import Checkout from "./components/Checkout/Checkout";
-import { ChatBox } from "./components/ChatBox/ChatBox";
-import OrderSuccess from "./pages/Order/OrderSuccess";
 import MyOrder from "./pages/Order/MyOrder";
+import PostProduct from "./pages/PostProduct/PostProduct";
+import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
+import DashBoard from './pages/DashBoard/DashBoard';
+
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/ecomarket/home" />} />
+
         <Route
-          path="/ecomarket/home"
+          path="/eco-market/admin"
+          element={
+            <LayoutAdmin >
+              <DashBoard />
+            </LayoutAdmin>
+          }
+        />
+
+
+
+
+
+
+        <Route path="/" element={<Navigate to="/eco-market/home" />} />
+        <Route
+          path="/eco-market/home"
           element={
             <Layout>
               <Home />
@@ -26,7 +43,7 @@ function App() {
           }
         />
         <Route
-          path="/ecomarket"
+          path="/eco-market"
           element={
             <Layout>
               <ProductList />
@@ -34,7 +51,7 @@ function App() {
           }
         />
         <Route
-          path="/ecomarket/product"
+          path="/eco-market/product"
           element={
             <Layout>
               <Product />
@@ -42,7 +59,7 @@ function App() {
           }
         />
         <Route
-          path="/ecomarket/login"
+          path="/eco-market/login"
           element={
             <Layout>
               <Login />
@@ -50,7 +67,7 @@ function App() {
           }
         ></Route>
         <Route
-          path="/ecomarket/register"
+          path="/eco-market/register"
           element={
             <Layout>
               <Register />
@@ -58,7 +75,7 @@ function App() {
           }
         ></Route>
         <Route
-          path="/ecomarket/my-cart"
+          path="/eco-market/my-cart"
           element={
             <Layout>
               <Cart />
@@ -66,7 +83,7 @@ function App() {
           }
         ></Route>
         <Route
-          path="/ecomarket/checkout"
+          path="/eco-market/checkout"
           element={
             <Layout>
               <Checkout />
@@ -74,18 +91,26 @@ function App() {
           }
         ></Route>
         <Route
-          path="/ecomarket/order-success"
+
           element={
             <Layout>
-              <OrderSuccess />
+
             </Layout>
           }
         ></Route>
         <Route
-          path="/ecomarket/my-order"
+          path="/eco-market/customer/orders"
           element={
             <Layout>
               <MyOrder />
+            </Layout>
+          }
+        ></Route>
+        <Route
+          path="/eco-market/seller/products/new"
+          element={
+            <Layout>
+              <PostProduct />
             </Layout>
           }
         ></Route>

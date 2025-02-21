@@ -42,5 +42,7 @@ router.put(
 );
 router.get("/admin/get-accounts", AccountController.getAccountsByAdmin);
 router.get("/account/:id", AccountController.getAccountById);
+router.post("/product/create",verifyToken,ProductController.addProduct)
+
 
 module.exports = router;

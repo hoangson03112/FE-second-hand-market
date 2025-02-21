@@ -1,23 +1,23 @@
 import axios from "axios";
 
 class CategoryContext {
-  async getCatgories() {
+  async getCategories() {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/categories"
+        "http://localhost:2000/eco-market/categories"
       );
       const categories = response.data.data;
-      return categories; // Trả về mảng categories khi dữ liệu đã được nhận
+      return categories; 
     } catch (error) {
       console.error("Error fetching data:", error);
-      return []; // Trả về một mảng rỗng nếu có lỗi
+      return []; 
     }
   }
 
   async getCategory(categoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/category",
+        "http://localhost:2000/eco-market/category",
         {
           params: { categoryID },
         }

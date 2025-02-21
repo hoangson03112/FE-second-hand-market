@@ -45,14 +45,14 @@ const Verification = ({ setShowVerify, userID }) => {
       const data = await AccountContext.Verify(userID, code);
       if (data.status === "success") {
         setShowVerify(false);
-        window.location.href = "/ecomarket/home";
+        window.location.href = "/eco-market/home";
       }
     } catch (error) {
       console.error("Error verifying code:", error);
     }
   };
 
-  // Chuyển đổi thời gian còn lại thành định dạng MM:SS
+
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;

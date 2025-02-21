@@ -4,7 +4,7 @@ class ChatController {
   async getAllChat(req, res) {
     try {
       const messages = await Message.find({
-        $or: [{ sender: req.accountID }],
+        $or: [{ sender: req.accountID }, { receiver: req.accountID }],
       }).sort({ timestamp: -1 });
 
       if (!messages || messages.length === 0) {
@@ -21,5 +21,4 @@ class ChatController {
     }
   }
 }
-
 module.exports = new ChatController();

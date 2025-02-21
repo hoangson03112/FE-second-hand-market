@@ -5,6 +5,8 @@ import ProductContext from "../../contexts/ProductContext";
 import "./Checkout.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+
 
 const Checkout = () => {
   const location = useLocation();
@@ -14,6 +16,7 @@ const Checkout = () => {
   const [shippingMethod, setShippingMethod] = useState("buyer");
   const [tempShippingMethod, setTempShippingMethod] = useState(shippingMethod);
   const navigate = useNavigate();
+  console.log(selectedItems);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -64,11 +67,12 @@ const Checkout = () => {
     }
 
     axios
-      .delete("http://localhost:2000/ecomarket/delete-item", {
+      .delete("http://localhost:2000/eco-market/delete-item", {
         headers: { Authorization: `Bearer ${token}` },
         data: { ids },
       })
       .then((response) => {
+
         console.log("Items deleted successfully:", response.data);
       })
       .catch((error) => {
@@ -123,18 +127,18 @@ const Checkout = () => {
                 (item) => item.productId === product._id
               );
               return {
-                productId: product._id, // Sử dụng _id từ sản phẩm
-                quantity: orderProduct ? orderProduct.quantity : 0, // Lấy số lượng tương ứng
+                productId: product._id,
+                quantity: orderProduct ? orderProduct.quantity : 0,
               };
             })
-            .filter((product) => product.quantity > 0); // Lọc những sản phẩm có số lượng lớn hơn 0
+            .filter((product) => product.quantity > 0);
 
           return {
             sellerId,
             products: sellerProducts,
           };
         })
-        .filter((order) => order.products.length > 0); // Lọc các đơn hàng không có sản phẩm
+        .filter((order) => order.products.length > 0);
 
       // Gửi yêu cầu tạo đơn hàng cho mỗi người bán
       for (const order of ordersBySeller) {
@@ -152,7 +156,7 @@ const Checkout = () => {
 
         // Gửi yêu cầu tạo đơn hàng
         await axios.post(
-          "http://localhost:2000/ecomarket/orders",
+          "http://localhost:2000/eco-market/orders",
           orderPayload,
           {
             headers: {
@@ -161,12 +165,18 @@ const Checkout = () => {
           }
         );
       }
-
+      Swal.fire({
+        title: "Thông báo!",
+        text: "Tạo đơn hàng thành công!",
+        icon: "success", // Các kiểu: 'success', 'error', 'warning', 'info', 'question'
+        confirmButtonText: "OK",
+      });
+      navigate("/eco-market/customer/orders")
       // Xóa các sản phẩm đã chọn sau khi đặt hàng
       deleteItems();
 
-      // Điều hướng đến trang thành công
-      navigate("/ecomarket/order-success");
+
+
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Đã có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
@@ -280,7 +290,7 @@ const Checkout = () => {
             <span className="text-primary me-2">
               {shippingMethod === "buyer"
                 ? "Tôi sẽ đến lấy"
-                : "Người bán vận chuyển"}
+                : "Người bán sẽ vận chuyển"}
             </span>
             <button
               className="btn btn-outline-danger "
@@ -332,19 +342,16 @@ const Checkout = () => {
             <span>Tổng tiền hàng</span>
             <span>{getTotalAmount().toLocaleString()}₫</span>
           </div>
-          <div className="d-flex justify-content-between mb-2">
-            <span>Phí vận chuyển</span>
-            <span>20.000₫</span>
-          </div>
+
           <div className="d-flex justify-content-between mb-2 fw-bold">
             <span>Tổng thanh toán</span>
-            <span>{(getTotalAmount() + 20000).toLocaleString()}₫</span>
+            <span>{(getTotalAmount()).toLocaleString()}₫</span>
           </div>
         </div>
         <div className="card-footer">
           <label className="form-check-label" htmlFor="agreementCheck">
             Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo{" "}
-            <span className="text-primary">Điều khoản EcoMarket</span>
+            <span className="text-primary">Điều khoản eco-market</span>
           </label>
           <Button
             className="btn btn-danger float-end"

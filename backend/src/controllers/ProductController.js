@@ -46,6 +46,20 @@ class ProductController {
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
+
+  async addProduct(req, res) {
+    try {
+      const product = req.body;
+      const newProduct = new Product({ ...product, sellerId: req.accountID });
+      await newProduct.save();
+      res.status(201).json({ message: 'Thêm sản phẩm thành công.', product: newProduct });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Lỗi khi thêm sản phẩm.', error: error.message });
+    }
+
+  }
+
 }
 
 module.exports = new ProductController();

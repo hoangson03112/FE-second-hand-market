@@ -1,0 +1,52 @@
+.gradient-custom-2 {
+ 
+
+  background: -webkit-linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  background: linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+}
+.input-group-password {
+  position: relative;
+}
+
+.input-group-password input {
+  padding-left: 2.5rem;
+}
+
+.input-group-password .input-icon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+.cart:hover {
+  color: white;
+  background: #fccb90 !important;
+
+  background: -webkit-linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+  background: linear-gradient(
+    to right,
+    #ee7724,
+    #d8363a,
+    #dd3675,
+    #b44593
+  ) !important;
+}

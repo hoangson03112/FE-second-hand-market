@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import OrderItem from "./OrderItem";
+import OrderItem from "../../components/specific/OrderItem";
 import OrderContext from "../../contexts/OrderContext";
 
 const MyOrder = () => {

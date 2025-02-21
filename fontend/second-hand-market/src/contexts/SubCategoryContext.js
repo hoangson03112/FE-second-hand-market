@@ -4,7 +4,7 @@ class SubCategoryContext {
   async getSubCategory(SubcategoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/ecomarket/subcategory",
+        "http://localhost:2000/eco-market/subcategory",
         {
           params: { SubcategoryID },
         }

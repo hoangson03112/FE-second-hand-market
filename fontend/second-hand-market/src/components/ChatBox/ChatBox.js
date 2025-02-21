@@ -1,11 +1,26 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Send } from "lucide-react";
+import ChatContext from "../../contexts/ChatContext";
 
 export const ChatBox = ({ isOpen, toggleChat }) => {
   const [hasScroll, setHasScroll] = useState(false);
   const chatRef = useRef(null);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [messages, setMessages] = useState([
+    {
+      sender: "other",
+      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      time: "12:00 PM | Aug 13",
+    },
+    {
+      sender: "me",
+      content:
+        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      time: "12:05 PM | Aug 13",
+    },
+  ]);
 
   const users = [
     {
@@ -46,33 +61,32 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     },
   ];
 
-  const messages = [
-    {
-      sender: "other",
-      content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      time: "12:00 PM | Aug 13",
-    },
-    {
-      sender: "me",
-      content:
-        "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-      time: "12:05 PM | Aug 13",
-    },
-  ];
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      const newMessageObj = {
+        sender: "me",
+        content: newMessage,
+        time: new Date().toLocaleTimeString(),
+      };
+      setMessages((prevMessages) => [...prevMessages, newMessageObj]);
+      setNewMessage("");
+      scrollToBottom();
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
-  }, [messages.length]);
+  }, [messages]);
 
   useEffect(() => {
     const fetchMessage = async () => {
       try {
-        // Implement your chat fetching logic here
-        // const data = await ChatContext.getChat();
+        const data = await ChatContext.getChat();
+        setMessages(data.data); // Cập nhật dữ liệu từ server vào state messages
       } catch (error) {
         console.error("Error fetching messages:", error);
       }
@@ -83,7 +97,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       scrollToBottom();
       checkForScroll();
     }
-  }, [messages.length, isOpen]);
+  }, [isOpen]);
 
   const checkForScroll = () => {
     if (chatContainerRef.current) {
@@ -91,6 +105,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       setHasScroll(scrollHeight > clientHeight);
     }
   };
+
 
   return (
     <>
@@ -107,11 +122,15 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
         >
           <div className="container">
             <div className="row">
-              <div className="col-md-12">
+              <div className="col-12">
                 <div
                   className="card"
                   id="chat3"
-                  style={{ borderRadius: "15px", position: "relative" }}
+                  style={{
+                    borderRadius: "15px",
+                    position: "relative",
+                    width: "1100px",
+                  }}
                 >
                   <h5 className="card-title text-end gradient-custom-2 py-3">
                     <i className="bi bi-x-lg fs-3 me-4" onClick={toggleChat} />
@@ -137,7 +156,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                           </div>
                           <div style={{ height: "400px", overflowY: "auto" }}>
                             <ul className="list-unstyled mb-0">
-                              {users.map((user, index) => (
+                              {users?.map((user, index) => (
                                 <li
                                   key={index}
                                   className="p-2 border-bottom"
@@ -151,9 +170,8 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                                   >
                                     <div className="d-flex flex-row">
                                       <img
-                                        src={`https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava${
-                                          index + 1
-                                        }-bg.webp`}
+                                        src={`https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava${index + 1
+                                          }-bg.webp`}
                                         alt="avatar"
                                         className="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
                                         width="60"
@@ -193,12 +211,11 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                             overflowY: hasScroll ? "scroll" : "hidden",
                           }}
                         >
-                          {messages.map((message, index) => (
+                          {messages?.map((message, index) => (
                             <div
                               key={index}
-                              className={`d-flex flex-row justify-content-${
-                                message.sender === "me" ? "end" : "start"
-                              } mb-4`}
+                              className={`d-flex flex-row justify-content-${message.sender === "me" ? "end" : "start"
+                                } mb-4`}
                             >
                               {message.sender === "other" && (
                                 <img
@@ -208,11 +225,10 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                                 />
                               )}
                               <div
-                                className={`p-3 ms-3 ${
-                                  message.sender === "me"
-                                    ? "gradient-custom-2"
-                                    : "border"
-                                }`}
+                                className={`p-3 ms-3 ${message.sender === "me"
+                                  ? "gradient-custom-2"
+                                  : "border"
+                                  }`}
                                 style={{
                                   borderRadius: "15px",
                                   backgroundColor:
@@ -222,9 +238,8 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                                 }}
                               >
                                 <p
-                                  className={`small mb-0 ${
-                                    message.sender === "me" ? "text-white" : ""
-                                  }`}
+                                  className={`small mb-0 ${message.sender === "me" ? "text-white" : ""
+                                    }`}
                                 >
                                   {message.content}
                                 </p>
@@ -252,8 +267,16 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                             className="form-control form-control-lg mx-2"
                             id="exampleFormControlInput2"
                             placeholder="Type message"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleSendMessage()
+                            }
                           />
-                          <button className="btn gradient-custom-2 text-white">
+                          <button
+                            className="btn gradient-custom-2 text-white"
+                            onClick={handleSendMessage}
+                          >
                             <Send size={24} />
                           </button>
                         </div>

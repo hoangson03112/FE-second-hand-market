@@ -16,11 +16,12 @@ function ProductList() {
   const [category, setCategory] = useState({});
   const [subCategory, setSubCategory] = useState({});
   const [sortOption, setSortOption] = useState("Mặc định");
-
+  const queryParams = new URLSearchParams(location.search);
+  const categoryID = queryParams.get("categoryID");
+  const subcategoryID = queryParams.get("subcategoryID");
   useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const categoryID = queryParams.get("categoryID");
-    const subcategoryID = queryParams.get("subcategoryID");
+
+
 
     const fetchCategory = async () => {
       try {
@@ -65,7 +66,7 @@ function ProductList() {
     }
 
     fetchProducts();
-  }, []);
+  }, [categoryID, subcategoryID]);
 
   const handleSortChange = (e) => {
     setSortOption(e.target.value);
@@ -78,7 +79,7 @@ function ProductList() {
           <ol className="breadcrumb d-flex align-items-center ">
             <li className="mx-1">
               <a
-                href="/ecomarket/home"
+                href="/eco-market/home"
                 className="text-decoration-none text-black"
               >
                 Trang chủ
@@ -93,7 +94,7 @@ function ProductList() {
             <li className="breadcrumb-item  mx-1">
               <span>&nbsp;&gt;&nbsp;</span>
               <a
-                href={`/ecomarket?categoryID=${category._id}`}
+                href={`/eco-market?categoryID=${category._id}`}
                 className="text-decoration-none text-black"
               >
                 {" "}
@@ -116,7 +117,7 @@ function ProductList() {
           </div>
           <div className="col-9 ">
             <div className="d-flex justify-content-between">
-              {subCategory?.name ? (
+              {subcategoryID ? (
                 <h3>{subCategory?.name} cũ</h3>
               ) : (
                 <h3>{category?.name} cũ</h3>
@@ -147,7 +148,7 @@ function ProductList() {
                 >
                   <Link
                     to={{
-                      pathname: `/ecomarket/product`,
+                      pathname: `/eco-market/product`,
                       search: `?productID=${product._id}`,
                       state: { category },
                     }}

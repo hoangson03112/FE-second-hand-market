@@ -9,23 +9,23 @@ class CartController {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Tìm sản phẩm trong giỏ hàng dựa vào productId
+
       const productIndex = account.cart.findIndex(
         (item) => item.productId.toString() === productId.toString()
       );
 
       if (productIndex > -1) {
-        // Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng sản phẩm
+
         account.cart[productIndex].quantity += Number(quantity);
       } else {
-        // Nếu sản phẩm chưa có trong giỏ hàng, thêm sản phẩm mới
+
         account.cart.push({
           productId,
           quantity: Number(quantity),
         });
       }
 
-      // Lưu lại tài khoản sau khi cập nhật giỏ hàng
+
       await account.save();
 
       return res.status(200).json({
@@ -156,7 +156,7 @@ class CartController {
     }
 
     try {
-      // Update quantity for specific product in cart
+
       const updatedAccount = await Account.findOneAndUpdate(
         {
           _id: req.accountID,

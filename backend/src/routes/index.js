@@ -1,7 +1,7 @@
 const router = require("./site");
 
 function route(app) {
-  app.use("/ecomarket", router);
+  app.use("/eco-market", router);
 
 }
 

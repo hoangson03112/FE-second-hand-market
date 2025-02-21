@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import emitter from "../../utils/mitt";
 
 import {
   Container,
@@ -17,7 +18,7 @@ import ProductContext from "../../contexts/ProductContext";
 import CategoryContext from "../../contexts/CategoryContext";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
-import { ChatBox } from "../ChatBox/ChatBox";
+
 
 export const Product = () => {
   const location = useLocation();
@@ -118,23 +119,22 @@ export const Product = () => {
       setQuantity(newQuantity);
     }
   };
-
   const handleAddToCart = async () => {
     try {
       const data = await AccountContext.Authentication();
       if (data.data.account) {
-        console.log(product._id);
-
         const messageAddToCart = await ProductContext.addToCart(
           product._id,
           quantity,
           account._id
         );
+
         if (messageAddToCart.status === "success") {
+          emitter.emit('CART_UPDATED');
           setShowToast(true);
         }
       } else {
-        navigate("/ecomarket/login");
+        navigate("/eco-market/login");
       }
     } catch (error) {
       console.error("Error fetching", error);
@@ -146,15 +146,11 @@ export const Product = () => {
       const data = await AccountContext.Authentication();
 
       if (data.data.account) {
-        // const messageAddToCart = await ProductContext.addToCart(
-        //   product._id,
-        //   quantity
-        // );
-        navigate("/ecomarket/checkout", {
-          state: { selectedItems: { ...product, quantity } },
+        navigate("/eco-market/checkout", {
+          state: { selectedItems: [{ ...product, productId: product._id, quantity }] },
         });
       } else {
-        navigate("/ecomarket/login");
+        navigate("/eco-market/login");
       }
     } catch (error) {
       console.error("Error fetching", error);
@@ -489,7 +485,7 @@ export const Product = () => {
           bottom: "40px",
           right: "20px",
           zIndex: 1000,
-          minWidth: "350px", // Tăng kích thước
+          minWidth: "350px",
         }}
       >
         <Toast.Header>

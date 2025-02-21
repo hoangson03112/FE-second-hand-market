@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import Header from "./Header";
-import { Footer } from "./Footer";
+import Header from "./Header/Header";
+import { Footer } from "./Footer/Footer";
 import { ChatBox } from "../ChatBox/ChatBox";
 
 const Layout = ({ children }) => {
@@ -10,7 +10,7 @@ const Layout = ({ children }) => {
   return (
     <div>
       <Header />
-      <div className="bg-body-secondary pt-5" style={{ minHeight: "100vh" }}>
+      <div className="bg-body-secondary" style={{ minHeight: "100vh" }}>
         {children}
       </div>
       <span

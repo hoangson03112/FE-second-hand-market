@@ -7,7 +7,7 @@ const AccountSchema = new Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     fullName: { type: String, required: false },
-    phoneNumber: { type: String, required: false, default: "none" },
+    phoneNumber: { type: String },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     status: { type: String, enum: ["active", "inactive"], default: "inactive" },
     avatar: { type: String, required: false },
@@ -20,17 +20,12 @@ const AccountSchema = new Schema(
     ],
     verificationCode: { type: String },
     codeExpires: { type: Date },
-    addresses: [
-      {
-        fullName: { type: String, required: true }, // Họ và tên
-        phoneNumber: { type: String, required: true }, // Số điện thoại
-        province: { type: String, required: true }, // Tỉnh/Thành phố
-        district: { type: String, required: true }, // Quận/Huyện
-        ward: { type: String, required: true }, // Phường/Xã
-        specificAddress: { type: String, required: true }, // Địa chỉ cụ thể
-        isDefault: { type: Boolean, required: true, default: false }, // Đặt làm địa chỉ mặc định
-      },
-    ],
+    address: {
+      province: { type: String },
+      district: { type: String },
+      ward: { type: String },
+      specificAddress: { type: String },
+    },
   },
   { timestamps: true, collection: "accounts" }
 );

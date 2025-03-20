@@ -7,18 +7,18 @@ mongoose.plugin(slug);
 
 const ProductSchema = new Schema(
   {
-    name: { type: String, required: false },
+    name: { type: String, required: true },
     slug: { type: String, slug: "name", unique: true },
 
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: false,
+      required: true,
     },
     subcategoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubCategory",
-      required: false,
+      required: true,
     },
     price: { type: Number, required: false },
     description: { type: String, required: false },
@@ -27,6 +27,10 @@ const ProductSchema = new Schema(
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
+    },
+    status: {
+      type: String,
+      default: "pending",
     },
     location: { type: String, required: false },
   },

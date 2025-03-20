@@ -49,7 +49,6 @@ class AccountController {
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
-
   async Register(req, res) {
     try {
       const data = req.body;
@@ -93,7 +92,6 @@ class AccountController {
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
-
   async Authentication(req, res) {
     if (req.accountID) {
       try {
@@ -105,6 +103,11 @@ class AccountController {
             fullName: account?.fullName,
             avatar: account?.avatar,
             cart: account?.cart,
+            role: account?.role,
+            email: account.email,
+            phoneNumber: account.phoneNumber,
+            createdAt: account.createdAt,
+            address: account.address,
           },
         });
       } catch (error) {
@@ -147,7 +150,6 @@ class AccountController {
       });
     }
   }
-
   async createAccountByAdmin(req, res) {
     try {
       let data = req.body;
@@ -267,7 +269,8 @@ class AccountController {
     const accountId = req.params.id;
 
     try {
-      const account = await Account.findById(accountId).select("-password");
+      const account = await Account.findById(accountID);
+      console.log(account);
 
       if (!account) {
         return res.status(404).json({ message: "Account not found" });
@@ -277,6 +280,34 @@ class AccountController {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Server error" });
+    }
+  }
+  async updateAccountInfo(req, res) {
+    try {
+      const accountUpdate = req.body;
+
+      const account = await Account.findById(req.accountID);
+      if (!account) {
+        return res.status(404).json({ message: "Tài khoản không tồn tại" });
+      }
+
+      account.fullName = accountUpdate.fullName;
+      account.email = accountUpdate.email;
+      account.phoneNumber = accountUpdate.phoneNumber;
+      account.address.province = accountUpdate.address.province;
+      account.address.district = accountUpdate.address.district;
+      account.address.ward = accountUpdate.address.ward;
+      account.address.specificAddress = accountUpdate.address.specificAddress;
+
+      await account.save();
+
+      return res.status(200).json({
+        message: "Cập nhật thành công!",
+        updatedAccount: account,
+      });
+    } catch (error) {
+      console.error("Lỗi cập nhật tài khoản:", error);
+      return res.status(500).json({ message: "Lỗi server" });
     }
   }
 }

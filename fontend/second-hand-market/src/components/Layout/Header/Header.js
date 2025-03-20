@@ -21,8 +21,10 @@ const Header = () => {
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        const data = await AccountContext.Authentication();
-        if (data.data) {
+        const data = await AccountContext.Authentication();   
+        console.log(data);
+        
+        if (data) {
           setAccount(data.data.account);
         }
       } catch (error) {
@@ -31,9 +33,9 @@ const Header = () => {
       }
     };
     checkAuthentication();
-    emitter.on('CART_UPDATED', checkAuthentication);
+    emitter.on("CART_UPDATED", checkAuthentication);
     return () => {
-      emitter.off('CART_UPDATED', checkAuthentication);
+      emitter.off("CART_UPDATED", checkAuthentication);
     };
   }, []);
 
@@ -51,7 +53,7 @@ const Header = () => {
   }, []);
 
   return (
-    <div className="">
+    <>
       <nav className="navbar navbar-expand-lg navbar-light bg-while p-0">
         <div className="container d-flex justify-content-evenly h-25">
           <Link className="navbar-brand" to="/">
@@ -72,7 +74,6 @@ const Header = () => {
               aria-label="Tìm Kiếm Sản Phẩm"
               aria-describedby="basic-addon1"
             />
-
           </div>
 
           <div id="navbarNav" className="ms-5 ">
@@ -105,7 +106,6 @@ const Header = () => {
                         }}
                       />
                     </Link>
-
 
                     <sup
                       style={{
@@ -146,12 +146,26 @@ const Header = () => {
                     </div>
                     {showDropdown && (
                       <div className="dropdown-menu show mt-2">
-                        <Link className="dropdown-item" to="/">
+                        <Link
+                          className="dropdown-item"
+                          to="/eco-market/user/profile"
+                        >
                           Hồ sơ
                         </Link>
-                        <Link className="dropdown-item" to="/eco-market/customer/orders">
+                        <Link
+                          className="dropdown-item"
+                          to="/eco-market/customer/orders"
+                        >
                           Đơn Hàng
                         </Link>
+                        {account?.role === "admin" && (
+                          <Link
+                            className="dropdown-item"
+                            to="/eco-market/admin"
+                          >
+                            Admin
+                          </Link>
+                        )}
                         <span className="dropdown-item" onClick={handleLogout}>
                           Đăng xuất
                         </span>
@@ -233,7 +247,7 @@ const Header = () => {
         </nav>
       </div>
       <hr className="m-0" />
-    </div>
+    </>
   );
 };
 

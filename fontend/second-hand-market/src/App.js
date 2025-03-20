@@ -11,27 +11,40 @@ import Checkout from "./components/Checkout/Checkout";
 import MyOrder from "./pages/Order/MyOrder";
 import PostProduct from "./pages/PostProduct/PostProduct";
 import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
-import DashBoard from './pages/DashBoard/DashBoard';
-
+import DashBoard from "./pages/DashBoard/DashBoard";
+import CategoryManagement from "./pages/CategoryManagement/CategoryManagement";
+import ProductManagement from "./pages/ProductManagement/ProductManagement";
+import UserProfile from "./pages/UserProfile/UserProfile";
+import UserManagement from "./pages/ManageUser/ManageUser";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         <Route
           path="/eco-market/admin"
           element={
-            <LayoutAdmin >
+            <LayoutAdmin>
               <DashBoard />
             </LayoutAdmin>
           }
         />
-
-
-
-
-
+        <Route
+          path="/eco-market/manager-products"
+          element={
+            <LayoutAdmin>
+              <ProductManagement />
+            </LayoutAdmin>
+          }
+        />
+        <Route
+          path="/eco-market/admin/categories"
+          element={
+            <LayoutAdmin>
+              <CategoryManagement />
+            </LayoutAdmin>
+          }
+        />
 
         <Route path="/" element={<Navigate to="/eco-market/home" />} />
         <Route
@@ -56,6 +69,22 @@ function App() {
             <Layout>
               <Product />
             </Layout>
+          }
+        />
+        <Route
+          path="/eco-market/user/profile"
+          element={
+            <Layout>
+              <UserProfile />
+            </Layout>
+          }
+        />
+        <Route
+          path="/eco-market/admin/manager-customer"
+          element={
+            <LayoutAdmin>
+              <UserManagement />
+            </LayoutAdmin>
           }
         />
         <Route
@@ -90,14 +119,7 @@ function App() {
             </Layout>
           }
         ></Route>
-        <Route
-
-          element={
-            <Layout>
-
-            </Layout>
-          }
-        ></Route>
+        <Route element={<Layout></Layout>}></Route>
         <Route
           path="/eco-market/customer/orders"
           element={

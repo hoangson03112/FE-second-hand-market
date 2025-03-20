@@ -20,6 +20,8 @@ const Cart = () => {
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
+
+
         if (data.data) {
           setCart(data.data.account.cart);
           const initialCheckedItems = {};

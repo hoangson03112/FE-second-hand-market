@@ -20,9 +20,6 @@ function ProductList() {
   const categoryID = queryParams.get("categoryID");
   const subcategoryID = queryParams.get("subcategoryID");
   useEffect(() => {
-
-
-
     const fetchCategory = async () => {
       try {
         const category = await CategoryContext.getCategory(categoryID);

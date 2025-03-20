@@ -4,10 +4,21 @@ class ProductContext {
   async getProduct(productID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/product",
+        "http://localhost:2000/eco-market/products",
         {
           params: { productID },
         }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      throw error;
+    }
+  }
+  async getProducts() {
+    try {
+      const response = await axios.get(
+        "http://localhost:2000/eco-market/products"
       );
       return response.data.data;
     } catch (error) {
@@ -66,7 +77,7 @@ class ProductContext {
       const response = await axios.post(
         "http://localhost:2000/eco-market/product/create",
         {
-          product
+          product,
         },
         {
           headers: {
@@ -80,6 +91,23 @@ class ProductContext {
       console.error("Error fetching product list:", error);
       throw error;
     }
+  }
+  async updateProductStatus(slug, status) {
+    const token = localStorage.getItem("token");
+    const response = await axios.patch(
+      "http://localhost:2000/eco-market/manager-products/update",
+      {
+        slug,
+        status,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
   }
 }
 

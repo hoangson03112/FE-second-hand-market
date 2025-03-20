@@ -7,17 +7,17 @@ class CategoryContext {
         "http://localhost:2000/eco-market/categories"
       );
       const categories = response.data.data;
-      return categories; 
+      return categories;
     } catch (error) {
       console.error("Error fetching data:", error);
-      return []; 
+      return [];
     }
   }
 
   async getCategory(categoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/category",
+        "http://localhost:2000/eco-market/categories",
         {
           params: { categoryID },
         }

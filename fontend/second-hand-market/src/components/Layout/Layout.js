@@ -10,7 +10,7 @@ const Layout = ({ children }) => {
   return (
     <div>
       <Header />
-      <div className="bg-body-secondary" style={{ minHeight: "100vh" }}>
+      <div className="bg-body-secondary mt-0" style={{ minHeight: "100vh" }}>
         {children}
       </div>
       <span

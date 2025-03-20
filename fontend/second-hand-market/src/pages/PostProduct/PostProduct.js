@@ -5,9 +5,8 @@ import Select from "react-select";
 import CategoryContext from "../../contexts/CategoryContext";
 
 import axios from "axios";
-import ButtonBack from './../../components/common/ButtomBack/ButtomBack';
-
-
+import ButtonBack from "./../../components/common/ButtomBack/ButtomBack";
+import Swal from "sweetalert2";
 
 const PostProduct = () => {
     const [categories, setCategories] = useState([]);
@@ -24,7 +23,6 @@ const PostProduct = () => {
         location: "",
         avatar: "",
     });
-
 
     const categoryOptions = categories.map((cate) => ({
         value: cate._id,
@@ -49,7 +47,6 @@ const PostProduct = () => {
         setProduct((prev) => ({ ...prev, [name]: value }));
     };
 
-
     const convertFilesToBase64 = (files) => {
         return Promise.all(
             files.map((file) => {
@@ -57,7 +54,7 @@ const PostProduct = () => {
                     const reader = new FileReader();
                     reader.readAsDataURL(file);
 
-                    reader.onload = () => resolve(reader.result); // Trả về base64
+                    reader.onload = () => resolve(reader.result);
                     reader.onerror = (error) => reject(error);
                 });
             })
@@ -69,13 +66,6 @@ const PostProduct = () => {
         const token = localStorage.getItem("token");
 
         try {
-
-
-            console.log(product);
-
-
-
-         
             const response = await axios.post(
                 "http://localhost:2000/eco-market/product/create",
                 product,
@@ -86,19 +76,23 @@ const PostProduct = () => {
                 }
             );
 
-            console.log(response.data);
+            if (response.data.message) {
+                Swal.fire({
+                    title: "Thêm thành công!",
+                    text: "Vui lòng chờ duyệt!",
+                    icon: "success"
+                });
+            }
         } catch (error) {
             console.error("Lỗi khi tải sản phẩm lên:", error);
         }
     };
-
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
                 const categories = await CategoryContext.getCategories();
                 setCategories(categories);
-
             } catch (error) {
                 console.error("Error fetching categories:", error);
             }
@@ -125,19 +119,19 @@ const PostProduct = () => {
             if (!files || files.length === 0) return;
 
             const encodedFiles = await convertFilesToBase64(files);
-            const firstImage = encodedFiles.find(file => file.startsWith("data:image"));
+            const firstImage = encodedFiles.find((file) =>
+                file.startsWith("data:image")
+            );
 
             setProduct((prev) => ({
                 ...prev,
-                images: encodedFiles, // Mã hóa tất cả ảnh & video
-                avatar: firstImage || null, // Ảnh đầu tiên hợp lệ hoặc null
+                images: encodedFiles,
+                avatar: firstImage || null,
             }));
         };
 
         processFiles();
     }, [files]);
-
-
 
     const handleFileChange = (event) => {
         const selectedFiles = Array.from(event.target.files);
@@ -154,24 +148,27 @@ const PostProduct = () => {
         });
     };
 
-
     return (
         <div className="sell-product-page">
             <div className="form-container  ">
                 <ButtonBack url="http://localhost:3000/eco-market/home" />
                 <h2 className="form-title ">Đăng sản phẩm mới</h2>
                 <p className="text-gray-600 mb-4 text-center">
-                    Mô tả các mặt hàng một cách trung thực và nhận được khoản thanh toán đảm bảo 100%.
+                    Mô tả các mặt hàng một cách trung thực và nhận được khoản thanh toán
+                    đảm bảo 100%.
                 </p>
 
-                <form noValidate onSubmit={handleSubmit} className="form-content row mt-3">
+                <form
+                    noValidate
+                    onSubmit={handleSubmit}
+                    className="form-content row mt-3"
+                >
                     <div className="mb-4">
                         <label className="form-label">
                             Ảnh và video <span className="text-danger">*</span>
                         </label>
                         <div
                             className="border border-2 border-dashed rounded p-4 text-center"
-
                             style={{ cursor: "pointer" }}
                         >
                             {files.length > 0 && (
@@ -207,7 +204,10 @@ const PostProduct = () => {
                                                         objectFit: "cover",
                                                     }}
                                                 >
-                                                    <source src={URL.createObjectURL(file)} type={file.type} />
+                                                    <source
+                                                        src={URL.createObjectURL(file)}
+                                                        type={file.type}
+                                                    />
                                                 </video>
                                             ) : null}
                                             <button
@@ -232,7 +232,6 @@ const PostProduct = () => {
                                 <i className="bi bi-camera mb-2 fs-1"></i>
                                 <p className="text-muted mb-0">Tải lên hình ảnh và video</p>
                             </div>
-
                         </div>
                         <input
                             id="fileInput"
@@ -242,10 +241,7 @@ const PostProduct = () => {
                             multiple
                             onChange={handleFileChange}
                         />
-
-
                     </div>
-
 
                     <div className="col-6">
                         <div className="form-group">
@@ -305,8 +301,6 @@ const PostProduct = () => {
                         ) : (
                             ""
                         )}
-
-
                     </div>
                     <div className="col-6">
                         <div className="form-group">
@@ -334,7 +328,7 @@ const PostProduct = () => {
                                     setProduct((prev) => ({
                                         ...prev,
                                         location: e.value,
-                                    }))
+                                    }));
                                 }}
                                 isSearchable
                                 placeholder="Tìm kiếm..."
@@ -356,13 +350,14 @@ const PostProduct = () => {
                     </div>
 
                     <div className="text-end">
-                        <button type="submit" className="btn-custom " style={{ width: "15rem", height: "3.5rem" }}>
+                        <button
+                            type="submit"
+                            className="btn-custom "
+                            style={{ width: "15rem", height: "3.5rem" }}
+                        >
                             Đăng sản phẩm
                         </button>
                     </div>
-
-
-
                 </form>
             </div>
         </div>

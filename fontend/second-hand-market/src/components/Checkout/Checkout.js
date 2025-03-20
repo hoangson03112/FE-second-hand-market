@@ -7,7 +7,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-
 const Checkout = () => {
   const location = useLocation();
   const { selectedItems } = location.state || { selectedItems: [] };
@@ -16,7 +15,6 @@ const Checkout = () => {
   const [shippingMethod, setShippingMethod] = useState("buyer");
   const [tempShippingMethod, setTempShippingMethod] = useState(shippingMethod);
   const navigate = useNavigate();
-  console.log(selectedItems);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -72,7 +70,6 @@ const Checkout = () => {
         data: { ids },
       })
       .then((response) => {
-
         console.log("Items deleted successfully:", response.data);
       })
       .catch((error) => {
@@ -171,12 +168,9 @@ const Checkout = () => {
         icon: "success", // Các kiểu: 'success', 'error', 'warning', 'info', 'question'
         confirmButtonText: "OK",
       });
-      navigate("/eco-market/customer/orders")
+      navigate("/eco-market/customer/orders");
       // Xóa các sản phẩm đã chọn sau khi đặt hàng
       deleteItems();
-
-
-
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Đã có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
@@ -345,7 +339,7 @@ const Checkout = () => {
 
           <div className="d-flex justify-content-between mb-2 fw-bold">
             <span>Tổng thanh toán</span>
-            <span>{(getTotalAmount()).toLocaleString()}₫</span>
+            <span>{getTotalAmount().toLocaleString()}₫</span>
           </div>
         </div>
         <div className="card-footer">

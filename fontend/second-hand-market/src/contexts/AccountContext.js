@@ -7,10 +7,13 @@ class AccountContext {
     }
 
     try {
-      const data = await axios.post("http://localhost:2000/eco-market/login", {
-        username,
-        password,
-      });
+      const data = await axios.post(
+        "http://localhost:2000/eco-market/accounts/login",
+        {
+          username,
+          password,
+        }
+      );
 
       if (data.data.status === "success") {
         localStorage.setItem("token", data.data.token);
@@ -60,7 +63,7 @@ class AccountContext {
       }
 
       const data = await axios.get(
-        "http://localhost:2000/eco-market/authentication",
+        "http://localhost:2000/eco-market/accounts/authentication",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -83,7 +86,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/verify",
+        "http://localhost:2000/eco-market/accounts/verify",
         {
           userID,
           code,
@@ -102,13 +105,58 @@ class AccountContext {
   async getAccount(accountId) {
     try {
       const response = await axios.get(
-        `http://localhost:2000/eco-market/account/${accountId}`
+        `http://localhost:2000/eco-market/accounts/${accountId}`
       );
 
       return response.data;
     } catch (error) {
       console.error("Error fetching account:", error);
       throw error;
+    }
+  }
+
+  async changePassword(passwordData) {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        "http://localhost:2000/eco-market/auth/change-password",
+        passwordData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || "Đổi mật khẩu thất bại");
+    }
+  }
+
+  async updateAccountInfo(newInfo) {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Bạn chưa đăng nhập!");
+        return;
+      }
+
+      const response = await axios.put(
+        "http://localhost:2000/eco-market/accounts/update",
+        newInfo,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        console.log(response);
+      }
+    } catch (error) {
+      console.error("Lỗi cập nhật tài khoản:", error);
+      alert("Cập nhật thất bại. Vui lòng thử lại!");
     }
   }
 }

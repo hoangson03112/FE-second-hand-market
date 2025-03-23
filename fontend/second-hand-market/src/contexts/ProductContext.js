@@ -4,7 +4,7 @@ class ProductContext {
   async getProduct(productID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/products",
+        "http://localhost:2000/eco-market/product",
         {
           params: { productID },
         }

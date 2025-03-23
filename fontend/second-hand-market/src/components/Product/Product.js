@@ -19,7 +19,6 @@ import CategoryContext from "../../contexts/CategoryContext";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
 
-
 export const Product = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -73,7 +72,6 @@ export const Product = () => {
     const fetchAccount = async (accountId) => {
       try {
         const response = await AccountContext.getAccount(accountId);
-
         setAccount(response);
       } catch (error) {
         console.error("Error fetching account:", error);
@@ -130,7 +128,7 @@ export const Product = () => {
         );
 
         if (messageAddToCart.status === "success") {
-          emitter.emit('CART_UPDATED');
+          emitter.emit("CART_UPDATED");
           setShowToast(true);
         }
       } else {
@@ -147,7 +145,9 @@ export const Product = () => {
 
       if (data.data.account) {
         navigate("/eco-market/checkout", {
-          state: { selectedItems: [{ ...product, productId: product._id, quantity }] },
+          state: {
+            selectedItems: [{ ...product, productId: product._id, quantity }],
+          },
         });
       } else {
         navigate("/eco-market/login");
@@ -216,7 +216,7 @@ export const Product = () => {
                       <h2 className="text-danger my-4 ms-4">
                         {product.price}đ
                       </h2>
-                      <p>Vận chuyển: Từ {product.location} tới</p>
+                      <p> Vị trí {product.location}</p>
                       <h5>Miễn phí vận chuyển</h5>
                       <Form.Group className="my-4">
                         <Form.Label>Số lượng:</Form.Label>

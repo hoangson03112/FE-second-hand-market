@@ -1,7 +1,7 @@
 const Product = require("../models/Product");
 
 class ProductController {
-  async getProductListByCategory(req, res) {
+  async getProductListByCate(req, res) {
     try {
       const { categoryID, subcategoryID } = req.query;
 
@@ -46,18 +46,7 @@ class ProductController {
       res.status(500).json({ success: false, message: "Server error" });
     }
   }
-  async getProducts(req, res) {
-    try {
-      const products = await Product.find({});
-      res.json({
-        success: true,
-        data: products,
-      });
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      res.status(500).json({ success: false, message: "Server error" });
-    }
-  }
+
   async addProduct(req, res) {
     try {
       const product = req.body;
@@ -73,27 +62,65 @@ class ProductController {
         .json({ message: "Lỗi khi thêm sản phẩm.", error: error.message });
     }
   }
+  async getAllProducts(req, res) {
+    try {
+      const products = await Product.find();
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách sản phẩm thành công",
+        data: products,
+      });
+    } catch (error) {
+      console.error("Lỗi lấy danh sách sản phẩm:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server, vui lòng thử lại sau",
+        error: error.message,
+      });
+    }
+  }
   async updateStatusProduct(req, res) {
     try {
       const { slug, status } = req.body;
-      if (!slug) {
-        return res.status(400).json({ error: "Slug is required" });
+
+      if (!slug || status === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: "Thiếu thông tin cần thiết (slug hoặc status)",
+        });
       }
 
+
+      // Find and update the product
       const updatedProduct = await Product.findOneAndUpdate(
         { slug },
-        { $set: { status: status } },
-        { new: true }
+        { status },
+        { new: true, runValidators: true }
       );
 
       if (!updatedProduct) {
-        return res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy sản phẩm",
+        });
       }
 
-      res.status(200).json(updatedProduct);
+  
+
+      // Return success response
+      res.status(200).json({
+        success: true,
+        message: "Cập nhật trạng thái sản phẩm thành công",
+        data: updatedProduct,
+      });
     } catch (error) {
-      console.error("Error updating product status:", error);
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Lỗi cập nhật trạng thái sản phẩm:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server, vui lòng thử lại sau",
+        error: error.message,
+      });
     }
   }
 }

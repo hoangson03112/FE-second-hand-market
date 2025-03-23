@@ -7,6 +7,7 @@ const {
   generateVerificationCode,
   sendVerificationEmail,
 } = require("../util/verifiEmail");
+const { create } = require("../models/category");
 
 class AccountController {
   async Login(req, res) {
@@ -49,6 +50,7 @@ class AccountController {
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
+
   async Register(req, res) {
     try {
       const data = req.body;
@@ -92,6 +94,7 @@ class AccountController {
       return res.status(500).json({ status: "error", message: "Server error" });
     }
   }
+
   async Authentication(req, res) {
     if (req.accountID) {
       try {
@@ -103,11 +106,11 @@ class AccountController {
             fullName: account?.fullName,
             avatar: account?.avatar,
             cart: account?.cart,
+            email: account?.email,
+            phoneNumber: account?.phoneNumber,
+            address: account?.address,
+            createdAt: account?.createdAt,
             role: account?.role,
-            email: account.email,
-            phoneNumber: account.phoneNumber,
-            createdAt: account.createdAt,
-            address: account.address,
           },
         });
       } catch (error) {
@@ -150,6 +153,7 @@ class AccountController {
       });
     }
   }
+
   async createAccountByAdmin(req, res) {
     try {
       let data = req.body;
@@ -250,7 +254,7 @@ class AccountController {
   }
   async getAccountsByAdmin(req, res) {
     try {
-      // Lấy tất cả các tài khoản từ cơ sở dữ liệu
+   
       const accounts = await Account.find();
 
       if (accounts.length === 0) {
@@ -266,11 +270,10 @@ class AccountController {
     }
   }
   async getAccountById(req, res) {
-    const accountId = req.params.id;
+    const accountId = req.params.accountId;
 
     try {
-      const account = await Account.findById(accountID);
-      console.log(account);
+      const account = await Account.findById(accountId).select("-password");
 
       if (!account) {
         return res.status(404).json({ message: "Account not found" });
@@ -282,32 +285,36 @@ class AccountController {
       return res.status(500).json({ message: "Server error" });
     }
   }
-  async updateAccountInfo(req, res) {
+  async updateAccount(req, res) {
     try {
-      const accountUpdate = req.body;
+      const accountId = req.accountID;
+      console.log(accountId);
 
-      const account = await Account.findById(req.accountID);
-      if (!account) {
-        return res.status(404).json({ message: "Tài khoản không tồn tại" });
+      const newInfo = req.body;
+
+      const updatedAccount = await Account.findByIdAndUpdate(
+        accountId,
+        { $set: newInfo },
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedAccount) {
+        return res.status(404).json({ message: "Không tìm thấy tài khoản" });
       }
 
-      account.fullName = accountUpdate.fullName;
-      account.email = accountUpdate.email;
-      account.phoneNumber = accountUpdate.phoneNumber;
-      account.address.province = accountUpdate.address.province;
-      account.address.district = accountUpdate.address.district;
-      account.address.ward = accountUpdate.address.ward;
-      account.address.specificAddress = accountUpdate.address.specificAddress;
-
-      await account.save();
-
-      return res.status(200).json({
-        message: "Cập nhật thành công!",
-        updatedAccount: account,
+      // Return success response with updated account info
+      res.status(200).json({
+        success: true,
+        message: "Cập nhật tài khoản thành công",
+        data: updatedAccount,
       });
     } catch (error) {
       console.error("Lỗi cập nhật tài khoản:", error);
-      return res.status(500).json({ message: "Lỗi server" });
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server, vui lòng thử lại sau",
+        error: error.message,
+      });
     }
   }
 }

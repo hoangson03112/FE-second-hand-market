@@ -7,7 +7,7 @@ const AccountSchema = new Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     fullName: { type: String, required: false },
-    phoneNumber: { type: String },
+    phoneNumber: { type: String, required: false, default: "none" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     status: { type: String, enum: ["active", "inactive"], default: "inactive" },
     avatar: { type: String, required: false },
@@ -21,10 +21,10 @@ const AccountSchema = new Schema(
     verificationCode: { type: String },
     codeExpires: { type: Date },
     address: {
-      province: { type: String },
-      district: { type: String },
-      ward: { type: String },
-      specificAddress: { type: String },
+      province: { type: String, required: true },
+      district: { type: String, required: true },
+      ward: { type: String, required: true },
+      specificAddress: { type: String, required: true },
     },
   },
   { timestamps: true, collection: "accounts" }

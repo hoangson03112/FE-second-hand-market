@@ -118,8 +118,10 @@ const UserProfile = () => {
   ];
   const fetchAccount = async () => {
     const { data } = await AccountContext.Authentication();
-    setAccount(data?.account);
-    setAccountUpdate(data?.account);
+    if (data.status === "success") {
+      setAccount(data?.account);
+      setAccountUpdate(data?.account);
+    }
   };
   useEffect(() => {
     fetchAccount();

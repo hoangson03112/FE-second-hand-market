@@ -7,13 +7,10 @@ class AccountContext {
     }
 
     try {
-      const data = await axios.post(
-        "http://localhost:2000/eco-market/accounts/login",
-        {
-          username,
-          password,
-        }
-      );
+      const data = await axios.post("http://localhost:2000/eco-market/login", {
+        username,
+        password,
+      });
 
       if (data.data.status === "success") {
         localStorage.setItem("token", data.data.token);
@@ -63,7 +60,7 @@ class AccountContext {
       }
 
       const data = await axios.get(
-        "http://localhost:2000/eco-market/accounts/authentication",
+        "http://localhost:2000/eco-market/authentication",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -86,7 +83,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/accounts/verify",
+        "http://localhost:2000/eco-market/verify",
         {
           userID,
           code,
@@ -102,10 +99,11 @@ class AccountContext {
       return "Đã xảy ra lỗi khi xác thực.";
     }
   }
+
   async getAccount(accountId) {
     try {
       const response = await axios.get(
-        `http://localhost:2000/eco-market/accounts/${accountId}`
+        `http://localhost:2000/eco-market/account/${accountId}`
       );
 
       return response.data;
@@ -141,7 +139,7 @@ class AccountContext {
       }
 
       const response = await axios.put(
-        "http://localhost:2000/eco-market/accounts/update",
+        "http://localhost:2000/eco-market/account/update",
         newInfo,
         {
           headers: {
@@ -159,6 +157,18 @@ class AccountContext {
       alert("Cập nhật thất bại. Vui lòng thử lại!");
     }
   }
+  async getAccounts() {
+    try {
+      const response = await axios.get(
+        "http://localhost:2000/eco-market/accounts"
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching account list:", error);
+      throw error;
+    }
+  }
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default new AccountContext();

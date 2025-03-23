@@ -7,18 +7,18 @@ mongoose.plugin(slug);
 
 const ProductSchema = new Schema(
   {
-    name: { type: String, required: true },
+    name: { type: String, required: false },
     slug: { type: String, slug: "name", unique: true },
 
     categoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
-      required: true,
+      required: false,
     },
     subcategoryId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubCategory",
-      required: true,
+      required: false,
     },
     price: { type: Number, required: false },
     description: { type: String, required: false },
@@ -28,12 +28,14 @@ const ProductSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
     },
+    location: { type: String, required: false },
     status: {
       type: String,
+      enum: ["approved", "pending", "rejected"],
       default: "pending",
     },
-    location: { type: String, required: false },
   },
+
   { timestamps: true, collection: "products" }
 );
 

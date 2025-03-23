@@ -17,11 +17,13 @@ class CategoryContext {
   async getCategory(categoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/categories",
+        "http://localhost:2000/eco-market/category",
         {
           params: { categoryID },
         }
       );
+      console.log(response.data);
+
       const category = response.data.data;
       return category;
     } catch (error) {

@@ -1,25 +1,11 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Container,
   CssBaseline,
-  AppBar,
-  Toolbar,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  IconButton,
   Button,
   TextField,
   Dialog,
@@ -39,75 +25,19 @@ import {
   Grid,
 } from "@mui/material";
 import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  ShoppingCart as ShoppingCartIcon,
-  Settings as SettingsIcon,
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  ExitToApp as LogoutIcon,
-  Person as PersonIcon,
 } from "@mui/icons-material";
-
-// Mock data
-const mockUsers = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    phone: "0901234567",
-    status: "active",
-    role: "user",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    email: "tranthib@example.com",
-    phone: "0912345678",
-    status: "active",
-    role: "admin",
-    joinDate: "2023-10-20",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    email: "levanc@example.com",
-    phone: "0923456789",
-    status: "inactive",
-    role: "user",
-    joinDate: "2024-02-05",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    email: "phamthid@example.com",
-    phone: "0934567890",
-    status: "active",
-    role: "user",
-    joinDate: "2023-11-12",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    email: "hoangvane@example.com",
-    phone: "0945678901",
-    status: "pending",
-    role: "seller",
-    joinDate: "2024-03-01",
-  },
-];
+import AccountContext from "../../contexts/AccountContext";
+import { formatDate } from "../../utils/function";
 
 export default function UserManagement() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [drawerOpen, setDrawerOpen] = useState(!isMobile);
-  const [users, setUsers] = useState(mockUsers);
-  const [filteredUsers, setFilteredUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -122,8 +52,19 @@ export default function UserManagement() {
   const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
 
-  const drawerWidth = 240;
-
+  const getUserList = async () => {
+    try {
+      const res = await AccountContext.getAccounts();
+      setUsers(res.accounts);
+      setFilteredUsers(res.accounts);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      return [];
+    }
+  };
+  useEffect(() => {
+    getUserList();
+  }, []);
   useEffect(() => {
     if (isMobile && drawerOpen) {
       setDrawerOpen(false);
@@ -131,11 +72,11 @@ export default function UserManagement() {
   }, [isMobile]);
 
   useEffect(() => {
-    // Filter users based on search query and active filters
     let result = [...users];
+    console.log(searchQuery);
 
     if (searchQuery) {
-      const lowerCaseQuery = searchQuery.toLowerCase();
+      const lowerCaseQuery = searchQuery;
       result = result.filter(
         (user) =>
           user.name.toLowerCase().includes(lowerCaseQuery) ||
@@ -214,10 +155,10 @@ export default function UserManagement() {
   };
 
   const handleUserSave = () => {
-    if (currentUser.id) {
+    if (currentUser._id) {
       // Update existing user
       const updatedUsers = users.map((user) =>
-        user.id === currentUser.id ? currentUser : user
+        user.id === currentUser._id ? currentUser : user
       );
       setUsers(updatedUsers);
       setSnackbar({
@@ -244,7 +185,7 @@ export default function UserManagement() {
   };
 
   const handleUserDelete = () => {
-    const updatedUsers = users.filter((user) => user.id !== currentUser.id);
+    const updatedUsers = users.filter((user) => user._id !== currentUser._id);
     setUsers(updatedUsers);
     setSnackbar({
       open: true,
@@ -318,7 +259,13 @@ export default function UserManagement() {
       <CssBaseline />
 
       {/* Header Section */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="h4" fontWeight="bold">
           Quản lý người dùng
         </Typography>
@@ -352,7 +299,12 @@ export default function UserManagement() {
               size="medium"
             />
           </Grid>
-          <Grid item xs={12} sm={4} sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Grid
+            item
+            xs={12}
+            sm={4}
+            sx={{ display: "flex", justifyContent: "flex-end" }}
+          >
             <Button
               variant="outlined"
               startIcon={<FilterIcon />}
@@ -373,8 +325,7 @@ export default function UserManagement() {
                 {activeFilters.includes("active") ? "✓ " : ""}Đang hoạt động
               </MenuItem>
               <MenuItem onClick={() => handleFilterSelect("inactive")}>
-                {activeFilters.includes("inactive") ? "✓ " : ""}Không hoạt
-                động
+                {activeFilters.includes("inactive") ? "✓ " : ""}Không hoạt động
               </MenuItem>
               <MenuItem onClick={() => handleFilterSelect("pending")}>
                 {activeFilters.includes("pending") ? "✓ " : ""}Chờ xác nhận
@@ -389,9 +340,7 @@ export default function UserManagement() {
               <MenuItem onClick={() => handleFilterSelect("user")}>
                 {activeFilters.includes("user") ? "✓ " : ""}Người dùng
               </MenuItem>
-              <MenuItem onClick={() => handleFilterSelect("seller")}>
-                {activeFilters.includes("seller") ? "✓ " : ""}Người bán
-              </MenuItem>
+
               {activeFilters.length > 0 && (
                 <>
                   <Divider />
@@ -420,8 +369,6 @@ export default function UserManagement() {
                     ? "Quản trị viên"
                     : filter === "user"
                     ? "Người dùng"
-                    : filter === "seller"
-                    ? "Người bán"
                     : filter
                 }
                 onDelete={() => handleFilterSelect(filter)}
@@ -464,20 +411,27 @@ export default function UserManagement() {
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
             .map((user) => (
               <Grid item xs={12} sm={6} md={4} key={user.id}>
-                <Paper sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                <Paper
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar sx={{ bgcolor: "primary.main" }}>
-                      {user.name.charAt(0)}
+                      {user?.fullName?.split(" ").pop().charAt(0)}
                     </Avatar>
                     <Box>
-                      <Typography variant="h6">{user.name}</Typography>
+                      <Typography variant="h6">{user.fullName}</Typography>
                       <Typography variant="body2" color="text.secondary">
                         {user.email}
                       </Typography>
                     </Box>
                   </Box>
                   <Typography variant="body2">
-                    <strong>Số điện thoại:</strong> {user.phone}
+                    <strong>Số điện thoại:</strong> {user.phoneNumber}
                   </Typography>
                   <Typography variant="body2">
                     <strong>Trạng thái:</strong>{" "}
@@ -491,9 +445,17 @@ export default function UserManagement() {
                     <strong>Vai trò:</strong> {getRoleText(user.role)}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Ngày tham gia:</strong> {user.joinDate}
+                    <strong>Ngày tham gia:</strong>{" "}
+                    {formatDate(user?.createdAt)}
                   </Typography>
-                  <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                      mt: 1,
+                    }}
+                  >
                     <Button
                       size="small"
                       variant="outlined"
@@ -543,44 +505,51 @@ export default function UserManagement() {
         fullWidth
       >
         <DialogTitle>
-          {currentUser && currentUser.id
+          {currentUser && currentUser._id
             ? "Sửa thông tin người dùng"
             : "Thêm người dùng mới"}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Họ tên"
-                name="name"
-                value={currentUser ? currentUser.name : ""}
-                onChange={handleInputChange}
-                required
-                autoFocus
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={currentUser ? currentUser.email : ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Số điện thoại"
-                name="phone"
-                value={currentUser ? currentUser.phone : ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Grid>
+            {currentUser && currentUser._id ? (
+              ""
+            ) : (
+              <>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Họ tên"
+                    name="name"
+                    value={currentUser ? currentUser.fullName : ""}
+                    onChange={handleInputChange}
+                    required
+                    autoFocus
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={currentUser ? currentUser.email : ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Số điện thoại"
+                    name="phone"
+                    value={currentUser ? currentUser.phoneNumber : ""}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Grid>
+              </>
+            )}
+
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -592,7 +561,6 @@ export default function UserManagement() {
               >
                 <MenuItem value="active">Hoạt động</MenuItem>
                 <MenuItem value="inactive">Không hoạt động</MenuItem>
-                <MenuItem value="pending">Chờ xác nhận</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} sm={6}>

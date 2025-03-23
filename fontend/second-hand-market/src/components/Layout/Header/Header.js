@@ -21,9 +21,7 @@ const Header = () => {
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
-        const data = await AccountContext.Authentication();   
-        console.log(data);
-        
+        const data = await AccountContext.Authentication();
         if (data) {
           setAccount(data.data.account);
         }

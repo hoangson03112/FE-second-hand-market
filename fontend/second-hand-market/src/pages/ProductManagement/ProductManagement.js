@@ -23,6 +23,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Divider,
 } from "@mui/material";
 import {
   Search,
@@ -30,6 +31,7 @@ import {
   Cancel,
   HourglassEmpty,
   ShoppingCart,
+  Visibility,
 } from "@mui/icons-material";
 import ProductContext from "../../contexts/ProductContext";
 import SubCategoryContext from "../../contexts/SubCategoryContext";
@@ -45,40 +47,8 @@ const ProductManagement = () => {
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState(["Tất cả"]);
-  // Dữ liệu mẫu
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: "Laptop Dell Latitude E7450",
-      price: 7500000,
-      category: "Điện tử",
-      status: "pending",
-      image: "https://picsum.photos/200/150?random=1",
-      description: "Core i5 6300U, RAM 8GB, SSD 256GB",
-    },
-    {
-      id: 2,
-      name: "iPhone 12 Pro Max 128GB",
-      price: 15500000,
-      category: "Điện tử",
-      status: "approved",
-      image: "https://picsum.photos/200/150?random=2",
-      description: "Máy nguyên bản, còn bảo hành",
-    },
-    {
-      id: 3,
-      name: "Bàn làm việc gỗ sồi",
-      price: 1200000,
-      category: "Nội thất",
-      status: "rejected",
-      image: "https://picsum.photos/200/150?random=3",
-      description: "Kích thước 120x60cm",
-    },
-  ]);
+  const [products, setProducts] = useState([]);
 
-  // Danh sách danh mục để lọc
-
-  // Lọc sản phẩm theo tab, tìm kiếm, danh mục và giá
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -113,7 +83,6 @@ const ProductManagement = () => {
     const fetchCategory = async () => {
       try {
         const categoriesData = await CategoryContext.getCategories();
-        console.log(categoriesData);
 
         setCategories(categoriesData);
       } catch (err) {}
@@ -263,68 +232,146 @@ const ProductManagement = () => {
       <Grid container spacing={3}>
         {displayedProducts.map((product) => (
           <Grid item xs={12} sm={6} md={3} key={product.id}>
-            <Card sx={{ height: "100%", position: "relative" }}>
-              <CardMedia
-                component="img"
-                height="150"
-                image={product.avatar}
-                alt={product.name}
-              />
-              <CardContent>
-                <Typography variant="h6" noWrap>
+            <Card
+              sx={{
+                height: "100%",
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+                },
+              }}
+            >
+              <Box sx={{ position: "relative" }}>
+                <CardMedia
+                  component="img"
+                  height="180"
+                  image={product.avatar}
+                  alt={product.name}
+                  sx={{ objectFit: "cover" }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    bgcolor:
+                      product.status === "pending"
+                        ? "warning.main"
+                        : product.status === "approved"
+                        ? "success.main"
+                        : "error.main",
+                    color: "white",
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {product.status === "pending"
+                    ? "Chờ duyệt"
+                    : product.status === "approved"
+                    ? "Đã duyệt"
+                    : "Đã hủy"}
+                </Box>
+              </Box>
+
+              <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                    mb: 1,
+                    height: "2.5rem",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
                   {product.name}
                 </Typography>
-                <Typography color="primary" fontWeight="bold">
+
+                <Typography
+                  color="primary"
+                  fontWeight="bold"
+                  variant="h6"
+                  sx={{ mb: 1 }}
+                >
                   {new Intl.NumberFormat("vi-VN").format(product.price)}₫
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    height: "3rem",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
                   {product.description}
                 </Typography>
               </CardContent>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ height: 40, justifyContent: "center", my: 1 }}
-              >
+
+              <Divider />
+
+              <Box sx={{ p: 2 }}>
                 {product.status === "pending" ? (
-                  <>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ justifyContent: "space-between" }}
+                  >
                     <Button
                       variant="contained"
                       color="success"
+                      size="small"
                       startIcon={<CheckCircle />}
                       onClick={() => handleApproveProduct(product.slug)}
+                      sx={{ flex: 1 }}
                     >
                       Duyệt
                     </Button>
                     <Button
                       variant="outlined"
                       color="error"
+                      size="small"
                       startIcon={<Cancel />}
                       onClick={() => handleRejectProduct(product.slug)}
+                      sx={{ flex: 1 }}
                     >
                       Hủy
                     </Button>
-                  </>
+                  </Stack>
                 ) : (
-                  <Typography
-                    sx={{ width: "60%", textAlign: "center" }}
-                    color={
-                      product.status === "approved"
-                        ? "success.main"
-                        : "error.main"
-                    }
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ justifyContent: "center" }}
                   >
-                    {product.status === "approved" ? "Đã duyệt" : "Đã hủy"}
-                  </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => handleViewDetail(product)}
+                      fullWidth
+                      startIcon={<Visibility />}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </Stack>
                 )}
-                <Button
-                  variant="outlined"
-                  onClick={() => handleViewDetail(product)}
-                  sx={{ marginRight: 5 }}
-                >
-                  Xem
-                </Button>
-              </Stack>
+              </Box>
             </Card>
           </Grid>
         ))}

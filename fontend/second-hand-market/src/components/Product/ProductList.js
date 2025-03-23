@@ -23,6 +23,8 @@ function ProductList() {
     const fetchCategory = async () => {
       try {
         const category = await CategoryContext.getCategory(categoryID);
+        // console.log(category);
+        
         setCategory(category);
       } catch (err) {
         setError(err);
@@ -32,9 +34,7 @@ function ProductList() {
     const fetchSubCategory = async () => {
       try {
         const data = await SubCategoryContext.getSubCategory(subcategoryID);
-        console.log(data);
-        setCategory(data.category);
-
+        // console.log(data);
         setSubCategory(data.subcategory);
       } catch (err) {
         setError(err);

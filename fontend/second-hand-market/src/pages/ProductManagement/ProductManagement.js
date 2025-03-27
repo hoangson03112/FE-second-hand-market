@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Chip,
   Container,
   Dialog,
   DialogContent,
@@ -17,13 +16,17 @@ import {
   TextField,
   Typography,
   Pagination,
-  Badge,
   useTheme,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
   Divider,
+  DialogActions,
+  Avatar,
+  IconButton,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import {
   Search,
@@ -32,13 +35,19 @@ import {
   HourglassEmpty,
   ShoppingCart,
   Visibility,
+  Delete,
+  Close,
 } from "@mui/icons-material";
 import ProductContext from "../../contexts/ProductContext";
-import SubCategoryContext from "../../contexts/SubCategoryContext";
 import CategoryContext from "../../contexts/CategoryContext";
 
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination as PagSwiper } from "swiper/modules"; // Import Navigation và Pagination
+import "swiper/css"; // CSS cơ bản của Swiper
+import "swiper/css/navigation"; // CSS cho navigation
+import "swiper/css/pagination"; // CSS cho pagination
+
 const ProductManagement = () => {
-  const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTab, setCurrentTab] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,7 +57,13 @@ const ProductManagement = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState(["Tất cả"]);
   const [products, setProducts] = useState([]);
-
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productDelete, setProductDelete] = useState({});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -72,7 +87,7 @@ const ProductManagement = () => {
   const fetchProducts = useCallback(async () => {
     try {
       const productsData = await ProductContext.getProducts();
-      console.log(productsData);
+
       setProducts(productsData);
     } catch (err) {
       console.error("Failed to fetch products:", err);
@@ -105,11 +120,25 @@ const ProductManagement = () => {
   const handleApproveProduct = async (slug) => {
     await ProductContext.updateProductStatus(slug, "approved");
     fetchProducts();
+    setSnackbar({
+      open: true,
+      message: "Sản phẩm đã được cập nhật",
+      severity: "success",
+    });
   };
 
   const handleRejectProduct = async (slug) => {
     await ProductContext.updateProductStatus(slug, "rejected");
     fetchProducts();
+    setSnackbar({
+      open: true,
+      message: "Sản phẩm đã được cập nhật",
+      severity: "success",
+    });
+  };
+  // Hàm đóng thông báo
+  const handleSnackbarClose = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   // Xem chi tiết sản phẩm
@@ -124,6 +153,20 @@ const ProductManagement = () => {
     setSelectedProduct(null);
   };
 
+  const handleDelete = async () => {
+    try {
+      await ProductContext.deleteProduct(productDelete._id);
+      setDeleteDialogOpen(false);
+      setProducts(products.filter((p) => p._id !== productDelete._id));
+      setSnackbar({
+        open: true,
+        message: "Sản phẩm đã được xóa",
+        severity: "success",
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+    }
+  };
   // Thống kê
   const stats = [
     {
@@ -369,6 +412,19 @@ const ProductManagement = () => {
                     >
                       Xem chi tiết
                     </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        setDeleteDialogOpen(true);
+                        setProductDelete(product);
+                      }}
+                      fullWidth
+                      startIcon={<Delete />}
+                      style={{ color: "red", borderColor: "red" }}
+                    >
+                      Xóa sản phẩm
+                    </Button>
                   </Stack>
                 )}
               </Box>
@@ -389,6 +445,137 @@ const ProductManagement = () => {
         </Box>
       )}
 
+      <Dialog
+        open={deleteDialogOpen}
+        onClick={() => setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "#f5f5f5",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              component="span"
+              sx={{ color: "#000000", fontWeight: 600 }}
+            >
+              Xác nhận xóa
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={() => setDeleteDialogOpen(false)}
+            size="small"
+            aria-label="close"
+            sx={{ color: "#000000" }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ pt: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Avatar
+              sx={{
+                bgcolor: "#ffebee",
+                color: "#f44336",
+                width: 70,
+                height: 70,
+                mb: 2,
+              }}
+            >
+              <Delete fontSize="large" />
+            </Avatar>
+
+            <Typography
+              sx={{
+                color: "#000000",
+                textAlign: "center",
+                fontWeight: 500,
+                mb: 1,
+              }}
+            >
+              Bạn có chắc chắn muốn xóa sản phẩm này?
+            </Typography>
+
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#000000",
+                textAlign: "center",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                mb: 1,
+              }}
+            >
+              "{productDelete?.name || "Không xác định"}"
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#666666",
+                textAlign: "center",
+              }}
+            >
+              Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến
+              người dùng này sẽ bị xóa vĩnh viễn.
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2, justifyContent: "center", gap: 2 }}>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            variant="outlined"
+            sx={{
+              minWidth: 100,
+              color: "#000000",
+              borderColor: "#cccccc",
+              "&:hover": {
+                borderColor: "#999999",
+                bgcolor: "#f5f5f5",
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleDelete}
+            variant="contained"
+            color="error"
+            startIcon={<Delete />}
+            sx={{
+              minWidth: 100,
+              fontWeight: 500,
+            }}
+          >
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Dialog chi tiết sản phẩm */}
       {selectedProduct && (
         <Dialog
@@ -401,16 +588,28 @@ const ProductManagement = () => {
           <DialogContent>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <img
-                  src={selectedProduct.avatar}
-                  alt={selectedProduct.name}
-                  style={{ width: "100%", borderRadius: "8px" }}
-                />
+                <Swiper
+                  modules={[Navigation, PagSwiper]}
+                  spaceBetween={10}
+                  slidesPerView={1}
+                  navigation
+                  pagination={{ clickable: true }}
+                >
+                  {selectedProduct.images.map((image, index) => (
+                    <SwiperSlide key={index}>
+                      <img
+                        src={image}
+                        alt={`Hình ảnh ${index + 1}`}
+                        style={{ width: "100%", borderRadius: "8px" }}
+                      />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
               </Grid>
               <Grid item xs={12} md={6}>
                 <Typography variant="h5">{selectedProduct.name}</Typography>
                 <Typography variant="h6" color="red">
-                  {new Intl.NumberFormat("vi-VN").format(selectedProduct.price)}
+                  {new Intl.NumberFormat("vi-VN").format(selectedProduct.price)}{" "}
                   ₫
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 2 }}>
@@ -451,6 +650,20 @@ const ProductManagement = () => {
           </DialogContent>
         </Dialog>
       )}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

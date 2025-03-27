@@ -16,6 +16,7 @@ import CategoryManagement from "./pages/CategoryManagement/CategoryManagement";
 import ProductManagement from "./pages/ProductManagement/ProductManagement";
 import UserProfile from "./pages/UserProfile/UserProfile";
 import UserManagement from "./pages/ManageUser/ManageUser";
+import OrderManage from "./pages/OrderManage/OrderManage";
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
           }
         />
         <Route
-          path="/eco-market/manager-products"
+          path="/eco-market/admin/products"
           element={
             <LayoutAdmin>
               <ProductManagement />
@@ -80,10 +81,18 @@ function App() {
           }
         />
         <Route
-          path="/eco-market/admin/manager-customer"
+          path="/eco-market/admin/customers"
           element={
             <LayoutAdmin>
               <UserManagement />
+            </LayoutAdmin>
+          }
+        />
+               <Route
+          path="/eco-market/admin/orders"
+          element={
+            <LayoutAdmin>
+              <OrderManage />
             </LayoutAdmin>
           }
         />

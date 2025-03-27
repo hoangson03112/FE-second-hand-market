@@ -138,7 +138,9 @@ const Checkout = () => {
         .filter((order) => order.products.length > 0);
 
       // Gửi yêu cầu tạo đơn hàng cho mỗi người bán
+      console.log(ordersBySeller);
       for (const order of ordersBySeller) {
+       
         const orderPayload = {
           totalAmount: getTotalAmount(), // Cần tính toán lại tổng số tiền cho từng người bán
           shippingMethod,
@@ -148,7 +150,8 @@ const Checkout = () => {
             address:
               "132/50, Mễ Trì Thượng, Phường Mễ Trì, Quận Nam Từ Liêm, Hà Nội",
           },
-          products: order.products, // Gửi sản phẩm của người bán
+          sellerId: order.sellerId, 
+          products: order.products,
         };
 
         // Gửi yêu cầu tạo đơn hàng

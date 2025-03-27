@@ -95,11 +95,24 @@ class ProductContext {
   async updateProductStatus(slug, status) {
     const token = localStorage.getItem("token");
     const response = await axios.patch(
-      "http://localhost:2000/eco-market/manager-products/update",
+      "http://localhost:2000/eco-market/product/updateStatus",
       {
         slug,
         status,
       },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async deleteProduct(productId) {
+    const token = localStorage.getItem("token");
+    const response = await axios.delete(
+      `http://localhost:2000/eco-market/product/${productId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

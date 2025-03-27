@@ -23,8 +23,7 @@ function ProductList() {
     const fetchCategory = async () => {
       try {
         const category = await CategoryContext.getCategory(categoryID);
-        // console.log(category);
-        
+
         setCategory(category);
       } catch (err) {
         setError(err);

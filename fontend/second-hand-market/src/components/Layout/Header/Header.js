@@ -200,18 +200,20 @@ const Header = () => {
                     {category.name}
                   </Link>
                   <ul className="dropdown-menu">
-                    {category.subcategories?.map((subcategory, index) => {
-                      return (
-                        <li key={index}>
-                          <Link
-                            className="dropdown-item"
-                            to={`/eco-market?subcategoryID=${subcategory._id}`}
-                          >
-                            {subcategory?.name}
-                          </Link>
-                        </li>
-                      );
-                    })}
+                    {category.subcategories
+                      .filter((subcate) => subcate.status === "active")
+                      ?.map((subcategory, index) => {
+                        return (
+                          <li key={index}>
+                            <Link
+                              className="dropdown-item"
+                              to={`/eco-market?subcategoryID=${subcategory._id}`}
+                            >
+                              {subcategory?.name}
+                            </Link>
+                          </li>
+                        );
+                      })}
                   </ul>
                 </li>
               ))}
@@ -227,18 +229,20 @@ const Header = () => {
                 {category.name}
               </Link>
               <ul className="dropdown-menu ">
-                {category.subcategories?.map((subcategory, index) => {
-                  return (
-                    <li key={index}>
-                      <Link
-                        className="dropdown-item"
-                        to={`/eco-market?subcategoryID=${subcategory._id}`}
-                      >
-                        {subcategory?.name}
-                      </Link>
-                    </li>
-                  );
-                })}
+                {category.subcategories
+                  .filter((subcate) => subcate.status === "active")
+                  ?.map((subcategory, index) => {
+                    return (
+                      <li key={index}>
+                        <Link
+                          className="dropdown-item"
+                          to={`/eco-market?subcategoryID=${subcategory._id}`}
+                        >
+                          {subcategory?.name}
+                        </Link>
+                      </li>
+                    );
+                  })}
               </ul>
             </div>
           ))}

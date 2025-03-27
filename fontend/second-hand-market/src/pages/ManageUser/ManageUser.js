@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -23,14 +22,26 @@ import {
   InputAdornment,
   Avatar,
   Grid,
+  IconButton,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
+  Home,
+  LocationCity,
+  Phone,
+  Email,
+  AccountCircle,
+  Person,
 } from "@mui/icons-material";
 import AccountContext from "../../contexts/AccountContext";
 import { formatDate } from "../../utils/function";
+import {
+  Close as CloseIcon,
+  DeleteForever as DeleteIcon,
+  Warning as WarningIcon,
+} from "@mui/icons-material";
 
 export default function UserManagement() {
   const theme = useTheme();
@@ -47,8 +58,9 @@ export default function UserManagement() {
     message: "",
     severity: "success",
   });
+
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   const [filterMenuAnchor, setFilterMenuAnchor] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
 
@@ -62,9 +74,11 @@ export default function UserManagement() {
       return [];
     }
   };
+
   useEffect(() => {
     getUserList();
   }, []);
+
   useEffect(() => {
     if (isMobile && drawerOpen) {
       setDrawerOpen(false);
@@ -73,24 +87,39 @@ export default function UserManagement() {
 
   useEffect(() => {
     let result = [...users];
-    console.log(searchQuery);
 
+    // Search functionality
     if (searchQuery) {
-      const lowerCaseQuery = searchQuery;
+      const lowerCaseQuery = searchQuery.toLowerCase();
       result = result.filter(
         (user) =>
-          user.name.toLowerCase().includes(lowerCaseQuery) ||
-          user.email.toLowerCase().includes(lowerCaseQuery) ||
-          user.phone.includes(searchQuery)
+          (user.fullName &&
+            user.fullName.toLowerCase().includes(lowerCaseQuery)) ||
+          (user.email && user.email.toLowerCase().includes(lowerCaseQuery)) ||
+          (user.phoneNumber && user.phoneNumber.includes(searchQuery))
       );
     }
 
+    // Filter functionality
     if (activeFilters.length > 0) {
-      result = result.filter(
-        (user) =>
-          activeFilters.includes(user.status) ||
-          activeFilters.includes(user.role)
+      // Separate filters by category
+      const statusFilters = ["active", "inactive", "pending"].filter((status) =>
+        activeFilters.includes(status)
       );
+
+      const roleFilters = ["admin", "user", "seller"].filter((role) =>
+        activeFilters.includes(role)
+      );
+
+      // If we have status filters, only include users with matching status
+      if (statusFilters.length > 0) {
+        result = result.filter((user) => statusFilters.includes(user.status));
+      }
+
+      // If we have role filters, only include users with matching role
+      if (roleFilters.length > 0) {
+        result = result.filter((user) => roleFilters.includes(user.role));
+      }
     }
 
     setFilteredUsers(result);
@@ -125,9 +154,9 @@ export default function UserManagement() {
 
   const handleAddUser = () => {
     setCurrentUser({
-      name: "",
+      fullName: "",
       email: "",
-      phone: "",
+      phoneNumber: "",
       status: "pending",
       role: "user",
     });
@@ -154,34 +183,47 @@ export default function UserManagement() {
     setCurrentUser(null);
   };
 
-  const handleUserSave = () => {
+  const handleUserSave = async () => {
     if (currentUser._id) {
-      // Update existing user
-      const updatedUsers = users.map((user) =>
-        user.id === currentUser._id ? currentUser : user
+      const data = await AccountContext.updateAccountByAdmin(
+        currentUser._id,
+        currentUser.role,
+        currentUser.status
       );
-      setUsers(updatedUsers);
-      setSnackbar({
-        open: true,
-        message: "Người dùng đã được cập nhật",
-        severity: "success",
-      });
+      console.log(data);
+
+      if (data.account) {
+        getUserList();
+        setDialogOpen(false);
+        setCurrentUser(null);
+        setSnackbar({
+          open: true,
+          message: "Người dùng đã được cập nhật",
+          severity: "success",
+        });
+      }
     } else {
-      // Add new user
-      const newUser = {
-        ...currentUser,
-        id: users.length + 1,
-        joinDate: new Date().toISOString().split("T")[0],
-      };
-      setUsers([...users, newUser]);
-      setSnackbar({
-        open: true,
-        message: "Người dùng đã được thêm",
-        severity: "success",
-      });
+      try {
+        const data = await AccountContext.createAccountByAdmin(currentUser);
+        if (data.status === "success") {
+          getUserList();
+          setSnackbar({
+            open: true,
+            message: "Người dùng đã được thêm",
+            severity: "success",
+          });
+          setDialogOpen(false);
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        console.error("Error saving user:", error);
+        setSnackbar({
+          open: true,
+          message: "Đã xảy ra lỗi, vui lòng thử lại sau.",
+          severity: "error",
+        });
+      }
     }
-    setDialogOpen(false);
-    setCurrentUser(null);
   };
 
   const handleUserDelete = () => {
@@ -213,7 +255,16 @@ export default function UserManagement() {
     const { name, value } = e.target;
     setCurrentUser({ ...currentUser, [name]: value });
   };
-
+  const handleInputChangeAddress = (e) => {
+    const { name, value } = e.target;
+    setCurrentUser(prevUser => ({
+      ...prevUser, 
+      address: {
+        ...prevUser.address, 
+        [name]: value 
+      }
+    }));
+  };
   const statusChipColor = (status) => {
     switch (status) {
       case "active":
@@ -227,15 +278,12 @@ export default function UserManagement() {
     }
   };
 
-  // Map status and role to their display text
   const getStatusText = (status) => {
     switch (status) {
       case "active":
         return "Hoạt động";
       case "inactive":
         return "Không hoạt động";
-      case "pending":
-        return "Chờ xác nhận";
       default:
         return status;
     }
@@ -258,7 +306,6 @@ export default function UserManagement() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, p: 2 }}>
       <CssBaseline />
 
-      {/* Header Section */}
       <Box
         sx={{
           display: "flex",
@@ -279,7 +326,6 @@ export default function UserManagement() {
         </Button>
       </Box>
 
-      {/* Search and Filter Section */}
       <Paper sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={8}>
@@ -327,9 +373,7 @@ export default function UserManagement() {
               <MenuItem onClick={() => handleFilterSelect("inactive")}>
                 {activeFilters.includes("inactive") ? "✓ " : ""}Không hoạt động
               </MenuItem>
-              <MenuItem onClick={() => handleFilterSelect("pending")}>
-                {activeFilters.includes("pending") ? "✓ " : ""}Chờ xác nhận
-              </MenuItem>
+
               <Divider />
               <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>
                 Vai trò
@@ -339,6 +383,9 @@ export default function UserManagement() {
               </MenuItem>
               <MenuItem onClick={() => handleFilterSelect("user")}>
                 {activeFilters.includes("user") ? "✓ " : ""}Người dùng
+              </MenuItem>
+              <MenuItem onClick={() => handleFilterSelect("seller")}>
+                {activeFilters.includes("seller") ? "✓ " : ""}Người bán
               </MenuItem>
 
               {activeFilters.length > 0 && (
@@ -363,8 +410,6 @@ export default function UserManagement() {
                     ? "Hoạt động"
                     : filter === "inactive"
                     ? "Không hoạt động"
-                    : filter === "pending"
-                    ? "Chờ xác nhận"
                     : filter === "admin"
                     ? "Quản trị viên"
                     : filter === "user"
@@ -410,7 +455,7 @@ export default function UserManagement() {
           filteredUsers
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
             .map((user) => (
-              <Grid item xs={12} sm={6} md={4} key={user.id}>
+              <Grid item xs={12} sm={6} md={4} key={user._id}>
                 <Paper
                   sx={{
                     p: 2,
@@ -421,7 +466,7 @@ export default function UserManagement() {
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar sx={{ bgcolor: "primary.main" }}>
-                      {user?.fullName?.split(" ").pop().charAt(0)}
+                      {user?.fullName?.split(" ").pop().charAt(0) || "U"}
                     </Avatar>
                     <Box>
                       <Typography variant="h6">{user.fullName}</Typography>
@@ -447,6 +492,12 @@ export default function UserManagement() {
                   <Typography variant="body2">
                     <strong>Ngày tham gia:</strong>{" "}
                     {formatDate(user?.createdAt)}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Sửa lần cuối:</strong>
+                    {user?.updatedAt
+                      ? new Date(user.updatedAt).toLocaleString("vi-VN")
+                      : ""}
                   </Typography>
                   <Box
                     sx={{
@@ -480,23 +531,22 @@ export default function UserManagement() {
       </Grid>
 
       {/* Pagination */}
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 0 }}>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[6, 12]}
           component="div"
           count={filteredUsers.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Số hàng mỗi trang:"
+          labelRowsPerPage="Số lượng mỗi trang:"
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} của ${count}`
           }
         />
       </Box>
 
-      {/* Dialogs and Snackbar */}
       {/* Dialog Add/Edit User */}
       <Dialog
         open={dialogOpen}
@@ -504,80 +554,262 @@ export default function UserManagement() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
+        <DialogTitle variant="h5">
           {currentUser && currentUser._id
             ? "Sửa thông tin người dùng"
             : "Thêm người dùng mới"}
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {currentUser && currentUser._id ? (
-              ""
-            ) : (
-              <>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Họ tên"
-                    name="name"
-                    value={currentUser ? currentUser.fullName : ""}
-                    onChange={handleInputChange}
-                    required
-                    autoFocus
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={currentUser ? currentUser.email : ""}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Số điện thoại"
-                    name="phone"
-                    value={currentUser ? currentUser.phoneNumber : ""}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </Grid>
-              </>
-            )}
+          {currentUser && currentUser._id ? (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Trạng thái"
+                  name="status"
+                  value={currentUser ? currentUser.status : "pending"}
+                  onChange={handleInputChange}
+                >
+                  <MenuItem value="active">Hoạt động</MenuItem>
+                  <MenuItem value="inactive">Không hoạt động</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Vai trò"
+                  name="role"
+                  value={currentUser ? currentUser.role : "user"}
+                  onChange={handleInputChange}
+                >
+                  <MenuItem value="admin">Quản trị viên</MenuItem>
+                  <MenuItem value="user">Người dùng</MenuItem>
+                </TextField>
+              </Grid>
+            </Grid>
+          ) : (
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              {currentUser && currentUser._id ? (
+                ""
+              ) : (
+                <Box sx={{ p: 3 }}>
+                  <Grid container spacing={3}>
+                    {/* Personal Information Section */}
+                    <Grid item xs={12}>
+                      <Typography
+                        variant="subtitle1"
+                        color="#000000"
+                        gutterBottom
+                      >
+                        Thông tin cơ bản
+                      </Typography>
+                      <Divider />
+                    </Grid>
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                select
-                label="Trạng thái"
-                name="status"
-                value={currentUser ? currentUser.status : "pending"}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="active">Hoạt động</MenuItem>
-                <MenuItem value="inactive">Không hoạt động</MenuItem>
-              </TextField>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Họ tên"
+                        name="fullName"
+                        value={currentUser?.fullName || ""}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Person color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Tên đăng nhập"
+                        name="username"
+                        value={currentUser?.username || ""}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <AccountCircle color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        name="email"
+                        type="email"
+                        value={currentUser?.email || ""}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Email color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Số điện thoại"
+                        name="phoneNumber"
+                        value={currentUser?.phoneNumber || ""}
+                        onChange={handleInputChange}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Phone color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        select
+                        label="Trạng thái"
+                        name="status"
+                        value={currentUser ? currentUser.status : "pending"}
+                        onChange={handleInputChange}
+                      >
+                        <MenuItem value="active">Hoạt động</MenuItem>
+                        <MenuItem value="inactive">Không hoạt động</MenuItem>
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        select
+                        label="Vai trò"
+                        name="role"
+                        value={currentUser ? currentUser.role : "user"}
+                        onChange={handleInputChange}
+                      >
+                        <MenuItem value="admin">Quản trị viên</MenuItem>
+                        <MenuItem value="user">Người dùng</MenuItem>
+                      </TextField>
+                    </Grid>
+                    {/* Address Section */}
+                    <Grid item xs={12}>
+                      <Typography
+                        variant="subtitle1"
+                        color="#000000"
+                        gutterBottom
+                      >
+                        Thông tin địa chỉ
+                      </Typography>
+                      <Divider sx={{ mb: 2 }} />
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="Tỉnh/Thành phố"
+                        name="province"
+                        value={currentUser?.address?.province || ""}
+                        onChange={handleInputChangeAddress}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LocationCity color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="Quận/Huyện"
+                        name="district"
+                        value={currentUser?.address?.district || ""}
+                        onChange={handleInputChangeAddress}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        fullWidth
+                        label="Phường/Xã"
+                        name="ward"
+                        value={currentUser?.address?.ward || ""}
+                        onChange={handleInputChangeAddress}
+                        required
+                        variant="outlined"
+                        InputProps={{
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Địa chỉ cụ thể"
+                        name="specificAddress"
+                        variant="outlined"
+                        multiline
+                        rows={1}
+                        value={currentUser?.address?.specificAddress || ""}
+                        onChange={handleInputChangeAddress}
+                        required
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Home color="#000000" />
+                            </InputAdornment>
+                          ),
+                          sx: { color: "#000000" },
+                        }}
+                        InputLabelProps={{ sx: { color: "#000000" } }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                select
-                label="Vai trò"
-                name="role"
-                value={currentUser ? currentUser.role : "user"}
-                onChange={handleInputChange}
-              >
-                <MenuItem value="admin">Quản trị viên</MenuItem>
-                <MenuItem value="user">Người dùng</MenuItem>
-                <MenuItem value="seller">Người bán</MenuItem>
-              </TextField>
-            </Grid>
-          </Grid>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>Hủy</Button>
@@ -588,16 +820,132 @@ export default function UserManagement() {
       </Dialog>
 
       {/* Dialog Delete Confirmation */}
-      <Dialog open={deleteDialogOpen} onClose={handleDeleteDialogClose}>
-        <DialogTitle>Xác nhận xóa</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Bạn có chắc chắn muốn xóa người dùng "{currentUser?.name}" không?
-          </Typography>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            bgcolor: "#f5f5f5",
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              component="span"
+              sx={{ color: "#000000", fontWeight: 600 }}
+            >
+              Xác nhận xóa
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={handleDeleteDialogClose}
+            size="small"
+            aria-label="close"
+            sx={{ color: "#000000" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ pt: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Avatar
+              sx={{
+                bgcolor: "#ffebee",
+                color: "#f44336",
+                width: 70,
+                height: 70,
+                mb: 2,
+              }}
+            >
+              <DeleteIcon fontSize="large" />
+            </Avatar>
+
+            <Typography
+              sx={{
+                color: "#000000",
+                textAlign: "center",
+                fontWeight: 500,
+                mb: 1,
+              }}
+            >
+              Bạn có chắc chắn muốn xóa người dùng này?
+            </Typography>
+
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#000000",
+                textAlign: "center",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                mb: 1,
+              }}
+            >
+              "{currentUser?.fullName || "Không xác định"}"
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#666666",
+                textAlign: "center",
+              }}
+            >
+              Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến
+              người dùng này sẽ bị xóa vĩnh viễn.
+            </Typography>
+          </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteDialogClose}>Hủy</Button>
-          <Button onClick={handleUserDelete} variant="contained" color="error">
+
+        <DialogActions sx={{ p: 2, justifyContent: "center", gap: 2 }}>
+          <Button
+            onClick={handleDeleteDialogClose}
+            variant="outlined"
+            sx={{
+              minWidth: 100,
+              color: "#000000",
+              borderColor: "#cccccc",
+              "&:hover": {
+                borderColor: "#999999",
+                bgcolor: "#f5f5f5",
+              },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleUserDelete}
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            sx={{
+              minWidth: 100,
+              fontWeight: 500,
+            }}
+          >
             Xóa
           </Button>
         </DialogActions>
@@ -606,9 +954,9 @@ export default function UserManagement() {
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+        autoHideDuration={3000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
           onClose={handleSnackbarClose}

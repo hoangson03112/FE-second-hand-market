@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from "react";
+import CloseIcon from '@mui/icons-material/Close';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Slide } from '@mui/material';
 import {
   Box,
   Button,
@@ -28,19 +32,17 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
 import CategoryContext from "../../contexts/CategoryContext";
+import SubCategoryContext from "../../contexts/SubCategoryContext";
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentCategory, setCurrentCategory] = useState({
-    _id: null,
     name: "",
-    slug: "",
     status: "active",
   });
   const [isSubcategory, setIsSubcategory] = useState(false);
@@ -52,6 +54,21 @@ const CategoryManagement = () => {
   });
   const [expandedCategories, setExpandedCategories] = useState({});
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [subcategoryToDelete, setSubcategoryToDelete] = useState(null);
+  const [parentCategoryToDelete, setParentCategoryToDelete] = useState(null);
+
+  const handleOpenDeleteDialog = (subcategory, parentCategory) => {
+    setSubcategoryToDelete(subcategory);
+    setParentCategoryToDelete(parentCategory);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSubcategoryToDelete(null);
+    setParentCategoryToDelete(null);
+  };
 
   // Show notification
   const showSnackbar = (message, severity = "success") => {
@@ -61,16 +78,6 @@ const CategoryManagement = () => {
   // Close notification
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
-  };
-
-  // Generate slug from name
-  const generateSlug = (name) => {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w\-]+/g, "")
-      .replace(/\-\-+/g, "-");
   };
 
   // Open dialog for add/edit category
@@ -87,9 +94,7 @@ const CategoryManagement = () => {
       setIsEditing(true);
     } else {
       setCurrentCategory({
-        _id: null,
         name: "",
-        slug: "",
         status: "active",
       });
       setIsEditing(false);
@@ -109,11 +114,6 @@ const CategoryManagement = () => {
       ...currentCategory,
       [name]: value,
     };
-
-    // Auto-generate slug when name changes
-    if (name === "name") {
-      updatedCategory.slug = generateSlug(value);
-    }
 
     setCurrentCategory(updatedCategory);
   };
@@ -148,58 +148,10 @@ const CategoryManagement = () => {
       if (isSubcategory) {
         addSubcategory(currentCategory, parentCategory._id);
         showSnackbar("New subcategory added successfully");
-      } else {
-        // Add new main category
-        await addCategory();
-
-        showSnackbar("New category added successfully");
       }
     }
 
     handleCloseDialog();
-  };
-
-  // Delete category
-  const handleDeleteCategory = (
-    categoryId,
-    isSubcat = false,
-    parent = null
-  ) => {
-    if (isSubcat) {
-      // Delete subcategory
-      const updatedCategories = categories.map((cat) => {
-        if (cat._id === parent._id) {
-          return {
-            ...cat,
-            subcategories: cat.subcategories.filter(
-              (subcat) => subcat._id !== categoryId
-            ),
-          };
-        }
-        return cat;
-      });
-
-      setCategories(updatedCategories);
-      showSnackbar("Subcategory deleted successfully");
-    } else {
-      // Delete main category
-      const categoryToDelete = categories.find((cat) => cat._id === categoryId);
-
-      if (
-        categoryToDelete &&
-        categoryToDelete.subcategories &&
-        categoryToDelete.subcategories.length > 0
-      ) {
-        showSnackbar("Cannot delete category with subcategories", "error");
-        return;
-      }
-
-      const updatedCategories = categories.filter(
-        (cat) => cat._id !== categoryId
-      );
-      setCategories(updatedCategories);
-      showSnackbar("Category deleted successfully");
-    }
   };
 
   // Toggle expand/collapse subcategories
@@ -234,7 +186,7 @@ const CategoryManagement = () => {
           </IconButton>
           <IconButton
             color="error"
-            onClick={() => handleDeleteCategory(subcat._id, true, category)}
+            onClick={() => handleOpenDeleteDialog(subcat, category)}
           >
             <DeleteIcon />
           </IconButton>
@@ -242,146 +194,110 @@ const CategoryManagement = () => {
       </ListItem>
     ));
   };
-
-  // Fetch categories on component mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const fetchedCategories = await CategoryContext.getCategories();
-        setCategories(fetchedCategories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        showSnackbar("Failed to load categories", "error");
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  // Add a new category
-  const addCategory = async (category) => {
+  const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(category),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add category");
-      }
-
-      const newCategory = await response.json();
-      setCategories([...categories, newCategory]);
-      showSnackbar("New category added successfully");
+      const fetchedCategories = await CategoryContext.getCategories();
+      setCategories(fetchedCategories);
     } catch (error) {
-      console.error("Error adding category:", error);
-      showSnackbar("Failed to add category", "error");
+      console.error("Error fetching categories:", error);
+      showSnackbar("Failed to load categories", "error");
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // Update an existing category
   const updateCategory = async (category) => {
     try {
-      const response = await fetch(`/api/categories/${category._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(category),
+      const response = await CategoryContext.updateCategory(category._id, {
+        name: category.name,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to update category");
+      if (!response) {
+        throw new Error("Lỗi cập nhật danh mục");
       }
 
-      const updatedCategory = await response.json();
-      const updatedCategories = categories.map((cat) =>
-        cat._id === updatedCategory._id ? updatedCategory : cat
+      setCategories((prev) =>
+        prev.map((cat) => (cat._id === category._id ? response : cat))
       );
-      setCategories(updatedCategories);
-      showSnackbar("Category updated successfully");
+      showSnackbar("Cập nhật danh mục thành công");
     } catch (error) {
       console.error("Error updating category:", error);
-      showSnackbar("Failed to update category", "error");
+      showSnackbar("Lỗi cập nhật danh mục", "error");
     }
   };
 
   // Add a new subcategory
   const addSubcategory = async (subcategory, parentCategoryId) => {
     try {
-      const response = await fetch(
-        `/api/categories/${parentCategoryId}/subcategories`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(subcategory),
-        }
+      const response = await SubCategoryContext.addSubcategory(
+        subcategory,
+        parentCategoryId
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to add subcategory");
+      if (!response) {
+        throw new Error("Lỗi thêm danh muc phu");
       }
 
-      const newSubcategory = await response.json();
-      const updatedCategories = categories.map((cat) => {
-        if (cat._id === parentCategoryId) {
-          return {
-            ...cat,
-            subcategories: [...(cat.subcategories || []), newSubcategory],
-          };
-        }
-        return cat;
-      });
-      setCategories(updatedCategories);
-      showSnackbar("New subcategory added successfully");
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat._id === parentCategoryId ? response.category : cat
+        )
+      );
+
+      showSnackbar("Thêm danh muc phu thành công");
     } catch (error) {
       console.error("Error adding subcategory:", error);
-      showSnackbar("Failed to add subcategory", "error");
+      showSnackbar("Lỗi thêm danh muc phu", "error");
     }
   };
 
   // Update an existing subcategory
   const updateSubcategory = async (subcategory, parentCategoryId) => {
     try {
-      const response = await fetch(
-        `/api/categories/${parentCategoryId}/subcategories/${subcategory._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(subcategory),
-        }
+      const response = await SubCategoryContext.updateSubcategory(
+        subcategory,
+        parentCategoryId
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to update subcategory");
+      if (!response) {
+        throw new Error("Cập nhật lỗi");
       }
-
-      const updatedSubcategory = await response.json();
       const updatedCategories = categories.map((cat) => {
         if (cat._id === parentCategoryId) {
-          return {
-            ...cat,
-            subcategories: cat.subcategories.map((subcat) =>
-              subcat._id === updatedSubcategory._id
-                ? updatedSubcategory
-                : subcat
-            ),
-          };
+          return response.category;
         }
         return cat;
       });
       setCategories(updatedCategories);
-      showSnackbar("Subcategory updated successfully");
+      showSnackbar("Cập nhật danh mục phụ thành công");
     } catch (error) {
       console.error("Error updating subcategory:", error);
-      showSnackbar("Failed to update subcategory", "error");
+      showSnackbar("Cập nhật lỗi", "error");
+    }
+  };
+  const handleDeleteSubCategory = async (subcategoryId, parentCategory) => {
+    try {
+      const response = await SubCategoryContext.deleteSubcategory(
+        subcategoryId,
+        parentCategory._id
+      );
+
+      if (!response) {
+        throw new Error("Lỗi xóa danh mục phụ");
+      }
+
+      setCategories((prev) =>
+        prev.map((cat) =>
+          cat._id === parentCategory._id ? response.category : cat
+        )
+      );
+
+      showSnackbar("Xóa danh mục phụ thành công");
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+      showSnackbar("Lỗi xóa danh mục phụ", "error");
     }
   };
 
@@ -539,6 +455,106 @@ const CategoryManagement = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Delete Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        maxWidth="sm"
+        fullWidth
+        TransitionComponent={Fade}
+        TransitionProps={{ timeout: 300 }}
+      >
+        <Box sx={{ textAlign: "center", p: 2 }}>
+          <ErrorOutlineIcon // Thêm icon cảnh báo
+            sx={{
+              fontSize: 60,
+              color: "warning.main",
+              mb: 2,
+              animation: "pulse 1s infinite", // Hiệu ứng nhấp nháy
+              "@keyframes pulse": {
+                "0%": { transform: "scale(1)" },
+                "50%": { transform: "scale(1.1)" },
+                "100%": { transform: "scale(1)" },
+              },
+            }}
+          />
+          <DialogTitle
+            variant="h5"
+            sx={{
+              fontWeight: "bold",
+              color: "text.primary",
+              pt: 0,
+            }}
+          >
+            Xác nhận xóa danh mục phụ
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Bạn sắp xóa danh mục phụ:
+              <Box
+                component="span"
+                sx={{
+                  color: "error.main",
+                  fontWeight: "bold",
+                  mx: 1,
+                }}
+              >
+                "{subcategoryToDelete?.name}"
+              </Box>
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary" }}>
+              Thao tác này sẽ xóa vĩnh viễn danh mục phụ và không thể hoàn tác.
+            </Typography>
+          </DialogContent>
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              pb: 3,
+              gap: 2,
+            }}
+          >
+            <Button
+              onClick={handleCloseDeleteDialog}
+              variant="outlined"
+              startIcon={<CloseIcon />}
+              sx={{
+                textTransform: "none",
+                px: 4,
+                borderRadius: "8px",
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              onClick={() => {
+                handleDeleteSubCategory(
+                  subcategoryToDelete._id,
+                  parentCategoryToDelete
+                );
+                handleCloseDeleteDialog();
+              }}
+              variant="contained"
+              color="error"
+              startIcon={<DeleteIcon />}
+              sx={{
+                textTransform: "none",
+                px: 4,
+                borderRadius: "8px",
+                boxShadow: "none",
+                "&:hover": {
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  backgroundColor: "error.dark",
+                },
+              }}
+            >
+              Xác nhận xóa
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -53,5 +53,31 @@ class OrderContext {
       };
     }
   }
+  async getOrdersByAdmin(){
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return { message: "Chưa đăng nhập", status: 401 };
+      }
+
+      const response = await axios.get(
+        "http://localhost:2000/eco-market/orders",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      return {
+        message:
+          error.response?.data?.message || "Có lỗi xảy ra khi lấy thông tin đơn hàng",
+        status: error.response?.status || 500,
+      };
+    }
+  }
 }
 export default new OrderContext();

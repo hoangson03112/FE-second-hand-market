@@ -31,6 +31,21 @@ class CategoryContext {
       return;
     }
   }
+
+  async updateCategory(categoryID, data) {
+    try {
+      const response = await axios.put(
+        `http://localhost:2000/eco-market/category/update?categoryID=${categoryID}`,
+        {
+          data,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating data:", error);
+      return;
+    }
+  }
 }
 
 export default new CategoryContext();

@@ -26,7 +26,6 @@ class AccountContext {
       }
     }
   }
-
   async Register(username, email, password, phoneNumber, fullName) {
     if (!username || !password || !email || !phoneNumber || !fullName) {
       return { message: "Vui lòng nhập đầy đủ thông tin đăng ký." };
@@ -51,7 +50,6 @@ class AccountContext {
       }
     }
   }
-
   async Authentication() {
     try {
       const token = localStorage.getItem("token");
@@ -75,7 +73,6 @@ class AccountContext {
       }
     } catch (error) {}
   }
-
   async Verify(userID, code) {
     if (!userID || !code) {
       return { message: "Vui lòng cung cấp userID và mã xác thực." };
@@ -99,7 +96,6 @@ class AccountContext {
       return "Đã xảy ra lỗi khi xác thực.";
     }
   }
-
   async getAccount(accountId) {
     try {
       const response = await axios.get(
@@ -112,7 +108,6 @@ class AccountContext {
       throw error;
     }
   }
-
   async changePassword(passwordData) {
     try {
       const token = localStorage.getItem("token");
@@ -128,7 +123,6 @@ class AccountContext {
       throw new Error(error.response?.data?.message || "Đổi mật khẩu thất bại");
     }
   }
-
   async updateAccountInfo(newInfo) {
     try {
       const token = localStorage.getItem("token");
@@ -165,6 +159,55 @@ class AccountContext {
       return response.data;
     } catch (error) {
       console.error("Error fetching account list:", error);
+      throw error;
+    }
+  }
+  async createAccountByAdmin(accountInfo) {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Bạn chưa đăng nhập!");
+        return;
+      }
+      const response = await axios.post(
+        "http://localhost:2000/eco-market/admin/account/create",
+        accountInfo,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating account:", error);
+      throw error;
+    }
+  }
+  async updateAccountByAdmin(accountId, role, status) {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Bạn chưa đăng nhập!");
+        return;
+      }
+
+      const response = await axios.put(
+        `http://localhost:2000/eco-market/admin/account/update/${accountId}`,
+        { role, status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating account:", error);
       throw error;
     }
   }

@@ -79,10 +79,10 @@ const LayoutAdmin = ({ children }) => {
   const menuItems = [
     { text: "Trang tổng quan", icon: <HomeIcon />, path: "/eco-market/admin" },
     { text: "Danh mục", icon: <CategoryIcon />, path: "/eco-market/admin/categories" },
-    { text: "Sản phẩm", icon: <LocalCafeIcon />, path: "/eco-market/manager-products" },
-    { text: "Khách hàng", icon: <PeopleIcon />, path: "/eco-market/admin/manager-customer" },
-    { text: "Đơn hàng", icon: <ShoppingBasketIcon />, path: "/eco-market/manager-orders" },
-    { text: "Hình ảnh", icon: <CollectionsIcon />, path: "/eco-market/manager-images" }
+    { text: "Sản phẩm", icon: <LocalCafeIcon />, path: "/eco-market/admin/products" },
+    { text: "Khách hàng", icon: <PeopleIcon />, path: "/eco-market/admin/customers" },
+    { text: "Đơn hàng", icon: <ShoppingBasketIcon />, path: "/eco-market/admin/orders" },
+    
   ];
 
   const bottomMenuItems = [

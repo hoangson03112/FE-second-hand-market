@@ -1,23 +1,25 @@
-export const addCategory = async (category) => {
-  const response = await fetch("/api/categories", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(category),
-  });
-  if (!response.ok) throw new Error("Failed to add category");
-  return response.json();
+import ApiService from './ApiService';
+
+const categoryService = {
+  getAllCategories: async () => {
+    return await ApiService.get('/categories');
+  },
+
+  getCategoryById: async (id) => {
+    return await ApiService.get(`/categories/${id}`);
+  },
+
+  createCategory: async (categoryData) => {
+    return await ApiService.post('/categories', categoryData);
+  },
+
+  updateCategory: async (id, categoryData) => {
+    return await ApiService.put(`/categories/${id}`, categoryData);
+  },
+
+  deleteCategory: async (id) => {
+    return await ApiService.delete(`/categories/${id}`);
+  },
 };
 
-export const updateCategory = async (category) => {
-  const response = await fetch(`/api/categories/${category._id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(category),
-  });
-  if (!response.ok) throw new Error("Failed to update category");
-  return response.json();
-};
+export default categoryService;

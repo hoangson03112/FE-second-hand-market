@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Slide } from '@mui/material';
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { Slide } from "@mui/material";
 import {
   Box,
   Button,
@@ -35,10 +35,12 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from "@mui/icons-material";
-import CategoryContext from "../../contexts/CategoryContext";
-import SubCategoryContext from "../../contexts/SubCategoryContext";
+
+import SubCategoryContext from "../../../contexts/SubCategoryContext";
+import { useCategory } from "../../../contexts/CategoryContext";
 
 const CategoryManagement = () => {
+  const { getCategories, updateCategory } = useCategory();
   const [categories, setCategories] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentCategory, setCurrentCategory] = useState({
@@ -141,7 +143,7 @@ const CategoryManagement = () => {
         showSnackbar("Subcategory updated successfully");
       } else {
         // Update existing main category
-        updateCategory(currentCategory);
+        handleUpdateCategory(currentCategory);
         showSnackbar("Category updated successfully");
       }
     } else {
@@ -196,7 +198,7 @@ const CategoryManagement = () => {
   };
   const fetchCategories = async () => {
     try {
-      const fetchedCategories = await CategoryContext.getCategories();
+      const fetchedCategories = await getCategories();
       setCategories(fetchedCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -209,9 +211,9 @@ const CategoryManagement = () => {
   }, []);
 
   // Update an existing category
-  const updateCategory = async (category) => {
+  const handleUpdateCategory = async (category) => {
     try {
-      const response = await CategoryContext.updateCategory(category._id, {
+      const response = await updateCategory(category._id, {
         name: category.name,
       });
 

@@ -1,7 +1,13 @@
+import React, { createContext, useContext } from 'react';
 import axios from "axios";
 
-class ChatContext {
-  async getChat() {
+const ChatContext = createContext();
+
+export const useChat = () => useContext(ChatContext);
+
+export const ChatProvider = ({ children }) => {
+  // Các phương thức API
+  const getChat = async () => {
     try {
       const token = localStorage.getItem("token");
 
@@ -22,7 +28,18 @@ class ChatContext {
       console.error("Error fetching data:", error);
       return { message: "Đã xảy ra lỗi khi xác thực.", status: 500 };
     }
-  }
-}
+  };
 
-export default new ChatContext();
+  // Các giá trị và phương thức để cung cấp thông qua context
+  const contextValue = {
+    getChat
+  };
+
+  return (
+    <ChatContext.Provider value={contextValue}>
+      {children}
+    </ChatContext.Provider>
+  );
+};
+
+export default ChatContext;

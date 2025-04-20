@@ -1,7 +1,13 @@
+import React, { createContext, useContext } from "react";
 import axios from "axios";
 
-class CategoryContext {
-  async getCategories() {
+const CategoryContext = createContext();
+
+export const useCategory = () => useContext(CategoryContext);
+
+export const CategoryProvider = ({ children }) => {
+  // Các phương thức API
+  const getCategories = async () => {
     try {
       const response = await axios.get(
         "http://localhost:2000/eco-market/categories"
@@ -12,12 +18,12 @@ class CategoryContext {
       console.error("Error fetching data:", error);
       return [];
     }
-  }
+  };
 
-  async getCategory(categoryID) {
+  const getCategory = async (categoryID) => {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/category",
+        "http://localhost:2000/eco-market/categories/details",
         {
           params: { categoryID },
         }
@@ -30,12 +36,12 @@ class CategoryContext {
       console.error("Error fetching data:", error);
       return;
     }
-  }
+  };
 
-  async updateCategory(categoryID, data) {
+  const updateCategory = async (categoryID, data) => {
     try {
       const response = await axios.put(
-        `http://localhost:2000/eco-market/category/update?categoryID=${categoryID}`,
+        `http://localhost:2000/eco-market/categories/update?categoryID=${categoryID}`,
         {
           data,
         }
@@ -45,7 +51,20 @@ class CategoryContext {
       console.error("Error updating data:", error);
       return;
     }
-  }
-}
+  };
 
-export default new CategoryContext();
+  // Các giá trị và phương thức để cung cấp thông qua context
+  const contextValue = {
+    getCategories,
+    getCategory,
+    updateCategory,
+  };
+
+  return (
+    <CategoryContext.Provider value={contextValue}>
+      {children}
+    </CategoryContext.Provider>
+  );
+};
+
+export default CategoryContext;

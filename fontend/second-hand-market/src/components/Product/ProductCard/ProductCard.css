@@ -1,0 +1,146 @@
+.product-card {
+  position: relative;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.product-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-media-container {
+  position: relative;
+  padding-top: 75%; /* 4:3 aspect ratio */
+  background-color: #f5f5f5;
+}
+
+.product-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: white;
+}
+
+.new-badge {
+  background-color: #4caf50;
+}
+
+.used-badge {
+  background-color: #ff9800;
+}
+
+.wishlist-button {
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.7) !important;
+  padding: 6px !important;
+  z-index: 10;
+}
+
+.wishlist-icon {
+  color: #999;
+  font-size: 1.25rem !important;
+  transition: color 0.2s ease;
+}
+
+.wishlist-icon.active {
+  color: #f44336;
+}
+
+.wishlist-button:hover .wishlist-icon {
+  color: #f44336;
+}
+
+.product-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px !important;
+}
+
+.product-name {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+  height: 1.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #333;
+}
+
+.product-price {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+}
+
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rating-container {
+  display: flex;
+  align-items: center;
+}
+
+.review-count {
+  color: #666;
+  margin-left: 4px;
+}
+
+.product-time {
+  color: #666;
+  font-size: 0.75rem !important;
+}
+
+.product-seller, 
+.product-location {
+  color: #666;
+  margin-bottom: 4px !important;
+}
+
+@media (max-width: 600px) {
+  .product-content {
+    padding: 8px !important;
+  }
+  
+  .product-name,
+  .product-price {
+    margin-bottom: 4px !important;
+  }
+} 

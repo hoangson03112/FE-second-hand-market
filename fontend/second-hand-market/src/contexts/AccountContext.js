@@ -1,31 +1,6 @@
 import axios from "axios";
 
 class AccountContext {
-  async Login(username, password) {
-    if (!username || !password) {
-      return { message: "Vui lòng nhập đầy đủ username và password." };
-    }
-
-    try {
-      const data = await axios.post("http://localhost:2000/eco-market/login", {
-        username,
-        password,
-      });
-
-      if (data.data.status === "success") {
-        localStorage.setItem("token", data.data.token);
-        window.location.href = "/eco-market/home";
-      } else {
-        return data.data;
-      }
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        return error.response.data;
-      } else {
-        return "Đã xảy ra lỗi, vui lòng thử lại sau.";
-      }
-    }
-  }
   async Register(username, email, password, phoneNumber, fullName) {
     if (!username || !password || !email || !phoneNumber || !fullName) {
       return { message: "Vui lòng nhập đầy đủ thông tin đăng ký." };
@@ -33,7 +8,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/register",
+        "http://localhost:2000/eco-market/accounts/register",
         { username, password, email, phoneNumber, fullName }
       );
 
@@ -58,7 +33,7 @@ class AccountContext {
       }
 
       const data = await axios.get(
-        "http://localhost:2000/eco-market/authentication",
+        "http://localhost:2000/eco-market/accounts/auth",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -80,7 +55,7 @@ class AccountContext {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/verify",
+        "http://localhost:2000/eco-market/accounts/verify",
         {
           userID,
           code,
@@ -99,7 +74,7 @@ class AccountContext {
   async getAccount(accountId) {
     try {
       const response = await axios.get(
-        `http://localhost:2000/eco-market/account/${accountId}`
+        `http://localhost:2000/eco-market/accounts/${accountId}`
       );
 
       return response.data;
@@ -112,7 +87,7 @@ class AccountContext {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        "http://localhost:2000/eco-market/auth/change-password",
+        "http://localhost:2000/eco-market/accounts/change-password",
         passwordData,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -133,7 +108,7 @@ class AccountContext {
       }
 
       const response = await axios.put(
-        "http://localhost:2000/eco-market/account/update",
+        "http://localhost:2000/eco-market/accounts/update",
         newInfo,
         {
           headers: {
@@ -154,7 +129,7 @@ class AccountContext {
   async getAccounts() {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/accounts"
+        "http://localhost:2000/eco-market/accounts/admin/list"
       );
       return response.data;
     } catch (error) {
@@ -171,7 +146,7 @@ class AccountContext {
         return;
       }
       const response = await axios.post(
-        "http://localhost:2000/eco-market/admin/account/create",
+        "http://localhost:2000/eco-market/accounts/admin/create",
         accountInfo,
         {
           headers: {
@@ -196,7 +171,7 @@ class AccountContext {
       }
 
       const response = await axios.put(
-        `http://localhost:2000/eco-market/admin/account/update/${accountId}`,
+        `http://localhost:2000/eco-market/accounts/admin/update/${accountId}`,
         { role, status },
         {
           headers: {

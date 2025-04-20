@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import "./Login.css";
-
-import AccountContext from "../../contexts/AccountContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -14,15 +14,17 @@ function Login() {
   };
 
   const handleLogin = async () => {
-    const data = await AccountContext.Login(username, password);
-
+    const data = await login(username, password);
+    if (data?.status === "success") {
+      window.location.href = "/eco-market/home";
+    }
     if (data?.status !== "success") {
       setErrorMessage(data?.message);
     }
   };
 
   const handleCloseModal = () => {
-    setErrorMessage(""); 
+    setErrorMessage("");
   };
 
   return (

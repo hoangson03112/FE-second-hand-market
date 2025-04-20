@@ -1,10 +1,16 @@
+import React, { createContext, useContext } from "react";
 import axios from "axios";
 
-class ProductContext {
-  async getProduct(productID) {
+const ProductContext = createContext();
+
+export const useProduct = () => useContext(ProductContext);
+
+export const ProductProvider = ({ children }) => {
+  // Các phương thức API
+  const getProduct = async (productID) => {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/product",
+        "http://localhost:2000/eco-market/products/details",
         {
           params: { productID },
         }
@@ -14,8 +20,9 @@ class ProductContext {
       console.error("Error fetching product:", error);
       throw error;
     }
-  }
-  async getProducts() {
+  };
+
+  const getProducts = async () => {
     try {
       const response = await axios.get(
         "http://localhost:2000/eco-market/products"
@@ -25,12 +32,20 @@ class ProductContext {
       console.error("Error fetching product:", error);
       throw error;
     }
-  }
+  };
 
-  async getProductList(categoryID, subcategoryID) {
+  const getProductsByUser = async () => {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      "http://localhost:2000/eco-market/products/by-user",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data.data;
+  };
+  const getProductList = async (categoryID, subcategoryID) => {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/product-list",
+        "http://localhost:2000/eco-market/products/by-category",
         {
           params: { categoryID, subcategoryID },
         }
@@ -45,37 +60,13 @@ class ProductContext {
       console.error("Error fetching product list:", error);
       throw error; // Re-throw the error for proper error handling
     }
-  }
+  };
 
-  async addToCart(productId, quantity, userId) {
+  const postProduct = async (product) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:2000/eco-market/add-to-cart",
-        {
-          productId,
-          quantity: quantity + "",
-          userId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Gửi token trong header
-          },
-        }
-      );
-
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching product list:", error);
-      throw error;
-    }
-  }
-
-  async postProduct(product) {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://localhost:2000/eco-market/product/create",
+        "http://localhost:2000/eco-market/products/create",
         {
           product,
         },
@@ -91,11 +82,12 @@ class ProductContext {
       console.error("Error fetching product list:", error);
       throw error;
     }
-  }
-  async updateProductStatus(slug, status) {
+  };
+
+  const updateProductStatus = async (slug, status) => {
     const token = localStorage.getItem("token");
     const response = await axios.patch(
-      "http://localhost:2000/eco-market/product/updateStatus",
+      "http://localhost:2000/eco-market/products/update-status",
       {
         slug,
         status,
@@ -108,11 +100,12 @@ class ProductContext {
     );
 
     return response.data;
-  }
-  async deleteProduct(productId) {
+  };
+
+  const deleteProduct = async (productId) => {
     const token = localStorage.getItem("token");
     const response = await axios.delete(
-      `http://localhost:2000/eco-market/product/${productId}`,
+      `http://localhost:2000/eco-market/products/${productId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -121,8 +114,23 @@ class ProductContext {
     );
 
     return response.data;
-  }
-}
+  };
 
-// eslint-disable-next-line import/no-anonymous-default-export
-export default new ProductContext();
+  const contextValue = {
+    getProduct,
+    getProducts,
+    getProductList,
+    postProduct,
+    updateProductStatus,
+    deleteProduct,
+    getProductsByUser,
+  };
+
+  return (
+    <ProductContext.Provider value={contextValue}>
+      {children}
+    </ProductContext.Provider>
+  );
+};
+
+export default ProductContext;

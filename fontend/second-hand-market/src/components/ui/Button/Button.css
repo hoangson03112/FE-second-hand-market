@@ -1,0 +1,57 @@
+.back-button {
+  margin: 10px 0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  transform: translateX(-5px);
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.action-button {
+  margin: 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.primary-button {
+  background: var(--primary-gradient);
+  color: var(--text-on-primary);
+}
+
+.primary-button:hover {
+  background: var(--primary-gradient);
+  filter: brightness(1.1);
+}
+
+.secondary-button {
+  background-color: var(--secondary-color);
+  color: var(--text-on-primary);
+}
+
+.secondary-button:hover {
+  background-color: var(--secondary-color);
+  filter: brightness(1.1);
+}
+
+.danger-button {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.danger-button:hover {
+  background-color: var(--error-color);
+  filter: brightness(1.1);
+}
+
+.success-button {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.success-button:hover {
+  background-color: var(--success-color);
+  filter: brightness(1.1);
+} 

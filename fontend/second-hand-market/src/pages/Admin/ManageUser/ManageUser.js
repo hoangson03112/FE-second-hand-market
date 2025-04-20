@@ -35,8 +35,8 @@ import {
   AccountCircle,
   Person,
 } from "@mui/icons-material";
-import AccountContext from "../../contexts/AccountContext";
-import { formatDate } from "../../utils/function";
+import AccountContext from "../../../contexts/AccountContext";
+import { formatDate } from "../../../utils/function";
 import {
   Close as CloseIcon,
   DeleteForever as DeleteIcon,
@@ -190,7 +190,7 @@ export default function UserManagement() {
         currentUser.role,
         currentUser.status
       );
-      console.log(data);
+
 
       if (data.account) {
         getUserList();
@@ -257,12 +257,12 @@ export default function UserManagement() {
   };
   const handleInputChangeAddress = (e) => {
     const { name, value } = e.target;
-    setCurrentUser(prevUser => ({
-      ...prevUser, 
+    setCurrentUser((prevUser) => ({
+      ...prevUser,
       address: {
-        ...prevUser.address, 
-        [name]: value 
-      }
+        ...prevUser.address,
+        [name]: value,
+      },
     }));
   };
   const statusChipColor = (status) => {

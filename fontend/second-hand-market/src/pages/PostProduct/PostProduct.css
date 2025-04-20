@@ -21,10 +21,7 @@
   transition: all 0.3s ease-in-out;
 }
 
-/* Hiệu ứng hover */
-.form-container:hover {
-  transform: translateY(-10px);
-}
+
 
 /* Title */
 .form-title {

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Image } from "react-bootstrap";
-import CategoryContext from "../../../contexts/CategoryContext";
 import AccountContext from "../../../contexts/AccountContext";
 import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 import emitter from "../../../utils/mitt";
-
+import { useCategory } from "../../../contexts/CategoryContext";
 const Header = () => {
+  const { getCategories } = useCategory();
   const [categories, setCategories] = useState([]);
   const [account, setAccount] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
@@ -40,7 +40,8 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categories = await CategoryContext.getCategories();
+        const categories = await getCategories();
+
         setCategories(categories);
       } catch (error) {
         console.error("Error fetching categories:", error);

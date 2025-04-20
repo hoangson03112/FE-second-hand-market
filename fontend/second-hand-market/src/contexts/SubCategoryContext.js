@@ -4,7 +4,7 @@ class SubCategoryContext {
   async getSubCategory(SubcategoryID) {
     try {
       const response = await axios.get(
-        "http://localhost:2000/eco-market/subcategory",
+        "http://localhost:2000/eco-market/categories/sub",
         {
           params: { SubcategoryID },
         }
@@ -19,7 +19,7 @@ class SubCategoryContext {
   async addSubcategory(subcategory, parentCategoryId) {
     try {
       const response = await axios.post(
-        `http://localhost:2000/eco-market/subcategory/${parentCategoryId}`,
+        `http://localhost:2000/eco-market/categories/sub/${parentCategoryId}`,
         {
           name: subcategory.name,
           status: subcategory.status,
@@ -34,7 +34,7 @@ class SubCategoryContext {
   async updateSubcategory(subcategory, parentCategoryId) {
     try {
       const response = await axios.put(
-        "http://localhost:2000/eco-market/subcategory/update",
+        "http://localhost:2000/eco-market/categories/sub/update",
         {
           subcategory,
           parentCategoryId,
@@ -49,7 +49,7 @@ class SubCategoryContext {
   async deleteSubcategory(subcategoryID, categoryId) {
     try {
       const response = await axios.delete(
-        `http://localhost:2000/eco-market/category/${categoryId}/subcategory/${subcategoryID}`
+        `http://localhost:2000/eco-market/categories/${categoryId}/sub/${subcategoryID}`
       );
       return response.data;
     } catch (error) {

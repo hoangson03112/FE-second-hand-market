@@ -27,6 +27,7 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Paper,
 } from "@mui/material";
 import {
   Search,
@@ -38,32 +39,38 @@ import {
   Delete,
   Close,
 } from "@mui/icons-material";
-import ProductContext from "../../contexts/ProductContext";
-import CategoryContext from "../../contexts/CategoryContext";
 
+import { useProduct } from "../../../contexts/ProductContext";
+import { useCategory } from "../../../contexts/CategoryContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination as PagSwiper } from "swiper/modules"; // Import Navigation và Pagination
-import "swiper/css"; // CSS cơ bản của Swiper
-import "swiper/css/navigation"; // CSS cho navigation
-import "swiper/css/pagination"; // CSS cho pagination
-
+import AccountContext from "../../../contexts/AccountContext";
 const ProductManagement = () => {
+  const { getProducts, updateProductStatus, deleteProduct } = useProduct();
+  const { getCategories } = useCategory();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentTab, setCurrentTab] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [priceFilter, setPriceFilter] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [categories, setCategories] = useState(["Tất cả"]);
+  const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productDelete, setProductDelete] = useState({});
+  const [seller, setSeller] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
     severity: "success",
   });
+
+  const locations = [
+    ...new Set(products.map((product) => product.location || "")),
+  ];
+
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
@@ -74,19 +81,27 @@ const ProductManagement = () => {
       (currentTab === 2 && product.status === "approved") ||
       (currentTab === 3 && product.status === "rejected");
     const matchesCategory =
-      categoryFilter === "all" || product.category === categoryFilter;
-    const matchesPrice =
-      priceFilter === "all" ||
-      (priceFilter === "low" && product.price < 5000000) ||
-      (priceFilter === "medium" &&
-        product.price >= 5000000 &&
-        product.price <= 10000000) ||
-      (priceFilter === "high" && product.price > 10000000);
-    return matchesSearch && matchesTab && matchesCategory && matchesPrice;
+      categoryFilter === "all" || product.categoryId === categoryFilter;
+    const matchesLocation =
+      locationFilter === "all" || product.location === locationFilter;
+    return matchesSearch && matchesTab && matchesCategory && matchesLocation;
   });
+  useEffect(() => {
+    const fetchSellerData = async () => {
+      if (selectedProduct && selectedProduct.sellerId) {
+        const sellerData = await AccountContext.getAccount(
+          selectedProduct.sellerId
+        );
+        setSeller(sellerData);
+      }
+    };
+
+    fetchSellerData();
+  }, [selectedProduct]);
+
   const fetchProducts = useCallback(async () => {
     try {
-      const productsData = await ProductContext.getProducts();
+      const productsData = await getProducts();
 
       setProducts(productsData);
     } catch (err) {
@@ -97,7 +112,7 @@ const ProductManagement = () => {
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const categoriesData = await CategoryContext.getCategories();
+        const categoriesData = await getCategories();
 
         setCategories(categoriesData);
       } catch (err) {}
@@ -118,7 +133,7 @@ const ProductManagement = () => {
 
   // Xử lý duyệt và hủy
   const handleApproveProduct = async (slug) => {
-    await ProductContext.updateProductStatus(slug, "approved");
+    await updateProductStatus(slug, "approved");
     fetchProducts();
     setSnackbar({
       open: true,
@@ -128,7 +143,7 @@ const ProductManagement = () => {
   };
 
   const handleRejectProduct = async (slug) => {
-    await ProductContext.updateProductStatus(slug, "rejected");
+    await updateProductStatus(slug, "rejected");
     fetchProducts();
     setSnackbar({
       open: true,
@@ -155,7 +170,7 @@ const ProductManagement = () => {
 
   const handleDelete = async () => {
     try {
-      await ProductContext.deleteProduct(productDelete._id);
+      await deleteProduct(productDelete._id);
       setDeleteDialogOpen(false);
       setProducts(products.filter((p) => p._id !== productDelete._id));
       setSnackbar({
@@ -232,16 +247,18 @@ const ProductManagement = () => {
           </Grid>
           <Grid item xs={6} sm={4}>
             <FormControl fullWidth>
-              <InputLabel>Giá</InputLabel>
+              <InputLabel>Vị trí</InputLabel>
               <Select
-                value={priceFilter}
-                onChange={(e) => setPriceFilter(e.target.value)}
-                label="Giá"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                label="Vị trí"
               >
                 <MenuItem value="all">Tất cả</MenuItem>
-                <MenuItem value="low">Dưới 5 triệu</MenuItem>
-                <MenuItem value="medium">5 - 10 triệu</MenuItem>
-                <MenuItem value="high">Trên 10 triệu</MenuItem>
+                {locations.map((location, index) => (
+                  <MenuItem key={index} value={location}>
+                    {location}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
@@ -287,6 +304,8 @@ const ProductManagement = () => {
                   transform: "translateY(-5px)",
                   boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
                 },
+                borderRadius: 2,
+                overflow: "hidden",
               }}
             >
               <Box sx={{ position: "relative" }}>
@@ -295,7 +314,11 @@ const ProductManagement = () => {
                   height="180"
                   image={product.avatar}
                   alt={product.name}
-                  sx={{ objectFit: "cover" }}
+                  sx={{
+                    objectFit: "cover",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => handleViewDetail(product)}
                 />
                 <Box
                   sx={{
@@ -324,26 +347,34 @@ const ProductManagement = () => {
                 </Box>
               </Box>
 
-              <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+              <CardContent sx={{ flexGrow: 1, pb: 1, px: 2, pt: 2 }}>
                 <Typography
                   variant="h6"
                   sx={{
                     fontWeight: "bold",
                     fontSize: "1rem",
                     mb: 1,
-                    height: "2.5rem",
+                    minHeight: "2.5rem",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     display: "-webkit-box",
-                    WebkitLineClamp: 2,
+                    WebkitLineClamp: 3,
                     WebkitBoxOrient: "vertical",
+                    lineHeight: "1.2",
+                    maxHeight: "3.6rem",
+                    "&:hover": {
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    },
                   }}
+                  title={product.name}
+                  onClick={() => handleViewDetail(product)}
                 >
                   {product.name}
                 </Typography>
 
                 <Typography
-                  color="primary"
+                  color="red"
                   fontWeight="bold"
                   variant="h6"
                   sx={{ mb: 1 }}
@@ -355,13 +386,15 @@ const ProductManagement = () => {
                   variant="body2"
                   color="text.secondary"
                   sx={{
-                    height: "3rem",
+                    minHeight: "3rem",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
+                    lineHeight: "1.5",
                   }}
+                  title={product.description}
                 >
                   {product.description}
                 </Typography>
@@ -583,68 +616,342 @@ const ProductManagement = () => {
           onClose={handleCloseDetail}
           maxWidth="lg"
           fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              overflow: "hidden",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+            },
+          }}
         >
-          <DialogTitle>Chi tiết sản phẩm</DialogTitle>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Swiper
-                  modules={[Navigation, PagSwiper]}
-                  spaceBetween={10}
-                  slidesPerView={1}
-                  navigation
-                  pagination={{ clickable: true }}
+          <DialogTitle
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              bgcolor: "#f5f5f5",
+              borderBottom: "1px solid #eaeaea",
+              px: 3,
+              py: 2,
+            }}
+          >
+            <Typography variant="h5" fontWeight="600" color="primary">
+              Chi tiết sản phẩm
+            </Typography>
+            <IconButton onClick={handleCloseDetail} size="small">
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ p: 0 }}>
+            <Grid container>
+              {/* Phần hình ảnh bên trái */}
+              <Grid
+                item
+                xs={12}
+                md={6}
+                sx={{
+                  bgcolor: "#f9f9f9",
+                  position: "relative",
+                  height: { xs: "auto", md: "500px" },
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 16,
+                    left: 16,
+                    zIndex: 10,
+                    bgcolor:
+                      selectedProduct.status === "pending"
+                        ? "warning.main"
+                        : selectedProduct.status === "approved"
+                        ? "success.main"
+                        : "error.main",
+                    color: "white",
+                    px: 2,
+                    py: 0.75,
+                    borderRadius: 4,
+                    fontWeight: "bold",
+                    fontSize: "0.8rem",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  }}
                 >
-                  {selectedProduct.images.map((image, index) => (
-                    <SwiperSlide key={index}>
-                      <img
-                        src={image}
-                        alt={`Hình ảnh ${index + 1}`}
-                        style={{ width: "100%", borderRadius: "8px" }}
-                      />
-                    </SwiperSlide>
-                  ))}
-                </Swiper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h5">{selectedProduct.name}</Typography>
-                <Typography variant="h6" color="red">
-                  {new Intl.NumberFormat("vi-VN").format(selectedProduct.price)}{" "}
-                  ₫
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Danh mục:</strong>{" "}
-                  {
-                    categories.find(
-                      (cate) => cate._id === selectedProduct.categoryId
-                    ).name
-                  }
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Danh mục con:</strong>{" "}
-                  {categories
-                    .flatMap((cate) => cate.subcategories)
-                    .find(
-                      (subCate) => subCate._id === selectedProduct.subcategoryId
-                    )?.name || "Không tìm thấy subcategory"}
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Vị trí:</strong> {selectedProduct.location}
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Ngày đăng:</strong> {selectedProduct.createdAt}
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Mô tả:</strong> {selectedProduct.description}
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 2 }}>
-                  <strong>Trạng thái:</strong>{" "}
                   {selectedProduct.status === "pending"
                     ? "Chờ duyệt"
                     : selectedProduct.status === "approved"
                     ? "Đã duyệt"
                     : "Đã hủy"}
-                </Typography>
+                </Box>
+                <Swiper
+                  modules={[Navigation, PagSwiper]}
+                  spaceBetween={0}
+                  slidesPerView={1}
+                  navigation
+                  pagination={{ clickable: true }}
+                  style={{ height: "100%" }}
+                >
+                  {selectedProduct.images &&
+                  selectedProduct.images.length > 0 ? (
+                    selectedProduct.images.map((image, index) => (
+                      <SwiperSlide key={index}>
+                        <Box
+                          sx={{
+                            height: { xs: "300px", md: "500px" },
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            overflow: "hidden",
+                            position: "relative",
+                          }}
+                        >
+                          <img
+                            src={image}
+                            alt={`Hình ảnh ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </Box>
+                      </SwiperSlide>
+                    ))
+                  ) : (
+                    <SwiperSlide>
+                      <Box
+                        sx={{
+                          height: { xs: "300px", md: "500px" },
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "#f0f0f0",
+                        }}
+                      >
+                        <Typography variant="body1" color="text.secondary">
+                          Không có hình ảnh
+                        </Typography>
+                      </Box>
+                    </SwiperSlide>
+                  )}
+                </Swiper>
+              </Grid>
+
+              {/* Phần thông tin bên phải */}
+              <Grid item xs={12} md={6}>
+                <Box sx={{ p: 4 }}>
+                  <Typography
+                    variant="h4"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 2,
+                      color: "#333",
+                    }}
+                  >
+                    {selectedProduct.name}
+                  </Typography>
+
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 700,
+                      color: "error.main",
+                      mb: 3,
+                      display: "inline-block",
+                      bgcolor: "rgba(211, 47, 47, 0.1)",
+                      px: 2,
+                      py: 0.5,
+                      borderRadius: 1,
+                    }}
+                  >
+                    {new Intl.NumberFormat("vi-VN").format(
+                      selectedProduct.price
+                    )}{" "}
+                    ₫
+                  </Typography>
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <Divider />
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Danh mục
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {categories.find(
+                            (cate) => cate._id === selectedProduct.categoryId
+                          )?.name || "Không xác định"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Danh mục con
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {categories
+                            .flatMap((cate) => cate.subcategories || [])
+                            .find(
+                              (subCate) =>
+                                subCate._id === selectedProduct.subcategoryId
+                            )?.name || "Không xác định"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Vị trí
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedProduct.location || "Không xác định"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={6}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Ngày đăng
+                        </Typography>
+                        <Typography variant="body1" fontWeight={500}>
+                          {selectedProduct.createdAt || "Không xác định"}
+                        </Typography>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          Người đăng
+                        </Typography>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          <Avatar
+                            src={selectedProduct.user?.avatar || ""}
+                            sx={{ width: 32, height: 32 }}
+                          >
+                            {seller?.fullName?.charAt(0) || "X"}
+                          </Avatar>
+                          <Typography variant="body1" fontWeight={500}>
+                            {seller?.fullName || "Không xác định"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Divider />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          Mô tả sản phẩm
+                        </Typography>
+                        <Paper
+                          variant="outlined"
+                          sx={{
+                            p: 2,
+                            borderRadius: 1,
+                            maxHeight: "150px",
+                            overflowY: "auto",
+                            bgcolor: "#fafafa",
+                          }}
+                        >
+                          <Typography
+                            variant="body1"
+                            sx={{ whiteSpace: "pre-line" }}
+                          >
+                            {selectedProduct.description || "Không có mô tả"}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Box
+                    sx={{
+                      mt: 4,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 2,
+                    }}
+                  >
+                    {selectedProduct.status === "pending" ? (
+                      <>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="large"
+                          startIcon={<CheckCircle />}
+                          onClick={() => {
+                            handleApproveProduct(selectedProduct.slug);
+                            handleCloseDetail();
+                          }}
+                          sx={{ flex: 1 }}
+                        >
+                          Duyệt sản phẩm
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="large"
+                          startIcon={<Cancel />}
+                          onClick={() => {
+                            handleRejectProduct(selectedProduct.slug);
+                            handleCloseDetail();
+                          }}
+                          sx={{ flex: 1 }}
+                        >
+                          Từ chối
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="large"
+                          onClick={handleCloseDetail}
+                          sx={{ flex: 1 }}
+                        >
+                          Đóng
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          size="large"
+                          startIcon={<Delete />}
+                          onClick={() => {
+                            setDeleteDialogOpen(true);
+                            setProductDelete(selectedProduct);
+                            handleCloseDetail();
+                          }}
+                          sx={{ flex: 1 }}
+                        >
+                          Xóa sản phẩm
+                        </Button>
+                      </>
+                    )}
+                  </Box>
+                </Box>
               </Grid>
             </Grid>
           </DialogContent>

@@ -4,23 +4,7 @@
   color: white;
   border-radius: 50%; /* Đảm bảo hình tròn */
   font-size: 16px; /* Điều chỉnh kích thước chữ theo ý muốn */
-  /* fallback for old browsers */
-  background: #fccb90 !important;
-  /* Chrome 10-25, Safari 5.1-6 */
-  background: -webkit-linear-gradient(
-    to right,
-    #ee7724,
-    #d8363a,
-    #dd3675,
-    #b44593
-  ) !important;
-  background: linear-gradient(
-    to right,
-    #ee7724,
-    #d8363a,
-    #dd3675,
-    #b44593
-  ) !important;
+  background: var(--primary-gradient) !important;
 }
 .quantity-span {
   display: inline-block;

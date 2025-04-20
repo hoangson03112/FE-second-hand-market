@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import ProductContext from "../../contexts/ProductContext";
-import AccountContext from "../../contexts/AccountContext";
+import { useProduct } from "../../contexts/ProductContext";
 import CancelOrderModal from "../../components/specific/CancelOrderModal";
-import OrderContext from "../../contexts/OrderContext";
-
+import { formatPrice } from "../../utils/function";
+import { useOrder } from "../../contexts/OrderContext";
+import AccountContext from "../../contexts/AccountContext";
 const OrderItem = ({ order, setOrders }) => {
+  const { getProduct } = useProduct();
+  const { updateOrder } = useOrder();
   const [products, setProducts] = useState([]);
   const [sellers, setSellers] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
@@ -15,7 +17,7 @@ const OrderItem = ({ order, setOrders }) => {
       try {
         if (order?.products?.length > 0) {
           const productPromises = order.products.map((item) =>
-            ProductContext.getProduct(item.productId)
+            getProduct(item.productId)
           );
           const productsData = await Promise.all(productPromises);
           setProducts(productsData);
@@ -28,15 +30,15 @@ const OrderItem = ({ order, setOrders }) => {
     };
 
     fetchProducts();
-  }, [order]);
+  }, [getProduct, order]);
 
   useEffect(() => {
     setTotalAmount(
       products.reduce((total, product) => {
         const orderProduct = order.products.find(
-          (p) => p.productId === product._id
+          (p) => p.productId === product?._id
         );
-        return total + product.price * (orderProduct?.quantity || 0);
+        return total + product?.price * (orderProduct?.quantity || 0);
       }, 0)
     );
   }, [products, order]);
@@ -45,7 +47,7 @@ const OrderItem = ({ order, setOrders }) => {
     const fetchSellers = async () => {
       try {
         const sellerIds = [
-          ...new Set(products.map((product) => product.sellerId)),
+          ...new Set(products.map((product) => product?.sellerId)),
         ];
         const sellerPromises = sellerIds.map((id) =>
           AccountContext.getAccount(id)
@@ -54,7 +56,7 @@ const OrderItem = ({ order, setOrders }) => {
 
         const sellersMap = {};
         sellersData.forEach((seller) => {
-          sellersMap[seller._id] = seller;
+          sellersMap[seller?._id] = seller;
         });
 
         setSellers(sellersMap);
@@ -70,7 +72,7 @@ const OrderItem = ({ order, setOrders }) => {
 
   const handleCancelOrder = async (orderId, reason, status) => {
     try {
-      const data = await OrderContext.updateOrder(orderId, reason, status);
+      const data = await updateOrder(orderId, reason, status);
       setOrders(data.orders);
       setShowCancelModal(false);
     } catch (error) {
@@ -134,7 +136,7 @@ const OrderItem = ({ order, setOrders }) => {
       <div className="mb-2">
         {Object.values(sellers).map((seller) => {
           const sellerProducts = products.filter(
-            (product) => product.sellerId === seller._id
+            (product) => product?.sellerId === seller?._id
           );
 
           if (sellerProducts.length === 0) {
@@ -142,7 +144,7 @@ const OrderItem = ({ order, setOrders }) => {
           }
           return (
             <div
-              key={seller._id}
+              key={seller?._id}
               className="d-flex justify-content-between align-items-center"
             >
               <div>
@@ -151,7 +153,7 @@ const OrderItem = ({ order, setOrders }) => {
                   style={{ cursor: "pointer" }}
                 >
                   <img
-                    src={seller.avatar || "https://default-avatar-url.png"}
+                    src={seller?.avatar || "https://default-avatar-url.png"}
                     alt="User"
                     style={{
                       width: "40px",
@@ -179,16 +181,16 @@ const OrderItem = ({ order, setOrders }) => {
         })}
       </div>
       <hr className="m-0 mb-2" />
-      {products.map((product) => (
+      {products?.map((product) => (
         <div
-          key={product._id}
+          key={product?._id}
           className="d-flex justify-content-between align-items-center py-2"
         >
           <div className="row align-items-center">
             <div className="col-auto">
               <img
-                src={product.avatar}
-                alt={product.name}
+                src={product?.avatar || "/path/to/default-product-image.png"}
+                alt={product?.name || "Product"}
                 style={{
                   width: "80px",
                   height: "80px",
@@ -199,14 +201,14 @@ const OrderItem = ({ order, setOrders }) => {
             </div>
             <div className="col">
               <a
-                href={`/eco-market/product?productID=${product._id}`}
+                href={`/eco-market/product?productID=${product?._id}`}
                 className="text-black text-decoration-none"
               >
-                <p className="mb-0 fw-bold">{product.name}</p>
+                <p className="mb-0 fw-bold">{product?.name}</p>
                 <p className="mb-0">
                   Số Lượng:{" "}
                   {
-                    order.products.find((p) => p.productId === product._id)
+                    order?.products.find((p) => p?.productId === product?._id)
                       ?.quantity
                   }
                 </p>
@@ -215,20 +217,21 @@ const OrderItem = ({ order, setOrders }) => {
           </div>
           <p>
             Giá:{" "}
-            <span className="text-danger me-3 fw-bold">{product.price}đ</span>
+            <span className="text-danger me-3 fw-bold">
+              {" "}
+              {formatPrice(product.price)}
+            </span>
           </p>
         </div>
       ))}
       <div className="d-flex justify-content-end align-items-center mt-2">
         <span>Thành tiền:</span>
-        <h3 className="text-danger mx-2">
-          {parseFloat(totalAmount.toFixed(2))}đ
-        </h3>
+        <h3 className="text-danger mx-2">{formatPrice(totalAmount)}</h3>
       </div>
       <div className="float-end">
         {showCancelModal && (
           <CancelOrderModal
-            orderId={order._id}
+            orderId={order?._id}
             onConfirm={handleCancelOrder}
             onClose={() => setShowCancelModal(false)}
           />

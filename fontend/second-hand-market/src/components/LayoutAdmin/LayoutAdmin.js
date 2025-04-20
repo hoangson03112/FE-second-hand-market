@@ -38,8 +38,12 @@ import {
   Person as PersonIcon
 } from "@mui/icons-material";
 import { alpha } from '@mui/material/styles';
+import "../../../src/styles/theme.css";
 
 const drawerWidth = 370;
+// Sử dụng màu từ theme.css
+const primaryColor = "#344960"; // Màu primary Navy
+const secondaryColor = "#a68a64"; // Màu secondary Beige
 
 const LayoutAdmin = ({ children }) => {
   const theme = useTheme();
@@ -89,9 +93,6 @@ const LayoutAdmin = ({ children }) => {
     { text: "Trang chủ", icon: <ArrowBackIosIcon />, path: "/eco-market/home" },
     { text: "Đăng xuất", icon: <ExitToAppIcon />, path: "#", onClick: () => console.log("Logout") }
   ];
-
-  const primaryColor = '#FF6F61';
-  const secondaryColor = '#FFA500';
 
   return (
     <Box sx={{ display: "flex" }}>

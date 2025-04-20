@@ -1,0 +1,223 @@
+/* Định nghĩa biến CSS cho màu chủ đạo - Màu Navy Sand - Sang trọng và thanh lịch */
+:root {
+  --primary-gradient: linear-gradient(
+    to right,
+    #2a3b4c,
+    #344960,
+    #3e5871,
+    #496883
+  );
+  --primary-gradient-webkit: -webkit-linear-gradient(
+    to right,
+    #2a3b4c,
+    #344960,
+    #3e5871,
+    #496883
+  );
+  --primary-color: #344960;
+  --primary-hover: #496883;
+  --primary-light: #d9e0e6;
+  --secondary-color: #a68a64;
+  --accent-color: #c8b6a6;
+  --text-on-primary: #ffffff;
+  --text-dark: #333333;
+  --text-muted: #6c757d;
+  --background-light: #f8f9fa;
+  --background-beige: #f5f2ed;
+  --background-paper: #ffffff;
+  --border-color: #e2ded8;
+  --success-color: #698474;
+  --warning-color: #d4ac6e;
+  --error-color: #c26d66;
+  --info-color: #6e99b4;
+}
+
+/* Áp dụng màu cho nút */
+.btn-primary {
+  background-image: var(--primary-gradient) !important;
+  border-color: transparent !important;
+  color: var(--text-on-primary) !important;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+  background-image: var(--primary-gradient) !important;
+  filter: brightness(1.1) !important;
+  border-color: transparent !important;
+}
+
+.btn-outline-primary {
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+  background-image: var(--primary-gradient) !important;
+  color: var(--text-on-primary) !important;
+  border-color: transparent !important;
+}
+
+/* Nút thứ cấp */
+.btn-secondary {
+  background-color: var(--secondary-color) !important;
+  border-color: transparent !important;
+  color: var(--text-on-primary) !important;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-color) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* Nút accent */
+.btn-accent {
+  background-color: var(--accent-color) !important;
+  border-color: transparent !important;
+  color: var(--text-dark) !important;
+}
+
+.btn-accent:hover {
+  background-color: var(--accent-color) !important;
+  filter: brightness(1.05) !important;
+}
+
+/* Áp dụng màu cho icon */
+.icon-primary {
+  color: var(--primary-color) !important;
+}
+
+.icon-primary:hover {
+  color: var(--primary-hover) !important;
+}
+
+.icon-secondary {
+  color: var(--secondary-color) !important;
+}
+
+.icon-accent {
+  color: var(--accent-color) !important;
+}
+
+/* Áp dụng màu cho text */
+.text-primary-custom {
+  color: var(--primary-color) !important;
+}
+
+.text-secondary-custom {
+  color: var(--secondary-color) !important;
+}
+
+.text-accent {
+  color: var(--accent-color) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-gradient {
+  background: var(--primary-gradient-webkit);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Màu nền */
+.bg-primary-gradient {
+  background: var(--primary-gradient) !important;
+  color: var(--text-on-primary) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+  color: var(--text-on-primary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--secondary-color) !important;
+  color: var(--text-on-primary) !important;
+}
+
+.bg-accent {
+  background-color: var(--accent-color) !important;
+  color: var(--text-dark) !important;
+}
+
+.bg-light {
+  background-color: var(--background-light) !important;
+}
+
+.bg-beige {
+  background-color: var(--background-beige) !important;
+}
+
+/* Điều chỉnh màu cho các liên kết khi hover */
+a:hover {
+  color: var(--primary-color) !important;
+}
+
+/* Điều chỉnh màu cho checkbox */
+.custom-checkbox input[type="checkbox"]:checked + .checkmark {
+  background: var(--primary-gradient) !important;
+}
+
+/* Điều chỉnh màu cho các nút tăng giảm số lượng */
+.btn-circle {
+  background: var(--primary-gradient) !important;
+  color: var(--text-on-primary) !important;
+}
+
+/* Card và Papers */
+.card-highlight {
+  border-top: 3px solid var(--primary-color) !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+.card-secondary {
+  border-top: 3px solid var(--secondary-color) !important;
+}
+
+.card-accent {
+  border-top: 3px solid var(--accent-color) !important;
+}
+
+/* Tùy chỉnh cho Material UI */
+.MuiButton-containedPrimary {
+  background: var(--primary-gradient) !important;
+  color: var(--text-on-primary) !important;
+}
+
+.MuiButton-containedPrimary:hover {
+  filter: brightness(1.1) !important;
+}
+
+.MuiButton-outlinedPrimary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.MuiButton-outlinedPrimary:hover {
+  background-color: rgba(52, 73, 96, 0.08) !important;
+}
+
+.MuiButton-containedSecondary {
+  background-color: var(--secondary-color) !important;
+}
+
+.MuiTabs-indicator {
+  background-color: var(--primary-color) !important;
+}
+
+.MuiRating-iconFilled {
+  color: var(--secondary-color) !important;
+}
+
+.MuiChip-colorPrimary {
+  background-color: var(--primary-color) !important;
+}
+
+.MuiChip-outlinedPrimary {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+} 

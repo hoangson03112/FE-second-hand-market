@@ -1,12 +1,13 @@
 import React, { memo } from "react";
 import { Button } from "react-bootstrap";
 import "./CartItem.css";
+import "../../../src/styles/theme.css";
 
 const CartItem = memo(
   ({
     sellers,
     products,
-    updateQuantity,
+    handleUpdateQuantity,
     checkedItems,
     onCheckboxChange,
     onDeleteItem,
@@ -34,7 +35,7 @@ const CartItem = memo(
                       width="50"
                       height="50"
                     />
-                    <span className="ms-3">
+                    <span className="ms-3 text-primary-custom">
                       {seller.fullName || "Loading..."}
                     </span>
                   </div>
@@ -72,13 +73,13 @@ const CartItem = memo(
                       </p>
                     </div>
                   </td>
-                  <td>{product.price?.toLocaleString()}₫</td>
+                  <td className="text-primary-custom">{product.price?.toLocaleString()}₫</td>
                   <td>
                     <div className="d-flex align-items-center justify-content-center">
                       <Button
                         variant="outline-secondary"
                         size="sm"
-                        onClick={() => updateQuantity(product._id, -1)}
+                        onClick={() => handleUpdateQuantity(product._id, -1)}
                         className="fs-7 px-2 btn-circle text-white"
                       >
                         -
@@ -89,23 +90,23 @@ const CartItem = memo(
                       <Button
                         variant="outline-secondary"
                         size="sm"
-                        onClick={() => updateQuantity(product._id, 1)}
+                        onClick={() => handleUpdateQuantity(product._id, 1)}
                         className="fs-7 px-2 btn-circle text-white"
                       >
                         +
                       </Button>
                     </div>
                   </td>
-                  <td>
+                  <td className="text-gradient fw-bold">
                     {(product.price * product.quantity).toLocaleString()}₫
                   </td>
                   <td>
                     <Button
                       variant="link"
-                      className="text-danger p-0 text-decoration-none"
+                      className="text-primary-custom p-0 text-decoration-none"
                       onClick={() => onDeleteItem([product._id])}
                     >
-                      <i className="bi bi-trash"></i> Xóa
+                      <i className="bi bi-trash icon-primary"></i> Xóa
                     </Button>
                   </td>
                 </tr>

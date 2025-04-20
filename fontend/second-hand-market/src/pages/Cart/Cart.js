@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button, Card } from "react-bootstrap";
 import "./Cart.css";
+import "../../../src/styles/theme.css";
 import CartItem from "../../components/specific/CartItem";
 import axios from "axios";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
-import ProductContext from "../../contexts/ProductContext";
-
+import { useProduct } from "../../contexts/ProductContext";
+import { useCart } from "../../contexts/CartContext";
 const Cart = () => {
+  const { getProduct } = useProduct();
+  const { deleteItem, updateQuantity } = useCart();
   const [checkedItems, setCheckedItems] = useState({});
   const [isCheckedAll, setIsCheckedAll] = useState(false);
   const [cart, setCart] = useState([]);
@@ -20,7 +23,6 @@ const Cart = () => {
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
-
 
         if (data.data) {
           setCart(data.data.account.cart);
@@ -42,7 +44,7 @@ const Cart = () => {
       try {
         if (cart.length > 0) {
           const productPromises = cart.map((item) =>
-            ProductContext.getProduct(item.productId)
+            getProduct(item.productId)
           );
           const productsData = await Promise.all(productPromises);
 
@@ -55,7 +57,6 @@ const Cart = () => {
               quantity: cartItem ? cartItem.quantity : 0,
             };
           });
-
           setProducts(productsWithQuantity);
         } else {
           setProducts([]); // Xóa hết sản phẩm khi giỏ hàng rỗng
@@ -140,15 +141,9 @@ const Cart = () => {
     }
 
     try {
-      const response = await axios.delete(
-        "http://localhost:2000/eco-market/delete-item",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { ids },
-        }
-      );
-      if (response.data.cart) {
-        setCart(response.data.cart);
+      const response = await deleteItem(ids);
+      if (response.status === "success") {
+        setCart(response.cart);
         setCheckedItems({});
         setIsCheckedAll(false);
       }
@@ -157,7 +152,7 @@ const Cart = () => {
     }
   };
 
-  const updateQuantity = async (productId, change) => {
+  const handleUpdateQuantity = async (productId, change) => {
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Vui lòng đăng nhập để tiếp tục.");
@@ -166,19 +161,10 @@ const Cart = () => {
     }
 
     try {
-      const response = await axios.put(
-        "http://localhost:2000/eco-market/update-item-quantity",
-        {
-          productId,
-          quantity: change,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await updateQuantity(productId, change);
 
-      if (response.data.status === "success") {
-        setCart(response.data.cart);
+      if (response.status === "success") {
+        setCart(response.cart);
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
@@ -190,6 +176,7 @@ const Cart = () => {
 
   const handleCheckout = () => {
     const selectedItems = cart.filter((item) => checkedItems[item.productId]);
+
     if (selectedItems.length > 0) {
       navigate("/eco-market/checkout", { state: { selectedItems } });
     }
@@ -202,7 +189,7 @@ const Cart = () => {
           <li className="ms-3">
             <a
               href="/eco-market/home"
-              className="text-decoration-none text-black"
+              className="text-decoration-none text-primary-custom"
             >
               Trang chủ
             </a>
@@ -239,7 +226,7 @@ const Cart = () => {
             <CartItem
               sellers={sellers}
               products={products}
-              updateQuantity={updateQuantity}
+              handleUpdateQuantity={handleUpdateQuantity}
               checkedItems={checkedItems}
               onCheckboxChange={handleCheckboxChange}
               onDeleteItem={deleteItems}
@@ -252,22 +239,21 @@ const Cart = () => {
               <div>
                 <Button
                   variant="link"
-                  className="text-danger p-0 text-decoration-none"
+                  className="text-primary-custom p-0 text-decoration-none"
                   onClick={handleDeleteSelected}
                 >
-                  Xóa
+                  <i className="bi bi-trash icon-primary"></i> Xóa
                 </Button>
               </div>
               <div className="text-right">
                 <p className="mb-0 font-weight-bold me-3">
                   Tổng tiền ({getSelectedCount()} Sản phẩm):{" "}
-                  <strong className="text-danger fs-5 ms-2">
+                  <strong className="text-gradient fs-5 ms-2">
                     {totalAmount.toLocaleString()}₫
                   </strong>
                 </p>
                 <Button
-                  variant="danger"
-                  className="mt-2 float-end"
+                  className="mt-2 float-end btn-primary"
                   onClick={handleCheckout}
                 >
                   Mua Hàng

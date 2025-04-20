@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import emitter from "../../utils/mitt";
-
 import {
   Container,
   Row,
@@ -12,20 +11,22 @@ import {
   Badge,
   Table,
   Toast,
+  Nav,
 } from "react-bootstrap";
 import "./Product.css";
-import ProductContext from "../../contexts/ProductContext";
 import CategoryContext from "../../contexts/CategoryContext";
 import AccountContext from "../../contexts/AccountContext";
-import { useNavigate } from "react-router-dom";
-
+import { useProduct } from "../../contexts/ProductContext";
+import { useCart } from "../../contexts/CartContext";
 export const Product = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const productID = queryParams.get("productID");
   const navigate = useNavigate();
 
-  const products = [
+  const { getProduct } = useProduct();
+  const { addToCart } = useCart();
+  const relatedProducts = [
     {
       id: 1,
       image:
@@ -67,11 +68,14 @@ export const Product = () => {
   const [showToast, setShowToast] = useState(false);
   const [account, setAccount] = useState({});
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("description");
+  const [imageLoading, setImageLoading] = useState(true);
 
   useEffect(() => {
     const fetchAccount = async (accountId) => {
       try {
         const response = await AccountContext.getAccount(accountId);
+
         setAccount(response);
       } catch (error) {
         console.error("Error fetching account:", error);
@@ -81,7 +85,7 @@ export const Product = () => {
 
     const fetchProduct = async () => {
       try {
-        const product = await ProductContext.getProduct(productID);
+        const product = await getProduct(productID);
         fetchAccount(product.sellerId);
         setProduct(product);
         setMainImage(product.images?.[0]);
@@ -110,18 +114,22 @@ export const Product = () => {
   }, [product.categoryId]);
 
   const handleThumbnailClick = (image) => {
+    setImageLoading(true);
     setMainImage(image);
   };
+
   const handleQuantityChange = (newQuantity) => {
     if (newQuantity > 0 && newQuantity <= product.stock) {
       setQuantity(newQuantity);
     }
   };
+
   const handleAddToCart = async () => {
     try {
       const data = await AccountContext.Authentication();
+
       if (data.data.account) {
-        const messageAddToCart = await ProductContext.addToCart(
+        const messageAddToCart = await addToCart(
           product._id,
           quantity,
           account._id
@@ -157,328 +165,527 @@ export const Product = () => {
     }
   };
 
-  return (
-    <div>
-      <div className="bg-body-secondary">
-        <Container className="">
-          <Row className="mb-3">
-            <Col>
-              <small className="text-muted">
-                Oreka Đồ cũ Sách Sách Tôi của tương lai - Còn mới - Giá gốc 180k
-              </small>
-            </Col>
-          </Row>
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
 
-          <Row>
-            <Col>
-              <Card style={{ transform: "none", boxShadow: "none" }}>
-                <Card.Body>
-                  <Row>
-                    <Col md={6}>
+  // Render a product card with consistent styling
+  const renderProductCard = (item) => (
+    <Card className="h-100 product-card shadow-sm hover-scale">
+      <div className="image-container">
+        <Card.Img
+          variant="top"
+          src={item.image}
+          alt={item.title}
+          className="product-image"
+        />
+        <div className="overlay">
+          <Button variant="light" className="quick-view-btn">
+            <i className="bi bi-eye"></i> Xem nhanh
+          </Button>
+        </div>
+      </div>
+      <Card.Body>
+        <Badge bg="success" className="mb-2 rounded-pill">
+          Freeship
+        </Badge>
+        <Card.Title className="product-title">{item.title}</Card.Title>
+        <Card.Text className="price">{item.price}</Card.Text>
+        <Card.Text className="location">
+          <i className="bi bi-geo-alt text-muted"></i> {item.location}
+        </Card.Text>
+      </Card.Body>
+    </Card>
+  );
+
+  return (
+    <div className="product-page py-4">
+      <Container>
+        {/* Breadcrumb */}
+        <nav aria-label="breadcrumb" className="mb-3">
+          <ol className="breadcrumb bg-light p-2 rounded">
+            <li className="breadcrumb-item">
+              <a href="/eco-market">Trang chủ</a>
+            </li>
+            <li className="breadcrumb-item">
+              <a href="/eco-market/category">Đồ cũ</a>
+            </li>
+            <li className="breadcrumb-item">
+              <a href={`/eco-market/category/${category?._id}`}>
+                {category?.name}
+              </a>
+            </li>
+            <li className="breadcrumb-item active" aria-current="page">
+              {product?.name}
+            </li>
+          </ol>
+        </nav>
+
+        {/* Product Main Section */}
+        <Row className="mb-4">
+          <Col lg={8}>
+            <Card className="border-0 shadow product-main-card rounded-4 overflow-hidden">
+              {/* Product Gallery */}
+              <Card.Body className="p-0">
+                <Row className="g-0">
+                  <Col md={6} className="product-gallery p-4">
+                    <div className="main-image-container mb-3 position-relative">
+                      {imageLoading && (
+                        <div className="image-loader">
+                          <div
+                            className="spinner-border text-primary"
+                            role="status"
+                          >
+                            <span className="visually-hidden">Loading...</span>
+                          </div>
+                        </div>
+                      )}
                       <img
                         src={mainImage}
-                        className="img-fluid"
-                        alt="Product"
-                        height="500px"
-                        width="600px"
-                        style={{ objectFit: "contain" }}
+                        className="img-fluid rounded main-product-image"
+                        alt={product?.name}
+                        style={{
+                          objectFit: "contain",
+                          height: "400px",
+                          width: "100%",
+                        }}
+                        onLoad={handleImageLoad}
                       />
-                      <div className="d-flex mt-2">
-                        {product?.images?.map((image, index) => (
+                      <div className="image-zoom-icon">
+                        <i className="bi bi-zoom-in"></i>
+                      </div>
+                    </div>
+                    <div className="thumbnails-container d-flex justify-content-center">
+                      {product?.images?.map((image, index) => (
+                        <div
+                          key={index}
+                          className={`thumbnail-wrapper mx-1 ${
+                            mainImage === image ? "active-thumbnail" : ""
+                          }`}
+                          onClick={() => handleThumbnailClick(image)}
+                        >
                           <img
-                            key={index}
                             src={image || "/api/placeholder/50/70"}
                             alt={`Thumbnail ${index + 1}`}
-                            className="me-2"
-                            style={{
-                              width: "70px",
-                              height: "90px",
-                              objectFit: "cover",
-                              cursor: "pointer",
-                              border:
-                                mainImage === image
-                                  ? "2px solid orange"
-                                  : "none",
-                            }}
-                            onClick={() => handleThumbnailClick(image)}
+                            className="thumbnail-image"
                           />
-                        ))}
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <h4 className="mt-3">{product?.name}</h4>
-                      <p className="text-secondary text-end me-5 ">
-                        Đã đăng lúc{" "}
+                        </div>
+                      ))}
+                    </div>
+                  </Col>
+
+                  {/* Product Info */}
+                  <Col md={6} className="product-info p-4">
+                    <div className="mb-2">
+                      <Badge bg="secondary" className="me-2 rounded-pill">
+                        Mới
+                      </Badge>
+                      <Badge bg="info" className="rounded-pill">
+                        Freeship
+                      </Badge>
+                    </div>
+                    <h3 className="product-title mb-2">{product?.name}</h3>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h2 className="product-price text-danger mb-0 fw-bold">
+                        {product?.price?.toLocaleString("vi-VN", {
+                          style: "currency",
+                          currency: "VND",
+                        })}
+                      </h2>
+                      <span className="text-muted small">
+                        Đăng ngày{" "}
                         {new Date(product?.createdAt).toLocaleDateString(
                           "vi-VN"
                         )}
-                      </p>
-                      <h2 className="text-danger my-4 ms-4">
-                        {product.price}đ
-                      </h2>
-                      <p> Vị trí {product.location}</p>
-                      <h5>Miễn phí vận chuyển</h5>
-                      <Form.Group className="my-4">
-                        <Form.Label>Số lượng:</Form.Label>
-                        <div className="d-flex align-items-center ms-5">
-                          <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            onClick={() => handleQuantityChange(quantity - 1)}
-                          >
-                            -
-                          </Button>
-                          <Form.Control
-                            type="text"
-                            value={quantity}
-                            onChange={(e) =>
-                              handleQuantityChange(parseInt(e.target.value))
-                            }
-                            className="mx-1 text-center"
-                            style={{ width: "50px" }}
-                          />
-                          <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            onClick={() => handleQuantityChange(quantity + 1)}
-                          >
-                            +
-                          </Button>
-                          <span className="ms-3 fst-italic">
-                            {product.stock} sản phẩm có sẵn
-                          </span>
-                        </div>
-                      </Form.Group>
-                      <Row className="me-5 mt-5">
-                        <Col>
-                          {" "}
-                          <Button
-                            className="btn btn-outline-orange me-2 
-                          w-75 p-3 float-end shadow btn-press-effect"
-                            onClick={handleAddToCart}
-                          >
-                            Thêm vào giỏ hàng
-                          </Button>
-                        </Col>
-                        <Col>
-                          {" "}
-                          <Button
-                            onClick={handlePurchaseNow}
-                            className="forSale border-0 w-75 p-3 gradient-custom-2 btn-press-effect shadow"
-                          >
-                            Mua ngay
-                          </Button>
-                        </Col>
-                      </Row>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                      </span>
+                    </div>
 
-          <Row className="my-4">
-            <Col md={9}>
-              <Card
-                className="mb-4"
-                style={{ transform: "none", boxShadow: "none" }}
-              >
-                <Card.Body>
-                  <Row className="align-items-center">
-                    <Col md={2} className="text-center">
-                      {account?.avatar ? (
-                        <img
-                          src={account?.avatar}
-                          alt="Shop Logo"
-                          className="img-fluid rounded-circle float-end"
-                          style={{ width: "80px", height: "80px" }}
-                        />
-                      ) : (
-                        <div
-                          className="d-flex justify-content-center align-items-center rounded-circle"
-                          style={{
-                            width: "80px",
-                            height: "80px",
-                            backgroundColor: "#ccc",
-                            color: "#fff",
-                            fontSize: "32px",
-                            textTransform: "uppercase",
-                          }}
+                    <hr className="my-3" />
+
+                    <div className="product-highlights p-3 mb-3 bg-light rounded">
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-geo-alt text-danger me-2"></i>
+                        <span>{product.location}</span>
+                      </div>
+
+                      <div className="d-flex align-items-center mb-2">
+                        <i className="bi bi-truck text-success me-2"></i>
+                        <span>Miễn phí vận chuyển</span>
+                      </div>
+
+                      <div className="d-flex align-items-center">
+                        <i className="bi bi-box-seam text-primary me-2"></i>
+                        <span>
+                          Còn <strong>{product.stock}</strong> sản phẩm có sẵn
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <Form.Group className="my-4">
+                      <Form.Label className="fw-bold">Số lượng:</Form.Label>
+                      <div className="ms-3 mt-3 quantity-selector d-flex align-items-center">
+                        <Button
+                          variant="outline-secondary"
+                          className="quantity-btn rounded-circle d-flex justify-content-center align-items-center"
+                          onClick={() => handleQuantityChange(quantity - 1)}
+                          style={{ width: "40px", height: "40px" }} // Đảm bảo kích thước cố định
                         >
-                          {account?.username?.charAt(0)}
-                        </div>
-                      )}
-                    </Col>
+                          <i
+                            className="bi bi-dash"
+                            style={{ fontSize: "1.2rem" }}
+                          ></i>
+                        </Button>
+                        <Form.Control
+                          type="text"
+                          value={quantity}
+                          onChange={(e) =>
+                            handleQuantityChange(parseInt(e.target.value))
+                          }
+                          className="quantity-input text-center mx-2 border-0 bg-light"
+                          style={{ width: "60px" }} // Điều chỉnh chiều rộng input nếu cần
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          className="quantity-btn rounded-circle d-flex justify-content-center align-items-center"
+                          onClick={() => handleQuantityChange(quantity + 1)}
+                          style={{ width: "40px", height: "40px" }} // Đảm bảo kích thước cố định
+                        >
+                          <i
+                            className="bi bi-plus"
+                            style={{ fontSize: "1.2rem" }}
+                          ></i>
+                        </Button>
+                      </div>
+                    </Form.Group>
 
-                    <Col md={10}>
-                      <Row className="align-items-center">
-                        <Col md={7}>
-                          <h5 className="text-black mb-1">
-                            {account?.fullName}
-                          </h5>
-                          <p className="mb-1">{product.location}</p>
-                        </Col>
-
-                        <Col md={5} className="text-md-end">
-                          <Button variant="outline-primary" size="sm">
-                            Xem hồ sơ
-                          </Button>
-                          <Button variant="outline-danger mx-2" size="sm">
-                            Chat với người bán
-                          </Button>
-                        </Col>
-                      </Row>
-                    </Col>
-                  </Row>
-                </Card.Body>
-              </Card>
-
-              <div className="bg-white p-4 rounded shadow-sm">
-                <h5 className="mb-3">Thông tin nổi bật</h5>
-                <Table className="mb-0" hover>
-                  <tbody>
-                    <tr>
-                      <td
-                        className=" text-start text-muted"
-                        style={{ width: "30%" }}
+                    {/* Action Buttons */}
+                    <div className="d-grid gap-2">
+                      <Button
+                        variant="outline-primary"
+                        className="btn-action btn-press-effect"
+                        onClick={handleAddToCart}
                       >
-                        Danh mục
-                      </td>
-                      <td className="text-start">
-                        <a href="#" className="text-primary">
-                          Oreka
-                        </a>{" "}
-                        &gt;{" "}
-                        <a href="#" className="text-primary">
-                          Đồ cũ
-                        </a>{" "}
-                        &gt;{" "}
-                        <a href="#" className="text-primary">
-                          {category?.name}
-                        </a>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted text-start">Phí vận chuyển</td>
-                      <td className="text-start">
-                        <Badge bg="info" className="text-white ">
-                          Freeship
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted text-start">Tình trạng</td>
-                      <td className="text-start">Mới</td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted text-start">Thương hiệu</td>
-                      <td className="text-start">{product.brand}</td>
-                    </tr>
-                    <tr>
-                      <td className="text-muted text-start">Màu sắc</td>
-                      <td className="text-start">{product.color}</td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </div>
+                        <i className="bi bi-cart-plus me-2"></i>Thêm vào giỏ
+                        hàng
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="btn-action gradient-custom-2 btn-press-effect"
+                        onClick={handlePurchaseNow}
+                      >
+                        <i className="bi bi-lightning-charge me-2"></i>Mua ngay
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
 
-              <Card
-                className="my-4"
-                style={{ transform: "none", boxShadow: "none" }}
-              >
-                <Card.Body>
-                  <h5>Mô tả sản phẩm</h5>
-                  <p>{product.description}</p>
-                </Card.Body>
-              </Card>
+          {/* Seller Info Card */}
+          <Col lg={4}>
+            <Card className="border-0 shadow rounded-4 mb-4 seller-card">
+              <Card.Body>
+                <h5 className="mb-3 border-bottom pb-2">
+                  <i className="bi bi-shop me-2"></i>Thông tin người bán
+                </h5>
+                <div className="d-flex align-items-center mb-3">
+                  {account?.avatar ? (
+                    <img
+                      src={account?.avatar}
+                      alt="Shop Logo"
+                      className="seller-avatar rounded-circle border"
+                    />
+                  ) : (
+                    <div className="seller-avatar-placeholder rounded-circle d-flex align-items-center justify-content-center bg-primary text-white">
+                      {account?.username?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="ms-3">
+                    <h6 className="mb-1">{account?.fullName}</h6>
+                    <p className="mb-1 text-muted small">
+                      <i className="bi bi-geo-alt me-1"></i>
+                      {product.location}
+                    </p>
+                    <div className="seller-rating text-warning">
+                      <i className="bi bi-star-fill"></i>
+                      <i className="bi bi-star-fill"></i>
+                      <i className="bi bi-star-fill"></i>
+                      <i className="bi bi-star-fill"></i>
+                      <i className="bi bi-star-half"></i>
+                      <span className="ms-1 text-muted small">(4.5)</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="seller-stats d-flex justify-content-around py-2 mb-3 bg-light rounded">
+                  <div className="text-center">
+                    <div className="fw-bold">96%</div>
+                    <div className="text-muted small">Phản hồi</div>
+                  </div>
+                  <div className="text-center border-start border-end px-3">
+                    <div className="fw-bold">98%</div>
+                    <div className="text-muted small">Đánh giá tốt</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="fw-bold">2 năm</div>
+                    <div className="text-muted small">Tham gia</div>
+                  </div>
+                </div>
+                <div className="d-grid gap-2">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="d-flex align-items-center justify-content-center btn-press-effect"
+                  >
+                    <i className="bi bi-person-lines-fill me-2"></i>Xem hồ sơ
+                  </Button>
 
-              <Card
-                className="my-4"
-                style={{ transform: "none", boxShadow: "none" }}
-              >
-                <Card.Body>
-                  <h5>Hỏi đáp</h5>
-                  <p>
-                    Hiện tại chưa có câu hỏi nào. Cần thêm thông tin hãy gửi câu
-                    hỏi cho người bán.
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    className="d-flex align-items-center justify-content-center btn-press-effect"
+                  >
+                    <i className="bi bi-chat-dots me-2"></i>Chat với người bán
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* Recommend Products */}
+            <Card className="border-0 shadow rounded-4">
+              <Card.Body>
+                <h5 className="mb-3 d-flex justify-content-between align-items-center">
+                  <span>
+                    <i className="bi bi-lightning me-2"></i>Có thể bạn thích
+                  </span>
+                  <Button variant="link" className="p-0 small">
+                    Xem tất cả
+                  </Button>
+                </h5>
+                <div className="recommended-products">
+                  {relatedProducts.slice(0, 2).map((product) => (
+                    <div key={product.id} className="mb-3 hover-scale">
+                      <Card className="recommended-product-card border-0 shadow-sm">
+                        <Row className="g-0">
+                          <Col xs={4}>
+                            <img
+                              src={product.image}
+                              alt={product.title}
+                              className="img-fluid rounded-start h-100 w-100"
+                              style={{ objectFit: "cover" }}
+                            />
+                          </Col>
+                          <Col xs={8}>
+                            <Card.Body className="p-2">
+                              <Card.Title
+                                className="fs-6 text-truncate"
+                                title={product.title}
+                              >
+                                {product.title}
+                              </Card.Title>
+                              <Card.Text className="text-danger fw-bold mb-0">
+                                {product.price}
+                              </Card.Text>
+                              <Card.Text className="text-muted small">
+                                <i className="bi bi-geo-alt"></i>{" "}
+                                {product.location}
+                              </Card.Text>
+                            </Card.Body>
+                          </Col>
+                        </Row>
+                      </Card>
+                    </div>
+                  ))}
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Product Details Tabs */}
+        <Card className="border-0 shadow rounded-4 mb-4">
+          <Card.Body>
+            <Nav variant="tabs" className="mb-3 product-tabs">
+              <Nav.Item>
+                <Nav.Link
+                  className={activeTab === "description" ? "active-tab" : ""}
+                  active={activeTab === "description"}
+                  onClick={() => setActiveTab("description")}
+                >
+                  <i className="bi bi-file-text me-2"></i>Mô tả sản phẩm
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link
+                  className={activeTab === "specs" ? "active-tab" : ""}
+                  active={activeTab === "specs"}
+                  onClick={() => setActiveTab("specs")}
+                >
+                  <i className="bi bi-list-ul me-2"></i>Thông số kỹ thuật
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link
+                  className={activeTab === "reviews" ? "active-tab" : ""}
+                  active={activeTab === "reviews"}
+                  onClick={() => setActiveTab("reviews")}
+                >
+                  <i className="bi bi-star me-2"></i>Đánh giá (0)
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link
+                  className={activeTab === "questions" ? "active-tab" : ""}
+                  active={activeTab === "questions"}
+                  onClick={() => setActiveTab("questions")}
+                >
+                  <i className="bi bi-question-circle me-2"></i>Hỏi đáp
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+
+            {/* Tab Content */}
+            <div className="tab-content p-3">
+              {activeTab === "description" && (
+                <div className="product-description">
+                  <p className="lead">
+                    {product.description ||
+                      "Chưa có mô tả chi tiết cho sản phẩm này."}
                   </p>
-                  <Button variant="outline-danger">+ Hỏi ngay</Button>
-                </Card.Body>
-              </Card>
+                </div>
+              )}
 
-              <Card style={{ transform: "none", boxShadow: "none" }}>
-                <Card.Body>
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5>Sản phẩm khác của shop</h5>
-                    <Button variant="link" href="#">
-                      Xem tất cả
+              {activeTab === "specs" && (
+                <div className="product-specs">
+                  <Table responsive borderless hover className="specs-table">
+                    <tbody>
+                      <tr>
+                        <td className="text-muted" style={{ width: "30%" }}>
+                          Danh mục
+                        </td>
+                        <td>
+                          <a href="/" className="text-primary">
+                            Oreka
+                          </a>{" "}
+                          &gt;{" "}
+                          <a href="#" className="text-primary">
+                            Đồ cũ
+                          </a>{" "}
+                          &gt;{" "}
+                          <a href="#" className="text-primary">
+                            {category?.name}
+                          </a>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Tình trạng</td>
+                        <td>Mới</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Thương hiệu</td>
+                        <td>{product.brand || "Không có thông tin"}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Màu sắc</td>
+                        <td>{product.color || "Không có thông tin"}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Kích thước</td>
+                        <td>{product.size || "Không có thông tin"}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Xuất xứ</td>
+                        <td>{product.origin || "Không có thông tin"}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </div>
+              )}
+
+              {activeTab === "reviews" && (
+                <div className="product-reviews text-center py-4">
+                  <i className="bi bi-star fs-1 text-muted"></i>
+                  <p className="mt-3">Chưa có đánh giá nào cho sản phẩm này.</p>
+                  <Button
+                    variant="outline-primary"
+                    className="btn-press-effect"
+                  >
+                    <i className="bi bi-pencil me-2"></i>Viết đánh giá
+                  </Button>
+                </div>
+              )}
+
+              {activeTab === "questions" && (
+                <div className="product-questions">
+                  <div className="text-center py-4">
+                    <i className="bi bi-chat-dots fs-1 text-muted"></i>
+                    <p className="mt-3">
+                      Hiện tại chưa có câu hỏi nào. Cần thêm thông tin hãy gửi
+                      câu hỏi cho người bán.
+                    </p>
+                    <Button
+                      variant="outline-primary"
+                      className="btn-press-effect"
+                    >
+                      <i className="bi bi-plus-circle me-2"></i>Hỏi ngay
                     </Button>
                   </div>
-                  <Row>
-                    {products.map((product) => (
-                      <Col key={product.id} md={3} className="mb-4">
-                        <Card className="h-100">
-                          <Card.Img
-                            variant="top"
-                            src={product.image}
-                            alt={product.title}
-                            style={{ height: "240px", objectFit: "cover" }}
-                          />
-                          <Card.Body>
-                            <Badge bg="success" className="mb-2">
-                              Freeship
-                            </Badge>
-                            <Card.Title style={{ fontSize: "14px" }}>
-                              {product.title}
-                            </Card.Title>
-                            <Card.Text>
-                              <strong>{product.price}</strong>
-                            </Card.Text>
-                          </Card.Body>
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col md={"3"}>
-              {products.map((product) => (
-                <div key={product.id} className="mb-4">
-                  <Card className="h-100">
-                    <Card.Img
-                      variant="top"
-                      src={product.image}
-                      alt={product.title}
-                      style={{ height: "240px", objectFit: "cover" }}
-                    />
-                    <Card.Body>
-                      <Badge bg="success" className="mb-2">
-                        Freeship
-                      </Badge>
-                      <Card.Title style={{ fontSize: "14px" }}>
-                        {product.title}
-                      </Card.Title>
-                      <Card.Text>
-                        <strong>{product.price}</strong>
-                      </Card.Text>
-                      <Card.Text>
-                        <small>{product.location}</small>
-                      </Card.Text>
-                    </Card.Body>
-                  </Card>
                 </div>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+
+        {/* Related Products */}
+        <Card className="border-0 shadow rounded-4 mb-4">
+          <Card.Body>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="mb-0">
+                <i className="bi bi-box2 me-2"></i>Sản phẩm tương tự
+              </h5>
+              <Button variant="link" className="p-0">
+                Xem tất cả
+              </Button>
+            </div>
+            <Row className="g-3">
+              {relatedProducts.map((product) => (
+                <Col key={product.id} md={3} sm={6}>
+                  {renderProductCard(product)}
+                </Col>
               ))}
-            </Col>
-          </Row>
-        </Container>
-      </div>
+            </Row>
+          </Card.Body>
+        </Card>
+
+        {/* Recently Viewed */}
+        <Card className="border-0 shadow rounded-4">
+          <Card.Body>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h5 className="mb-0">
+                <i className="bi bi-clock-history me-2"></i>Đã xem gần đây
+              </h5>
+              <Button variant="link" className="p-0">
+                Xem tất cả
+              </Button>
+            </div>
+            <Row className="g-3">
+              {relatedProducts.slice(0, 4).map((product) => (
+                <Col key={product.id} md={3} sm={6}>
+                  {renderProductCard(product)}
+                </Col>
+              ))}
+            </Row>
+          </Card.Body>
+        </Card>
+      </Container>
+
+      {/* Success Toast */}
       <Toast
-        className="border-danger p-2"
+        className="success-toast"
         onClose={() => setShowToast(false)}
         show={showToast}
-        // delay={5000}
+        delay={3000}
         autohide
         style={{
           position: "fixed",
@@ -488,13 +695,16 @@ export const Product = () => {
           minWidth: "350px",
         }}
       >
-        <Toast.Header>
-          <div className="d-flex align-items-center w-100">
-            <i className="bi bi-bell fs-4 me-2"></i>
-            <strong className="text-success">Thông báo</strong>
-          </div>
+        <Toast.Header className="bg-success text-white">
+          <i className="bi bi-check-circle-fill me-2"></i>
+          <strong className="me-auto">Thành công</strong>
         </Toast.Header>
-        <Toast.Body>Thêm sản phẩm vào giỏ hàng thành công!</Toast.Body>
+        <Toast.Body>
+          <div className="d-flex align-items-center">
+            <i className="bi bi-cart-check text-success fs-4 me-2"></i>
+            <span>Thêm sản phẩm vào giỏ hàng thành công!</span>
+          </div>
+        </Toast.Body>
       </Toast>
     </div>
   );

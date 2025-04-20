@@ -1,0 +1,141 @@
+.order-item-card {
+  margin-bottom: 24px;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden;
+}
+
+.order-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #f9f9f9;
+}
+
+.order-id {
+  font-weight: 600 !important;
+}
+
+.status-chip {
+  font-weight: 600 !important;
+}
+
+.order-item-content {
+  padding: 16px;
+}
+
+.order-item-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.info-label {
+  color: #666;
+  font-weight: 500 !important;
+}
+
+.info-value {
+  font-weight: 500 !important;
+}
+
+.total-amount {
+  font-weight: 600 !important;
+}
+
+.order-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  gap: 10px;
+}
+
+.action-button {
+  min-width: 120px !important;
+}
+
+/* Chi tiết đơn hàng */
+.order-detail-container {
+  padding: 16px 8px;
+}
+
+.order-detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-divider {
+  margin: 16px 0 !important;
+}
+
+.order-product-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.product-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 16px;
+}
+
+.product-details {
+  flex: 1;
+}
+
+.product-subtotal {
+  min-width: 100px;
+  text-align: right;
+  font-weight: 600 !important;
+}
+
+.order-summary {
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 4px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.summary-row.total {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+  .order-item-info, 
+  .order-item-header,
+  .order-product-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .order-item-info > * {
+    margin-bottom: 4px;
+  }
+  
+  .status-chip {
+    margin-top: 8px;
+    align-self: flex-start;
+  }
+  
+  .product-thumbnail {
+    margin-bottom: 8px;
+  }
+  
+  .product-subtotal {
+    margin-top: 8px;
+    text-align: left;
+  }
+} 

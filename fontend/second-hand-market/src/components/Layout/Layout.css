@@ -12,3 +12,26 @@
     font-family: system-ui;
   }
   
+  body {
+    background-color: var(--background-light);
+  }
+  
+  .bg-body-secondary {
+    background-color: var(--background-light) !important;
+  }
+  
+  .gradient-background {
+    background: var(--primary-gradient);
+  }
+  
+  /* Styling for the chat icon */
+  .chat-icon {
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+  }
+  
+  .chat-icon:hover {
+    color: var(--primary-hover);
+    transform: scale(1.1);
+  }
+  

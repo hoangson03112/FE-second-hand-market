@@ -6,21 +6,27 @@ import "./Checkout.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-
+import { useCart } from "../../contexts/CartContext";
+import { useProduct } from "../../contexts/ProductContext";
 const Checkout = () => {
+  const { getProduct } = useProduct();
+  const { deleteItem } = useCart();
   const location = useLocation();
   const { selectedItems } = location.state || { selectedItems: [] };
   const [products, setProducts] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [shippingMethod, setShippingMethod] = useState("buyer");
+  const [showShippingModal, setShowShippingModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [shippingMethod, setShippingMethod] = useState("direct");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [tempShippingMethod, setTempShippingMethod] = useState(shippingMethod);
+  const [tempPaymentMethod, setTempPaymentMethod] = useState(paymentMethod);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const productsData = await Promise.all(
-          selectedItems.map((item) => ProductContext.getProduct(item.productId))
+          selectedItems.map((item) => getProduct(item.productId))
         );
         setProducts(productsData);
       } catch (error) {
@@ -38,44 +44,33 @@ const Checkout = () => {
     }, 0);
   };
 
-  const handleShowModal = () => {
-    setTempShippingMethod(shippingMethod);
-    setShowModal(true);
-  };
-  const handleCloseModal = () => {
-    setShowModal(false);
+  const handleCloseShippingModal = () => {
+    setShowShippingModal(false);
   };
 
-  const handlePaymentChange = (e) => {
-    setTempShippingMethod(e.target.value);
+  // Payment Method Handlers
+  const handleShowPaymentModal = () => {
+    setTempPaymentMethod(paymentMethod);
+    setShowPaymentModal(true);
   };
 
-  const handleSaveChanges = () => {
-    setShippingMethod(tempShippingMethod);
-    handleCloseModal();
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
   };
-  //Xoa san pham trong cart khi da tao order
-  const deleteItems = () => {
+
+  const handlePaymentMethodChange = (e) => {
+    setTempPaymentMethod(e.target.value);
+  };
+
+  const handleSavePaymentChanges = () => {
+    setPaymentMethod(tempPaymentMethod);
+    handleClosePaymentModal();
+  };
+
+  // Delete items from cart
+  const handleDeleteItems = async () => {
     const ids = selectedItems.map((item) => item.productId);
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Vui lòng đăng nhập để tiếp tục.");
-      navigate("/login");
-      return;
-    }
-
-    axios
-      .delete("http://localhost:2000/eco-market/delete-item", {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { ids },
-      })
-      .then((response) => {
-        console.log("Items deleted successfully:", response.data);
-      })
-      .catch((error) => {
-        console.error("Error deleting items:", error);
-        alert("Có lỗi xảy ra khi xóa sản phẩm.");
-      });
+    await deleteItem(ids);
   };
 
   const handlePlaceOrder = async () => {
@@ -86,6 +81,7 @@ const Checkout = () => {
       })),
       totalAmount: getTotalAmount(),
       shippingMethod,
+      paymentMethod,
       shippingAddress: {
         name: "Hoàng Sơn",
         phone: "(+84) 332454556",
@@ -102,19 +98,14 @@ const Checkout = () => {
         return;
       }
 
-      // Lấy dữ liệu sản phẩm
       const productsData = await Promise.all(
-        orderData.products.map((product) =>
-          ProductContext.getProduct(product.productId)
-        )
+        orderData.products.map((product) => getProduct(product.productId))
       );
 
-      // Lấy danh sách ID người bán duy nhất
       const uniqueSellerIds = Array.from(
         new Set(productsData.map((product) => product.sellerId).filter(Boolean))
       );
 
-      // Nhóm sản phẩm theo người bán
       const ordersBySeller = uniqueSellerIds
         .map((sellerId) => {
           const sellerProducts = productsData
@@ -137,24 +128,16 @@ const Checkout = () => {
         })
         .filter((order) => order.products.length > 0);
 
-      // Gửi yêu cầu tạo đơn hàng cho mỗi người bán
-      console.log(ordersBySeller);
       for (const order of ordersBySeller) {
-       
         const orderPayload = {
-          totalAmount: getTotalAmount(), // Cần tính toán lại tổng số tiền cho từng người bán
+          totalAmount: getTotalAmount(),
           shippingMethod,
-          shippingAddress: {
-            name: "Hoàng Sơn",
-            phone: "(+84) 332454556",
-            address:
-              "132/50, Mễ Trì Thượng, Phường Mễ Trì, Quận Nam Từ Liêm, Hà Nội",
-          },
-          sellerId: order.sellerId, 
+          paymentMethod,
+          shippingAddress: orderData.shippingAddress,
+          sellerId: order.sellerId,
           products: order.products,
         };
 
-        // Gửi yêu cầu tạo đơn hàng
         await axios.post(
           "http://localhost:2000/eco-market/orders",
           orderPayload,
@@ -165,18 +148,46 @@ const Checkout = () => {
           }
         );
       }
+
       Swal.fire({
         title: "Thông báo!",
         text: "Tạo đơn hàng thành công!",
-        icon: "success", // Các kiểu: 'success', 'error', 'warning', 'info', 'question'
+        icon: "success",
         confirmButtonText: "OK",
       });
       navigate("/eco-market/customer/orders");
-      // Xóa các sản phẩm đã chọn sau khi đặt hàng
-      deleteItems();
+      handleDeleteItems();
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Đã có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.");
+    }
+  };
+
+  const getShippingMethodText = () => {
+    switch (shippingMethod) {
+      case "direct":
+        return "Giao dịch trực tiếp";
+      case "thirdParty":
+        return "Vận chuyển qua bên thứ 3";
+      case "sellerShipping":
+        return "Người bán tự vận chuyển";
+      default:
+        return "Chưa chọn";
+    }
+  };
+
+  const getPaymentMethodText = () => {
+    switch (paymentMethod) {
+      case "cod":
+        return "Thanh toán khi nhận hàng (COD)";
+      case "bankTransfer":
+        return "Chuyển khoản ngân hàng";
+      case "eWallet":
+        return "Ví điện tử (Momo, ZaloPay)";
+      case "platformPayment":
+        return "Thanh toán qua nền tảng";
+      default:
+        return "Chưa chọn";
     }
   };
 
@@ -196,7 +207,7 @@ const Checkout = () => {
             </p>
           </div>
           <div className="me-4">
-            <button className="btn btn-outline-danger ">Thay Đổi</button>
+            <button className="btn btn-outline-danger">Thay Đổi</button>
           </div>
         </div>
       </div>
@@ -281,68 +292,214 @@ const Checkout = () => {
       </div>
 
       <div className="card mb-3">
+        {/* Phần phương thức vận chuyển mới */}
+        <div className="card-header">
+          <h5 className="mb-0">
+            <i className="bi bi-truck me-2 text-primary"></i>
+            Phương thức vận chuyển
+          </h5>
+        </div>
+
+        <div className="card-body">
+          <div className="row g-3">
+            {/* Option 1: Giao dịch trực tiếp */}
+            <div className="col-md-4">
+              <div
+                className={`card h-100 shipping-option ${
+                  shippingMethod === "direct" ? "border-primary shadow" : ""
+                }`}
+                onClick={() => setShippingMethod("direct")}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="card-body text-center">
+                  <div className="mb-3">
+                    <i className="bi bi-people-fill fs-1 text-success"></i>
+                  </div>
+                  <h5 className="card-title">Gặp mặt trực tiếp</h5>
+                  <p className="card-text text-muted small">
+                    Tự thỏa thuận địa điểm giao dịch với người bán
+                  </p>
+                  <div className="mt-2">
+                    <span className="badge bg-light text-dark">
+                      Không phí vận chuyển
+                    </span>
+                  </div>
+                </div>
+                <div className="card-footer bg-transparent">
+                  {shippingMethod === "direct" && (
+                    <button className="btn btn-sm btn-success w-100">
+                      <i className="bi bi-check-circle me-1"></i> Đã chọn
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Option 2: Vận chuyển bên thứ 3 */}
+            <div className="col-md-4">
+              <div
+                className={`card h-100 shipping-option ${
+                  shippingMethod === "thirdParty" ? "border-primary shadow" : ""
+                }`}
+                onClick={() => setShippingMethod("thirdParty")}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="card-body text-center">
+                  <div className="mb-3">
+                    <i className="bi bi-box-seam fs-1 text-warning"></i>
+                  </div>
+                  <h5 className="card-title">Đơn vị vận chuyển</h5>
+                  <p className="card-text text-muted small">
+                    Giao hàng nhanh chóng qua GHN, GHTK, Viettel Post
+                  </p>
+                  <div className="mt-2">
+                    <span className="badge bg-light text-dark">
+                      Phí 30,000đ
+                    </span>
+                  </div>
+                </div>
+                <div className="card-footer bg-transparent">
+                  {shippingMethod === "thirdParty" && (
+                    <button className="btn btn-sm btn-success w-100">
+                      <i className="bi bi-check-circle me-1"></i> Đã chọn
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Option 3: Người bán tự giao */}
+            <div className="col-md-4">
+              <div
+                className={`card h-100 shipping-option ${
+                  shippingMethod === "sellerShipping"
+                    ? "border-primary shadow"
+                    : ""
+                }`}
+                onClick={() => setShippingMethod("sellerShipping")}
+                style={{ cursor: "pointer" }}
+              >
+                <div className="card-body text-center">
+                  <div className="mb-3">
+                    <i className="bi bi-person-badge fs-1 text-info"></i>
+                  </div>
+                  <h5 className="card-title">Người bán giao hàng</h5>
+                  <p className="card-text text-muted small">
+                    Người bán tự tổ chức vận chuyển theo thỏa thuận
+                  </p>
+                  <div className="mt-2">
+                    <span className="badge bg-light text-dark">
+                      Phí thỏa thuận
+                    </span>
+                  </div>
+                </div>
+                <div className="card-footer bg-transparent">
+                  {shippingMethod === "sellerShipping" && (
+                    <button className="btn btn-sm btn-success w-100">
+                      <i className="bi bi-check-circle me-1"></i> Đã chọn
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chi tiết phương thức đã chọn */}
+          {shippingMethod && (
+            <div className="mt-4 p-3 bg-light rounded">
+              <h6>
+                <i className="bi bi-info-circle me-2 text-primary"></i>
+                Thông tin vận chuyển
+              </h6>
+              <ul className="list-unstyled">
+                {shippingMethod === "direct" && (
+                  <>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Bạn sẽ
+                      nhận hàng trực tiếp từ người bán
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Kiểm
+                      tra hàng trước khi thanh toán
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Thời
+                      gian giao dịch linh hoạt
+                    </li>
+                  </>
+                )}
+                {shippingMethod === "thirdParty" && (
+                  <>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Giao
+                      hàng toàn quốc trong 2-5 ngày
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Được
+                      đóng gói và bảo hiểm hàng hóa
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Theo
+                      dõi đơn hàng trực tuyến
+                    </li>
+                  </>
+                )}
+                {shippingMethod === "sellerShipping" && (
+                  <>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Người
+                      bán sẽ liên hệ để thống nhất phương thức
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Phí vận
+                      chuyển sẽ được thông báo sau
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Thời
+                      gian giao hàng tùy thuộc vào người bán
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="card mb-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Phương thức thanh toán</h5>
           <div>
-            <span className="text-primary me-2">
-              {shippingMethod === "buyer"
-                ? "Tôi sẽ đến lấy"
-                : "Người bán sẽ vận chuyển"}
-            </span>
+            <span className="text-primary me-2">{getPaymentMethodText()}</span>
             <button
-              className="btn btn-outline-danger "
-              onClick={handleShowModal}
+              className="btn btn-outline-danger"
+              onClick={handleShowPaymentModal}
             >
               Thay Đổi
             </button>
           </div>
         </div>
-
-        <Modal show={showModal} onHide={handleCloseModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>Chọn phương thức vận chuyển</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form>
-              <Form.Check
-                type="radio"
-                id="payment-method-creditCard"
-                name="paymentMethod"
-                label="Tôi sẽ đến lấy"
-                value="buyer"
-                checked={tempShippingMethod === "buyer"}
-                onChange={handlePaymentChange}
-              />
-              <Form.Check
-                type="radio"
-                id="payment-method-bankTransfer"
-                name="paymentMethod"
-                label="Người bán vận chuyển"
-                value="seller"
-                checked={tempShippingMethod === "seller"}
-                onChange={handlePaymentChange}
-              />
-            </Form>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Đóng
-            </Button>
-            <Button variant="primary" onClick={handleSaveChanges}>
-              Lưu thay đổi
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
         <div className="card-body">
           <div className="d-flex justify-content-between mb-2">
             <span>Tổng tiền hàng</span>
             <span>{getTotalAmount().toLocaleString()}₫</span>
           </div>
 
+          {/* Hiển thị phí vận chuyển nếu có */}
+          {shippingMethod === "thirdParty" && (
+            <div className="d-flex justify-content-between mb-2">
+              <span>Phí vận chuyển</span>
+              <span>30,000₫</span>
+            </div>
+          )}
+
           <div className="d-flex justify-content-between mb-2 fw-bold">
             <span>Tổng thanh toán</span>
-            <span>{getTotalAmount().toLocaleString()}₫</span>
+            <span className="text-danger">
+              {(
+                getTotalAmount() + (shippingMethod === "thirdParty" ? 30000 : 0)
+              ).toLocaleString()}
+              ₫
+            </span>
           </div>
         </div>
         <div className="card-footer">
@@ -358,6 +515,60 @@ const Checkout = () => {
           </Button>
         </div>
       </div>
+
+      <Modal show={showPaymentModal} onHide={handleClosePaymentModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Chọn phương thức thanh toán</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Check
+              type="radio"
+              id="payment-cod"
+              name="paymentMethod"
+              label="Thanh toán khi nhận hàng (COD)"
+              value="cod"
+              checked={tempPaymentMethod === "cod"}
+              onChange={handlePaymentMethodChange}
+            />
+            <Form.Check
+              type="radio"
+              id="payment-bank"
+              name="paymentMethod"
+              label="Chuyển khoản ngân hàng"
+              value="bankTransfer"
+              checked={tempPaymentMethod === "bankTransfer"}
+              onChange={handlePaymentMethodChange}
+            />
+            <Form.Check
+              type="radio"
+              id="payment-ewallet"
+              name="paymentMethod"
+              label="Ví điện tử (Momo, ZaloPay)"
+              value="eWallet"
+              checked={tempPaymentMethod === "eWallet"}
+              onChange={handlePaymentMethodChange}
+            />
+            <Form.Check
+              type="radio"
+              id="payment-platform"
+              name="paymentMethod"
+              label="Thanh toán qua nền tảng"
+              value="platformPayment"
+              checked={tempPaymentMethod === "platformPayment"}
+              onChange={handlePaymentMethodChange}
+            />
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClosePaymentModal}>
+            Đóng
+          </Button>
+          <Button variant="primary" onClick={handleSavePaymentChanges}>
+            Lưu thay đổi
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

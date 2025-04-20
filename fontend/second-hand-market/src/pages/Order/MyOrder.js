@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import OrderItem from "../../components/specific/OrderItem";
-import OrderContext from "../../contexts/OrderContext";
+import { useOrder } from "../../contexts/OrderContext";
 
 const MyOrder = () => {
+  const { getOrder } = useOrder();
   const [activeTab, setActiveTab] = useState("ALL");
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -22,7 +23,7 @@ const MyOrder = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const data = await OrderContext.getOrder();
+      const data = await getOrder();
       setOrders(data.orders);
       setFilteredOrders(data.orders);
     } catch (error) {
@@ -33,7 +34,7 @@ const MyOrder = () => {
   };
 
   useEffect(() => {
-    fetchOrders(); // Gọi hàm lấy danh sách đơn hàng khi component được load
+    fetchOrders();
   }, []);
 
   useEffect(() => {

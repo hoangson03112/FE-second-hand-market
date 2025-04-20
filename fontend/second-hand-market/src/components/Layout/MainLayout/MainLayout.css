@@ -1,0 +1,143 @@
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* App Bar */
+.app-bar {
+  background-color: var(--background-paper) !important;
+  color: var(--text-dark) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1201 !important;
+}
+
+.menu-button {
+  margin-right: 16px !important;
+}
+
+.app-title {
+  flex-grow: 1;
+  text-decoration: none;
+  color: var(--primary-color);
+  font-weight: 600 !important;
+}
+
+/* Desktop Menu */
+.desktop-menu {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: center;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 16px;
+  text-decoration: none;
+  color: var(--text-muted);
+  position: relative;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.menu-item svg {
+  margin-bottom: 4px;
+  font-size: 1.5rem !important;
+}
+
+.menu-text {
+  color: inherit;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+}
+
+.menu-item:hover {
+  background-color: var(--primary-light);
+  color: var(--primary-color);
+}
+
+.active-menu-item {
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+}
+
+.menu-badge {
+  position: absolute;
+  top: 0;
+  right: 5px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: var(--error-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Drawer */
+.drawer-container {
+  width: 280px;
+  max-width: 100%;
+}
+
+.drawer-header {
+  padding: 16px;
+  background-color: var(--background-beige);
+}
+
+.drawer-title {
+  font-weight: 600 !important;
+  color: var(--primary-color);
+}
+
+.drawer-subtitle {
+  color: var(--text-muted);
+  margin-top: 4px !important;
+}
+
+.menu-icon {
+  color: inherit !important;
+  min-width: 40px !important;
+}
+
+/* Main Content */
+.main-content {
+  flex-grow: 1;
+  padding: 24px 0;
+  background-color: var(--background-light);
+  min-height: 100vh;
+}
+
+.content-container {
+  padding-top: 16px;
+  padding-bottom: 32px;
+}
+
+/* Toolbar Actions */
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+}
+
+.notification-button {
+  margin-left: 8px !important;
+  color: var(--primary-color) !important;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 16px 0;
+  }
+  
+  .content-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+} 

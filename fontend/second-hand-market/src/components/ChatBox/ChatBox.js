@@ -9,6 +9,9 @@ import {
   InsertDriveFile,
   CheckCircle,
   Delete,
+  ZoomOutMap,
+  ZoomIn,
+  ZoomOut,
 } from "@mui/icons-material";
 import {
   Box,
@@ -33,12 +36,12 @@ import {
   CircularProgress,
   Zoom,
   Fade,
+  Modal,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { io } from "socket.io-client";
 import AccountContext from "../../contexts/AccountContext";
 import axios from "axios";
-import MarkChatReadIcon from "@mui/icons-material/MarkChatRead";
 import "./ChatBox.css";
 const socket = io("http://localhost:2000");
 
@@ -48,7 +51,9 @@ const StyledChatCard = styled(Card)(({ theme }) => ({
   overflow: "hidden",
   boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  maxHeight: "85vh",
+  maxHeight: "90vh",
+  display: "flex",
+  flexDirection: "column",
 }));
 
 const StyledAvatar = styled(Avatar)(({ theme, isonline }) => ({
@@ -79,7 +84,7 @@ const MessageBubble = styled(Box)(({ theme, sender }) => ({
   animation: "fadeIn 0.3s ease",
 }));
 
-export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
+export const ChatBox = ({ isOpen, toggleChat }) => {
   const [hasScroll, setHasScroll] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const chatRef = useRef(null);
@@ -101,6 +106,42 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const [attachmentMenuAnchor, setAttachmentMenuAnchor] = useState(null);
+
+  // Fullscreen image viewer states
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
+
+  // AI typing indicator
+  const [aiTyping, setAiTyping] = useState(false);
+
+  // Function to handle zoom in
+  const handleZoomIn = (e) => {
+    e.stopPropagation();
+    setZoomLevel((prev) => Math.min(prev + 0.5, 3));
+  };
+
+  // Function to handle zoom out
+  const handleZoomOut = (e) => {
+    e.stopPropagation();
+    setZoomLevel((prev) => Math.max(prev - 0.5, 1));
+  };
+
+  // Reset zoom level when closing the fullscreen view
+  const handleCloseFullscreen = () => {
+    setFullscreenImage(null);
+    setZoomLevel(1);
+  };
+
+  // Handle double click to toggle zoom
+  const handleDoubleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (zoomLevel > 1) {
+      setZoomLevel(1);
+    } else {
+      setZoomLevel(2);
+    }
+  };
 
   useEffect(() => {
     const fetchChatPartners = async () => {
@@ -129,20 +170,14 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto" });
     }
-  };
 
-  const scrollToBottomAfterSend = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    // Ensure the container itself can be scrolled
+    if (chatContainerRef.current) {
+      const { scrollHeight, clientHeight } = chatContainerRef.current;
+      if (scrollHeight > clientHeight) {
+        chatContainerRef.current.scrollTop = scrollHeight - clientHeight;
+      }
     }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) {
-      return new Date().toLocaleString();
-    }
-    return date.toLocaleString();
   };
 
   const handleAttachmentMenuOpen = (event) => {
@@ -205,6 +240,90 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
       return;
     }
 
+    // Handle AI chat differently
+    if (selectedUser.isAI) {
+      setIsLoading(true);
+
+      const tempMsgId = `temp-${Date.now()}`;
+      const userMessage = {
+        _id: tempMsgId,
+        senderId: account.accountID,
+        receiverId: selectedUser.id,
+        text: message.trim(),
+        createdAt: new Date().toISOString(),
+        isRead: true,
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      setTimeout(scrollToBottom, 100);
+      setMessage("");
+
+      // Show AI typing indicator after a short delay
+      setTimeout(() => {
+        setAiTyping(true);
+      }, 500);
+
+      // Simulate AI response after a longer delay
+      setTimeout(() => {
+        // Mock AI response logic - In a real app, this would call your backend AI service
+        let aiResponse = {
+          _id: `ai-${Date.now()}`,
+          senderId: "ai-assistant",
+          receiverId: account.accountID,
+          createdAt: new Date().toISOString(),
+          isRead: true,
+        };
+
+        // Simple keyword-based responses for demonstration
+        const userMessageLower = message.toLowerCase().trim();
+
+        if (
+          userMessageLower.includes("áo") ||
+          userMessageLower.includes("quần") ||
+          userMessageLower.includes("giày")
+        ) {
+          aiResponse.text = `Tôi đã tìm thấy một số sản phẩm phù hợp với "${message.trim()}". Bạn có thể xem chi tiết tại đây:`;
+          aiResponse.productSuggestions = [
+            {
+              id: 1,
+              name: "Sản phẩm tương tự 1",
+              price: "320.000đ",
+              image: "https://via.placeholder.com/80",
+            },
+            {
+              id: 2,
+              name: "Sản phẩm tương tự 2",
+              price: "450.000đ",
+              image: "https://via.placeholder.com/80",
+            },
+          ];
+        } else if (
+          userMessageLower.includes("giá") ||
+          userMessageLower.includes("tiền")
+        ) {
+          aiResponse.text =
+            "Khoảng giá nào bạn đang tìm kiếm? Tôi có thể giúp lọc sản phẩm theo ngân sách của bạn.";
+        } else if (
+          userMessageLower.includes("cảm ơn") ||
+          userMessageLower.includes("thank")
+        ) {
+          aiResponse.text =
+            "Rất vui được giúp đỡ bạn! Bạn có cần tìm thêm sản phẩm nào nữa không?";
+        } else {
+          aiResponse.text = `Tôi sẽ tìm kiếm "${message.trim()}" cho bạn. Bạn có thể cung cấp thêm chi tiết như màu sắc, kích thước hoặc thương hiệu không?`;
+        }
+
+        // Hide the typing indicator when we get the response
+        setAiTyping(false);
+
+        setMessages((prev) => [...prev, aiResponse]);
+        setTimeout(scrollToBottom, 100);
+        setIsLoading(false);
+      }, 2500); // Longer delay to make typing effect visible
+
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -220,18 +339,18 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
           name: attachment.name,
           url: attachment.preview,
         })),
+        type: "file",
         createdAt: new Date().toISOString(),
         isRead: false,
         isPending: true,
       };
 
       setMessages((prev) => [...prev, tempMsg]);
-      
+
       setTimeout(scrollToBottom, 100);
 
       setMessage("");
 
-      let processedAttachments = [];
       if (attachments.length > 0) {
         const formData = new FormData();
 
@@ -260,13 +379,14 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
           "Message with attachments sent via backend:",
           response.data
         );
-        
+
         setTimeout(scrollToBottom, 100);
       } else {
         const newMsg = {
           senderId: account.accountID,
           receiverId: selectedUser.id,
           text: message.trim(),
+          type: "text",
           attachments: [],
           tempMsgId: tempMsgId,
         };
@@ -287,7 +407,7 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     setIsLoading(true);
-    
+
     fetchChatHistory(user.id).then(() => {
       setTimeout(scrollToBottom, 300);
     });
@@ -345,7 +465,7 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
 
         return [...updatedMessages, msg];
       });
-      
+
       updateChatPartnerLastMessage(msg);
     };
 
@@ -409,25 +529,25 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
         console.log("Fetched chat history:", response.data.data);
         const processedMessages = response.data.data.map((message) => {
           const attachments = message.attachments || [];
-          
+
           return {
             ...message,
-            attachments: attachments.map(attachment => ({
+            attachments: attachments.map((attachment) => ({
               ...attachment,
               id: attachment._id || attachment.id || Date.now() + Math.random(),
               url: attachment.url || attachment.data || "",
-              type: attachment.type || (
-                attachment.url?.match(/\.(jpg|jpeg|png|gif)$/i) 
-                  ? "image/jpeg" 
+              type:
+                attachment.type ||
+                (attachment.url?.match(/\.(jpg|jpeg|png|gif)$/i)
+                  ? "image/jpeg"
                   : attachment.url?.match(/\.(mp4|webm|ogg)$/i)
-                    ? "video/mp4"
-                    : "application/octet-stream"
-              ),
-              name: attachment.name || "Attached file"
-            }))
+                  ? "video/mp4"
+                  : "application/octet-stream"),
+              name: attachment.name || "Attached file",
+            })),
           };
         });
-        
+
         setMessages(processedMessages);
       }
     } catch (error) {
@@ -658,12 +778,18 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
               <div
                 key={attachment.id || attachment._id}
                 className="media-message image-message"
+                onClick={() => {
+                  setFullscreenImage(source);
+                }}
               >
                 <div className="media-preview">
                   <div className="media-overlay">
-                    <IconButton 
+                    <IconButton
                       className="media-fullscreen-btn"
-                      onClick={() => window.open(source, "_blank")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFullscreenImage(source);
+                      }}
                     >
                       <Search />
                     </IconButton>
@@ -672,22 +798,12 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                     src={source}
                     alt={attachment.name || "Image attachment"}
                     loading="lazy"
-                    onClick={() => window.open(source, "_blank")}
                     onError={(e) => {
                       console.error("Error loading image:", source);
                       e.target.src =
                         "https://via.placeholder.com/300x200?text=Image+Not+Found";
                     }}
                   />
-                </div>
-                <div className="media-caption">
-                  <Typography
-                    variant="caption"
-                    className="media-filename"
-                    noWrap
-                  >
-                    {attachment.name || "Hình ảnh"}
-                  </Typography>
                 </div>
               </div>
             );
@@ -701,8 +817,8 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                 className="media-message video-message"
               >
                 <div className="media-preview video-preview">
-                  <video 
-                    controls 
+                  <video
+                    controls
                     controlsList="nodownload"
                     className="chat-video-player"
                     onError={(e) => {
@@ -723,8 +839,8 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                   >
                     {attachment.name || "Video"}
                   </Typography>
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     className="media-download"
                     onClick={() => window.open(source, "_blank")}
                   >
@@ -759,32 +875,46 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
     if (!partner.lastMessage && !partner.lastMessageType) {
       return "Bắt đầu cuộc trò chuyện...";
     }
-    
+
     // Hiển thị ai gửi tin nhắn
     const isFromMe = partner.lastMessageSenderId === account?.accountID;
     const prefix = isFromMe ? "Bạn: " : "";
-    
+
     // Nếu có attachment type, hiển thị thông tin về loại file
     if (partner.lastMessageType) {
       if (partner.lastMessageType.startsWith("image/")) {
-        return `${prefix}${partner.lastMessage ? partner.lastMessage + " (Hình ảnh)" : "Đã gửi hình ảnh"}`;
+        return `${prefix}${
+          partner.lastMessage
+            ? partner.lastMessage + " (Hình ảnh)"
+            : "Đã gửi hình ảnh"
+        }`;
       } else if (partner.lastMessageType.startsWith("video/")) {
-        return `${prefix}${partner.lastMessage ? partner.lastMessage + " (Video)" : "Đã gửi video"}`;
+        return `${prefix}${
+          partner.lastMessage
+            ? partner.lastMessage + " (Video)"
+            : "Đã gửi video"
+        }`;
       } else {
-        return `${prefix}${partner.lastMessage ? partner.lastMessage + " (File)" : "Đã gửi file"}`;
+        return `${prefix}${
+          partner.lastMessage ? partner.lastMessage + " (File)" : "Đã gửi file"
+        }`;
       }
     }
-    
+
     // Nếu chỉ có text
     return `${prefix}${partner.lastMessage}`;
   };
 
   // Hàm cập nhật tin nhắn cuối cùng trong danh sách người chat
   const updateChatPartnerLastMessage = (msg) => {
-    if (account?.accountID === msg.receiverId || account?.accountID === msg.senderId) {
+    if (
+      account?.accountID === msg.receiverId ||
+      account?.accountID === msg.senderId
+    ) {
       setChatPartners((prev) => {
         // Tìm partner tương ứng
-        const partnerId = msg.senderId === account?.accountID ? msg.receiverId : msg.senderId;
+        const partnerId =
+          msg.senderId === account?.accountID ? msg.receiverId : msg.senderId;
         const partnerIndex = prev.findIndex((p) => p.id === partnerId);
         if (partnerIndex === -1) {
           return prev;
@@ -793,7 +923,7 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
         // Prepare last message display text
         let lastMessageText = msg.text || "";
         let lastMessageType = "";
-        
+
         // Kiểm tra nếu có attachments
         if (msg.attachments && msg.attachments.length > 0) {
           lastMessageType = msg.attachments[0].type || "";
@@ -807,15 +937,113 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
           lastMessageAt: msg.createdAt,
           lastMessageSenderId: msg.senderId,
           lastMessageType: lastMessageType,
-          unread: account?.accountID === msg.receiverId && msg.senderId !== account?.accountID 
-            ? (newPartners[partnerIndex].unread || 0) + 1 
-            : newPartners[partnerIndex].unread || 0,
+          unread:
+            account?.accountID === msg.receiverId &&
+            msg.senderId !== account?.accountID
+              ? (newPartners[partnerIndex].unread || 0) + 1
+              : newPartners[partnerIndex].unread || 0,
         };
-        
+
         // Sắp xếp lại danh sách người chat theo thời gian tin nhắn mới nhất
-        return newPartners.sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+        return newPartners.sort(
+          (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt)
+        );
       });
     }
+  };
+
+  // Add this new component for rendering AI message with product suggestions
+  const renderAIMessageContent = (message) => {
+    if (!message.productSuggestions) {
+      return (
+        <Typography
+          variant="body2"
+          sx={{ wordBreak: "break-word", color: "white" }}
+        >
+          {message.text}
+        </Typography>
+      );
+    }
+
+    return (
+      <>
+        <Typography
+          variant="body2"
+          sx={{ wordBreak: "break-word", mb: 2, color: "white" }}
+        >
+          {message.text}
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {message.productSuggestions.map((product) => (
+            <Box
+              key={product.id}
+              sx={{
+                display: "flex",
+                p: 1,
+                borderRadius: 2,
+                border: "1px solid rgba(255,255,255,0.2)",
+                backgroundColor: "rgba(255,255,255,0.15)",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.25)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                },
+              }}
+              onClick={() => {
+                // Handle product click - in a real app this would navigate to product page
+                console.log(`Clicked on product: ${product.id}`);
+              }}
+            >
+              <Box
+                component="img"
+                src={product.image}
+                alt={product.name}
+                sx={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 1,
+                  mr: 1.5,
+                  objectFit: "cover",
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                }}
+              />
+              <Box sx={{ flex: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 500, color: "white" }}
+                >
+                  {product.name}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}
+                >
+                  {product.price}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+          <Button
+            variant="contained"
+            size="small"
+            sx={{
+              mt: 1,
+              alignSelf: "flex-start",
+              bgcolor: "white",
+              color: "#36D1DC",
+              fontWeight: 600,
+              "&:hover": {
+                bgcolor: "rgba(255,255,255,0.9)",
+              },
+            }}
+          >
+            Xem thêm sản phẩm
+          </Button>
+        </Box>
+      </>
+    );
   };
 
   return (
@@ -856,7 +1084,9 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                 className="chat-header"
               />
               <CardContent sx={{ p: 0 }}>
-                <Box sx={{ display: "flex", height: "500px" }}>
+                <Box
+                  sx={{ display: "flex", height: { xs: "70vh", sm: "500px" } }}
+                >
                   <Box
                     sx={{
                       width: { xs: "100%", sm: "40%" },
@@ -888,6 +1118,82 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                         }}
                       />
                     </Box>
+
+                    {/* AI Assistant chat button */}
+                    <Box
+                      sx={{
+                        p: 2,
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: "rgba(25, 118, 210, 0.05)",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        "&:hover": {
+                          backgroundColor: "rgba(25, 118, 210, 0.1)",
+                        },
+                      }}
+                      onClick={() => {
+                        setSelectedUser({
+                          id: "ai-assistant",
+                          name: "AI Shopping Assistant",
+                          avatar:
+                            "https://cdn-icons-png.flaticon.com/512/4712/4712027.png",
+                          isAI: true,
+                        });
+                        // Reset existing messages when switching to AI
+                        setMessages([
+                          {
+                            _id: "ai-welcome",
+                            senderId: "ai-assistant",
+                            text: "Xin chào! Tôi là trợ lý mua sắm AI. Tôi có thể giúp bạn tìm kiếm sản phẩm dựa trên mô tả của bạn. Bạn muốn tìm sản phẩm gì?",
+                            createdAt: new Date().toISOString(),
+                            isRead: true,
+                          },
+                        ]);
+                      }}
+                    >
+                      <Avatar
+                        src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+                        alt="AI Assistant"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          mr: 2,
+                          background:
+                            "linear-gradient(135deg, #42a5f5, #1976d2)",
+                          p: 0.5,
+                        }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            fontWeight: 600,
+                            color: "primary.main",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          AI Shopping Assistant
+                          <Chip
+                            label="AI"
+                            size="small"
+                            color="primary"
+                            sx={{ ml: 1, height: 20, fontSize: "0.7rem" }}
+                          />
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "text.secondary", fontSize: "0.85rem" }}
+                          noWrap
+                        >
+                          Tìm kiếm sản phẩm bằng trò chuyện thông minh
+                        </Typography>
+                      </Box>
+                    </Box>
+
                     <div className="chat-partner-list">
                       {chatPartners.length > 0 ? (
                         chatPartners.map((partner) => (
@@ -988,6 +1294,8 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                         p: 2,
                         display: "flex",
                         flexDirection: "column",
+                        maxHeight: "100%",
+                        height: "100%",
                       }}
                       className="chat-messages-container"
                     >
@@ -1058,6 +1366,7 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
 
                             const isMe =
                               message.senderId === account?.accountID;
+                            const isAI = message.senderId === "ai-assistant";
 
                             result.push(
                               <Fade in={true} key={message._id} timeout={500}>
@@ -1074,11 +1383,14 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                                   {!isMe && (
                                     <StyledAvatar
                                       src={
-                                        message.senderAvatar ||
-                                        "https://i.pravatar.cc/150?img=3"
+                                        isAI
+                                          ? "https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+                                          : message.senderAvatar ||
+                                            "https://i.pravatar.cc/150?img=3"
                                       }
                                       sx={{ mr: 1 }}
                                       isonline={
+                                        isAI ||
                                         onlineUsers.includes(message.senderId)
                                           ? "true"
                                           : "false"
@@ -1089,21 +1401,39 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                                   <MessageBubble
                                     sender={isMe ? "me" : "other"}
                                     className={`message-bubble ${
-                                      isMe ? "sent" : "received"
+                                      isMe ? "sent" : isAI ? "ai" : "received"
                                     }`}
+                                    sx={
+                                      isAI
+                                        ? {
+                                            background:
+                                              "linear-gradient(135deg, #5B86E5, #36D1DC)",
+                                            color: "white",
+                                            maxWidth: "80%",
+                                          }
+                                        : {}
+                                    }
                                   >
-                                    {message.text && (
-                                      <Typography
-                                        variant="body2"
-                                        sx={{ wordBreak: "break-word" }}
-                                      >
-                                        {message.text}
-                                      </Typography>
-                                    )}
+                                    {isAI ? (
+                                      renderAIMessageContent(message)
+                                    ) : (
+                                      <>
+                                        {message.text && (
+                                          <Typography
+                                            variant="body2"
+                                            sx={{ wordBreak: "break-word" }}
+                                          >
+                                            {message.text}
+                                          </Typography>
+                                        )}
 
-                                    {message.attachments &&
-                                      message.attachments.length > 0 &&
-                                      renderAttachments(message.attachments)}
+                                        {message.attachments &&
+                                          message.attachments.length > 0 &&
+                                          renderAttachments(
+                                            message.attachments
+                                          )}
+                                      </>
+                                    )}
 
                                     <Box
                                       sx={{
@@ -1153,6 +1483,28 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
                           {typingUsers[selectedUser?.id] && (
                             <Box sx={{ display: "flex", ml: 2, mb: 1 }}>
                               <div className="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                              </div>
+                            </Box>
+                          )}
+
+                          {/* AI typing indicator */}
+                          {aiTyping && selectedUser?.isAI && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                mb: 2,
+                              }}
+                            >
+                              <StyledAvatar
+                                src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+                                sx={{ mr: 1 }}
+                                isonline="true"
+                              />
+                              <div className="ai-typing-indicator">
                                 <span></span>
                                 <span></span>
                                 <span></span>
@@ -1417,6 +1769,110 @@ export const ChatBox = ({ isOpen, toggleChat, initialPartner = null }) => {
           }
         }
       `}</style>
+      {fullscreenImage && (
+        <div
+          className="custom-fullscreen-modal"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.98)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          onClick={handleCloseFullscreen}
+        >
+          <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 1500 }}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCloseFullscreen();
+              }}
+              sx={{
+                color: "#333",
+                backgroundColor: "rgba(240, 240, 240, 0.8)",
+                width: 40,
+                height: 40,
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              maxWidth: "90%",
+              maxHeight: "80%",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={fullscreenImage}
+              alt="Fullscreen"
+              className="fullscreen-image-viewer"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "80vh",
+                objectFit: "contain",
+                transform: `scale(${zoomLevel})`,
+                transition: "transform 0.2s ease",
+                userSelect: "none",
+              }}
+              onDoubleClick={handleDoubleClick}
+              draggable="false"
+            />
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: -60,
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                gap: "20px",
+                padding: "8px 16px",
+                borderRadius: "30px",
+                backgroundColor: "rgba(240, 240, 240, 0.8)",
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              <IconButton
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1}
+                sx={{
+                  color: zoomLevel <= 1 ? "#BBB" : "#333",
+                  backgroundColor: "white",
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                <ZoomOut />
+              </IconButton>
+
+              <IconButton
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 3}
+                sx={{
+                  color: zoomLevel >= 3 ? "#BBB" : "#333",
+                  backgroundColor: "white",
+                  width: 40,
+                  height: 40,
+                }}
+              >
+                <ZoomIn />
+              </IconButton>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

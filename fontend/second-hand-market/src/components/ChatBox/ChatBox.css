@@ -42,6 +42,8 @@
     .chat-partner-list {
         overflow-y: auto;
         height: calc(100% - 68px);
+        max-height: 100%;
+        scrollbar-width: thin;
     }
 
     .chat-partner-item {
@@ -111,6 +113,11 @@
         background-color: #fff;
         background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f0f0f0' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         scrollbar-width: thin;
+        max-height: 100%;
+        height: 100%;
+        overflow-y: auto !important;
+        overflow-x: hidden;
+        position: relative;
     }
 
     .messages-date-divider {
@@ -273,11 +280,40 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
+    /* Specific styling for images in chat */
+    .image-message {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .image-message:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    }
+
     .image-message .media-preview {
-        height: 200px;
+        height: auto;
+        max-height: 220px;
         overflow: hidden;
         background-color: #f0f0f0;
         position: relative;
+        border-radius: 16px;
+    }
+
+    .image-message img {
+        object-fit: contain;
+        max-height: 220px;
+        border-radius: 16px;
+        width: 100%;
+    }
+
+    /* Make sure the overlay fits the new image dimensions */
+    .image-message .media-overlay {
+        border-radius: 16px;
+        background: rgba(0, 0, 0, 0.4);
     }
 
     .video-message .media-preview {
@@ -293,6 +329,7 @@
         object-fit: cover;
         transition: transform 0.5s ease;
         cursor: pointer;
+        display: block;
     }
 
     .media-preview video {
@@ -534,4 +571,200 @@
         .message-bubble {
             max-width: 85%;
         }
+    }
+
+    /* AI Message Bubble styling */
+    .message-bubble.ai {
+        background: linear-gradient(135deg, #5B86E5, #36D1DC);
+        color: white;
+        box-shadow: 0 4px 12px rgba(91, 134, 229, 0.3);
+        border-radius: 4px 18px 18px 18px;
+        margin-right: 40px;
+        border: none;
+    }
+
+    .message-bubble.ai .MuiTypography-root {
+        color: white;
+    }
+
+    /* Special styling for AI in the chat list */
+    .ai-chat-item {
+        background: linear-gradient(45deg, rgba(91, 134, 229, 0.08), rgba(54, 209, 220, 0.08));
+        border-left: 3px solid #5B86E5 !important;
+    }
+
+    .ai-chat-item:hover {
+        background: linear-gradient(45deg, rgba(91, 134, 229, 0.12), rgba(54, 209, 220, 0.12)) !important;
+    }
+
+    .ai-badge {
+        background: linear-gradient(135deg, #5B86E5, #36D1DC);
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 8px;
+    }
+
+    /* AI Typing indicator animation */
+    .ai-typing-indicator {
+        display: flex;
+        align-items: center;
+        background: linear-gradient(135deg, rgba(91, 134, 229, 0.15), rgba(54, 209, 220, 0.15));
+        padding: 10px 16px;
+        border-radius: 16px;
+        width: max-content;
+        animation: fadeIn 0.5s ease;
+        border: 1px solid rgba(91, 134, 229, 0.2);
+        box-shadow: 0 3px 10px rgba(91, 134, 229, 0.1);
+        margin-bottom: 8px;
+    }
+
+    .ai-typing-indicator span {
+        height: 8px;
+        width: 8px;
+        background: linear-gradient(135deg, #5B86E5, #36D1DC);
+        border-radius: 50%;
+        margin: 0 2px;
+        display: inline-block;
+        animation: aiTyping 1.3s infinite ease-in-out;
+    }
+
+    .ai-typing-indicator span:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .ai-typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .ai-typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes aiTyping {
+        0% {
+            transform: translateY(0px) scale(1);
+            opacity: 0.6;
+        }
+        50% {
+            transform: translateY(-6px) scale(1.2);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(0px) scale(1);
+            opacity: 0.6;
+        }
+    }
+
+    /* Product and Order message styles */
+    .product-message, .order-message {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        background-color: white;
+        max-width: 280px;
+        margin: 8px 0;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .product-message:hover, .order-message:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-message img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .product-message .product-info {
+        padding: 12px;
+    }
+
+    .product-message .product-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .product-message .product-price {
+        color: #1976d2;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .order-message .order-header {
+        background-color: #1976d2;
+        color: white;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+    }
+
+    .order-message .order-header svg {
+        margin-right: 8px;
+    }
+
+    .order-message .order-content {
+        padding: 12px;
+    }
+
+    .order-message .order-id {
+        font-weight: 600;
+        color: #1976d2;
+    }
+
+    .order-message .order-status {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 8px;
+    }
+
+    .order-message .order-status.completed {
+        background-color: #e6f7ed;
+        color: #2e7d32;
+    }
+
+    .order-message .order-status.pending {
+        background-color: #fff4e5;
+        color: #ed6c02;
+    }
+
+    .order-message .order-details {
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .order-message .order-total {
+        margin-top: 8px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    /* Dialog styles */
+    .dialog-product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .dialog-product-item {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .dialog-product-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }

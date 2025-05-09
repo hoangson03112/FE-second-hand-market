@@ -10,7 +10,6 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const [account, setAccount] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
-  const navigate = useNavigate();
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
 
   const handleLogout = () => {

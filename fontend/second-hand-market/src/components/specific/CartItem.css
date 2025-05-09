@@ -12,3 +12,14 @@
   text-align: center; /* Căn giữa nội dung */
   font-weight: 600;
 }
+
+.delete-icon {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #e74c3c;
+}
+
+.delete-icon:hover {
+  transform: scale(1.15);
+  color: #c0392b;
+}

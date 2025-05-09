@@ -3,7 +3,7 @@ import { Table, Button, Card } from "react-bootstrap";
 import "./Cart.css";
 import "../../../src/styles/theme.css";
 import CartItem from "../../components/specific/CartItem";
-import axios from "axios";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AccountContext from "../../contexts/AccountContext";
 import { useNavigate } from "react-router-dom";
 import { useProduct } from "../../contexts/ProductContext";
@@ -59,7 +59,7 @@ const Cart = () => {
           });
           setProducts(productsWithQuantity);
         } else {
-          setProducts([]); // Xóa hết sản phẩm khi giỏ hàng rỗng
+          setProducts([]);
         }
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -185,7 +185,7 @@ const Cart = () => {
   return (
     <div className="container vh-100">
       <nav aria-label="breadcrumb">
-        <ol className="breadcrumb d-flex align-items-center mt-4">
+        <ol className="breadcrumb d-flex align-items-center pt-4">
           <li className="ms-3">
             <a
               href="/eco-market/home"
@@ -204,7 +204,7 @@ const Cart = () => {
         <div className="card p-3 shadow" style={{ transform: "none" }}>
           <Table borderless className="table-hover">
             <thead>
-              <tr className="text-center bg-light text-nowrap">
+              <tr className=" text-center bg-light text-nowrap">
                 <th>
                   <label className="custom-checkbox">
                     <input
@@ -219,8 +219,8 @@ const Cart = () => {
                 <th>Sản Phẩm</th>
                 <th>Đơn Giá</th>
                 <th>Số Lượng</th>
-                <th>Số Tiền</th>
-                <th>Thao Tác</th>
+                <th>Thành Tiền</th>
+                <th style={{ width: "5%" }}></th>
               </tr>
             </thead>
             <CartItem
@@ -237,18 +237,23 @@ const Cart = () => {
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
-                <Button
-                  variant="link"
-                  className="text-primary-custom p-0 text-decoration-none"
-                  onClick={handleDeleteSelected}
-                >
-                  <i className="bi bi-trash icon-primary"></i> Xóa
-                </Button>
+                {Object.values(checkedItems).some(
+                  (value) => typeof value === "boolean" && value === true
+                ) && (
+                  <Button
+                    variant="link"
+                    className="d-flex font-monospace fs-5 align-items-center text-danger text-decoration-none"
+                    onClick={handleDeleteSelected}
+                  >
+                    <DeleteOutlineIcon className="delete-icon" />
+                    <span>Xóa</span>
+                  </Button>
+                )}
               </div>
               <div className="text-right">
                 <p className="mb-0 font-weight-bold me-3">
                   Tổng tiền ({getSelectedCount()} Sản phẩm):{" "}
-                  <strong className="text-gradient fs-5 ms-2">
+                  <strong className="text-danger fs-5 ms-2">
                     {totalAmount.toLocaleString()}₫
                   </strong>
                 </p>

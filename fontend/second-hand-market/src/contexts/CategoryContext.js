@@ -53,7 +53,6 @@ export const CategoryProvider = ({ children }) => {
     }
   };
 
-  // Các giá trị và phương thức để cung cấp thông qua context
   const contextValue = {
     getCategories,
     getCategory,

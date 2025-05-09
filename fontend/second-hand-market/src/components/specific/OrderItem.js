@@ -4,7 +4,9 @@ import CancelOrderModal from "../../components/specific/CancelOrderModal";
 import { formatPrice } from "../../utils/function";
 import { useOrder } from "../../contexts/OrderContext";
 import AccountContext from "../../contexts/AccountContext";
+import { useChat } from "../../contexts/ChatContext";
 const OrderItem = ({ order, setOrders }) => {
+  const { setOpenChat } = useChat();
   const { getProduct } = useProduct();
   const { updateOrder } = useOrder();
   const [products, setProducts] = useState([]);
@@ -85,7 +87,10 @@ const OrderItem = ({ order, setOrders }) => {
       case "PENDING":
         return (
           <>
-            <button className="btn btn-outline-secondary btn-sm">
+            <button
+              className="btn btn-outline-secondary btn-sm"
+              onClick={() => handleContactSeller(order)}
+            >
               Liên hệ với người bán
             </button>
             <button
@@ -102,6 +107,12 @@ const OrderItem = ({ order, setOrders }) => {
             <button className="btn btn-outline-primary btn-sm">
               Yêu cầu trả hàng
             </button>
+            <button
+              onClick={() => handleContactSeller(order)}
+              className="btn btn-outline-danger btn-sm mx-2"
+            >
+              Liên hệ người bán
+            </button>
             <button className="btn btn-outline-danger btn-sm mx-2">
               Đã nhận được hàng
             </button>
@@ -111,6 +122,12 @@ const OrderItem = ({ order, setOrders }) => {
         return (
           <>
             <button className="btn btn-outline-dark btn-sm">Mua lại</button>
+            <button
+              onClick={() => handleContactSeller(order)}
+              className="btn btn-outline-danger btn-sm mx-2"
+            >
+              Liên hệ người bán
+            </button>
             <button className="btn btn-outline-danger btn-sm mx-2">
               Đánh giá
             </button>
@@ -121,7 +138,10 @@ const OrderItem = ({ order, setOrders }) => {
         return (
           <>
             <button className="btn btn-outline-dark btn-sm">Mua lại</button>
-            <button className="btn btn-outline-danger btn-sm mx-2">
+            <button
+              onClick={() => handleContactSeller(order)}
+              className="btn btn-outline-danger btn-sm mx-2"
+            >
               Liên hệ người bán
             </button>
           </>
@@ -131,6 +151,20 @@ const OrderItem = ({ order, setOrders }) => {
     }
   };
 
+  const handleContactSeller = (order) => {
+    setOpenChat(true);
+    console.log(order);
+    const tempMsgId = `temp-${Date.now()}`;
+    const tempMsg = {
+      _id: tempMsgId,
+      senderId: localStorage.getItem("user")._id,
+      receiverId: order.sellerId,
+      type: "order",
+      createdAt: new Date().toISOString(),
+      isRead: false,
+      isPending: true,
+    };
+  };
   return (
     <div>
       <div className="mb-2">

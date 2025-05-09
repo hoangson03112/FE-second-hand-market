@@ -69,8 +69,8 @@ const MyOrder = () => {
       </ul>
 
       <div style={{ minHeight: "60vh" }}>
-        {filteredOrders.length > 0 &&
-          filteredOrders.map((order, index) => (
+        {filteredOrders?.length > 0 &&
+          filteredOrders?.map((order, index) => (
             <div className="border p-3 pb-5 mb-3" key={index}>
               <OrderItem order={order} setOrders={setOrders} />
             </div>

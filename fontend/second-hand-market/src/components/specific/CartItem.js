@@ -2,6 +2,7 @@ import React, { memo } from "react";
 import { Button } from "react-bootstrap";
 import "./CartItem.css";
 import "../../../src/styles/theme.css";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 const CartItem = memo(
   ({
@@ -25,11 +26,11 @@ const CartItem = memo(
 
           return (
             <React.Fragment key={seller._id}>
-              <tr>
+              <tr className="border-top mt-3">
                 <td colSpan="6">
                   <div className="d-flex align-items-center w-100 mb-2">
                     <img
-                      src={seller.avatar}
+                      src={seller?.avatar}
                       alt="Avatar"
                       className="rounded-circle"
                       width="50"
@@ -73,7 +74,9 @@ const CartItem = memo(
                       </p>
                     </div>
                   </td>
-                  <td className="text-primary-custom">{product.price?.toLocaleString()}₫</td>
+                  <td className="text-primary-custom">
+                    {product.price?.toLocaleString()}₫
+                  </td>
                   <td>
                     <div className="d-flex align-items-center justify-content-center">
                       <Button
@@ -84,7 +87,7 @@ const CartItem = memo(
                       >
                         -
                       </Button>
-                      <div className="quantity-span mx-2">
+                      <div className="quantity-span px-2">
                         {product.quantity || 0}
                       </div>
                       <Button
@@ -97,17 +100,14 @@ const CartItem = memo(
                       </Button>
                     </div>
                   </td>
-                  <td className="text-gradient fw-bold">
+                  <td className="text-danger fw-bold">
                     {(product.price * product.quantity).toLocaleString()}₫
                   </td>
-                  <td>
-                    <Button
-                      variant="link"
-                      className="text-primary-custom p-0 text-decoration-none"
+                  <td className="text-start">
+                    <DeleteForeverIcon
+                      className="delete-icon"
                       onClick={() => onDeleteItem([product._id])}
-                    >
-                      <i className="bi bi-trash icon-primary"></i> Xóa
-                    </Button>
+                    />
                   </td>
                 </tr>
               ))}

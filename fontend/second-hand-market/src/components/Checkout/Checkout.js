@@ -1,14 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  Button,
-  Modal,
-  Form,
-  Row,
-  Col,
-  Badge,
-  Dropdown,
-} from "react-bootstrap";
+import { Button, Modal, Form, Row, Col } from "react-bootstrap";
 import "./Checkout.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -37,7 +29,7 @@ const Checkout = () => {
     ward: "",
     district: "",
     province: "",
-    default: false,
+    isDefault: false,
   });
 
   // States for location suggestions
@@ -54,9 +46,7 @@ const Checkout = () => {
   const API_URL =
     "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data";
 
-  const getDefaultAddress = () => {
-    return addresses.find((address) => address.default === true);
-  };
+
 
   const formatAddress = (address) => {
     if (!address) return "";
@@ -84,7 +74,7 @@ const Checkout = () => {
       setAddresses(addresses);
 
       const defaultAddress = addresses.find(
-        (address) => address.default === true
+        (address) => address.isDefault === true
       );
       setSelectedAddress(defaultAddress);
     };
@@ -158,22 +148,7 @@ const Checkout = () => {
 
     fetchWards();
   }, [newAddress.district, districts]);
-  const handleProvinceChange = (e) => {
-    setNewAddress({
-      ...newAddress,
-      province: e.target.value,
-      district: "",
-      ward: "",
-    });
-  };
 
-  const handleDistrictChange = (e) => {
-    setNewAddress({ ...newAddress, district: e.target.value, ward: "" });
-  };
-
-  const handleWardChange = (e) => {
-    setNewAddress({ ...newAddress, ward: e.target.value });
-  };
   const getTotalAmount = () => {
     return selectedItems.reduce((total, item) => {
       const product = products.find((p) => p._id === item.productId);
@@ -288,7 +263,6 @@ const Checkout = () => {
       [name]: type === "checkbox" ? checked : value,
     });
 
-    // Filter suggestions based on input
     if (name === "province") {
       const filtered = provinces.filter((province) =>
         (province.ProvinceName || "")
@@ -343,7 +317,6 @@ const Checkout = () => {
 
   const handleAddNewAddress = async () => {
     try {
-      // Validate form
       if (
         !newAddress.fullName ||
         !newAddress.phoneNumber ||
@@ -356,19 +329,16 @@ const Checkout = () => {
         return;
       }
 
-      // Add new address via API
-      await AddressContext.addAddress(newAddress);
+      await AddressContext.createAddress(newAddress);
 
-      // Refresh addresses list
       const updatedAddresses = await AddressContext.getAddresses();
       setAddresses(updatedAddresses);
 
       const addedAddress = updatedAddresses[updatedAddresses.length - 1];
-      if (newAddress.default || updatedAddresses.length === 1) {
+      if (newAddress.isDefault || updatedAddresses.length === 1) {
         setSelectedAddress(addedAddress);
       }
 
-      // Reset form and close it
       setNewAddress({
         fullName: "",
         phoneNumber: "",
@@ -376,7 +346,7 @@ const Checkout = () => {
         ward: "",
         district: "",
         province: "",
-        default: false,
+        isDefault: false,
       });
       setShowNewAddressForm(false);
     } catch (error) {
@@ -461,7 +431,7 @@ const Checkout = () => {
                           <span className="ms-2">
                             {currentUser?.phoneNumber}
                           </span>
-                          {address.default && (
+                          {address.isDefault && (
                             <span className="badge bg-danger ms-2">
                               Mặc định
                             </span>
@@ -548,7 +518,7 @@ const Checkout = () => {
                         value={newAddress.phoneNumber}
                         onChange={handleNewAddressChange}
                         className="form-control-clean"
-                        style={{ paddingLeft: 38 }}
+                        style={{ paddingLeft: 18 }}
                       />
                     </Form.Group>
                   </Col>
@@ -725,16 +695,16 @@ const Checkout = () => {
                     value={newAddress.specificAddress}
                     onChange={handleNewAddressChange}
                     className="form-control-clean"
-                    style={{ paddingLeft: 38 }}
+                    style={{ paddingLeft: 18 }}
                   />
                 </Form.Group>
 
                 <Form.Group className="mb-3" controlId="isDefault">
                   <Form.Check
                     type="checkbox"
-                    name="default"
+                    name="isDefault"
                     label="Đặt làm địa chỉ mặc định"
-                    checked={newAddress.default}
+                    checked={newAddress.isDefault}
                     onChange={handleNewAddressChange}
                   />
                 </Form.Group>
@@ -764,7 +734,6 @@ const Checkout = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Add CSS for autocomplete dropdown */}
       <style jsx>{`
         .form-control-clean {
           border-radius: 8px;

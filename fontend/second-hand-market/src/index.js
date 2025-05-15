@@ -5,11 +5,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import './styles/theme.css';
+import './styles/CSS/theme.css';
 import "./index.css";
 import "swiper/css"; 
 import "swiper/css/navigation"; 
 import "swiper/css/pagination"; 
+
+
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

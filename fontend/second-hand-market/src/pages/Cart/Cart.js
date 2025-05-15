@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Table, Button, Card } from "react-bootstrap";
 import "./Cart.css";
-import "../../../src/styles/theme.css";
 import CartItem from "../../components/specific/CartItem";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AccountContext from "../../contexts/AccountContext";

@@ -3,13 +3,12 @@ import { useState } from "react";
 import Header from "./Header/Header";
 import { Footer } from "./Footer/Footer";
 import { ChatBox } from "../ChatBox/ChatBox";
-import "../../../src/styles/theme.css";
 import "./Layout.css";
 import { useChat } from "../../contexts/ChatContext";
 
 const Layout = ({ children }) => {
-  const { openChat, setOpenChat } = useChat();
-  const toggleChat = () => setOpenChat(!openChat);
+  const { openChat, toggleChat } = useChat();
+
   return (
     <div>
       <Header />
@@ -24,7 +23,7 @@ const Layout = ({ children }) => {
         <i className="bi bi-wechat"></i>
       </span>
 
-      <ChatBox isOpen={openChat} toggleChat={toggleChat} />
+      <ChatBox />
     </div>
   );
 };

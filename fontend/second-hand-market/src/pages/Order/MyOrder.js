@@ -19,7 +19,6 @@ const MyOrder = () => {
     { label: "Trả hàng/Hoàn tiền", value: "REFUND" },
   ];
 
-  // Hàm lấy danh sách đơn hàng
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -38,7 +37,6 @@ const MyOrder = () => {
   }, []);
 
   useEffect(() => {
-    // Cập nhật filteredOrders mỗi khi activeTab hoặc orders thay đổi
     if (activeTab === "ALL") {
       setFilteredOrders(orders);
     } else {
@@ -52,18 +50,17 @@ const MyOrder = () => {
       <ul className="nav nav-tabs border-bottom-0">
         {tabs.map((tab) => (
           <li className="nav-item" key={tab.value}>
-            <a
+            <span
               className={`nav-link ${
                 activeTab === tab.value ? "active text-danger" : "text-muted"
-              }`}
-              href="/"
+              } hover:text-primary hover:font-semibold transition`}
               onClick={(e) => {
                 e.preventDefault();
                 setActiveTab(tab.value);
               }}
             >
               {tab.label}
-            </a>
+            </span>
           </li>
         ))}
       </ul>

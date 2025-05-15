@@ -52,9 +52,8 @@ import { formatDate } from "./../../utils/function";
 import { useProduct } from "../../contexts/ProductContext";
 import { useAuth } from "../../contexts/AuthContext";
 import authService from "../../services/authService";
-import "../../../src/styles/theme.css";
 
-// Tạo theme với màu chủ đạo từ biến CSS
+
 const theme = createTheme({
   palette: {
     primary: {

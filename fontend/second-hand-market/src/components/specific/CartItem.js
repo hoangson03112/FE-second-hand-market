@@ -1,7 +1,6 @@
 import React, { memo } from "react";
 import { Button } from "react-bootstrap";
 import "./CartItem.css";
-import "../../../src/styles/theme.css";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
 const CartItem = memo(

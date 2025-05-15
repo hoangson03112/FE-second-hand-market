@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Button, Modal, Form, Row, Col } from "react-bootstrap";
-import "./Checkout.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -9,6 +8,7 @@ import { useCart } from "../../contexts/CartContext";
 import { useProduct } from "../../contexts/ProductContext";
 import AddressContext from "../../contexts/AddressContext";
 import { useAuth } from "../../contexts/AuthContext";
+import AccountContext from "../../contexts/AccountContext";
 const Checkout = () => {
   const { getProduct } = useProduct();
   const { deleteItem } = useCart();
@@ -45,9 +45,7 @@ const Checkout = () => {
   const GHN_TOKEN = "53135f42-2c23-11f0-9b81-222185cb68c8";
   const API_URL =
     "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data";
-
-
-
+  const [sellers, setSellers] = useState([]);
   const formatAddress = (address) => {
     if (!address) return "";
     const { specificAddress, ward, district, province } = address;
@@ -83,7 +81,29 @@ const Checkout = () => {
     fetchAddresses();
   }, [selectedItems]);
 
-  // Fetch provinces
+  useEffect(() => {
+    const fetchSellers = async () => {
+      try {
+        const uniqueSellerIds = Array.from(
+          new Set(products.map((product) => product.sellerId))
+        );
+
+        const sellerPromises = uniqueSellerIds.map((sellerId) =>
+          AccountContext.getAccount(sellerId)
+        );
+        const sellersData = await Promise.all(sellerPromises);
+
+        setSellers(sellersData);
+      } catch (err) {
+        console.error("Error fetching sellers:", err);
+      }
+    };
+
+    if (products.length > 0) {
+      fetchSellers();
+    }
+  }, [products]);
+
   useEffect(() => {
     const fetchProvinces = async () => {
       try {
@@ -160,7 +180,7 @@ const Checkout = () => {
     const ids = selectedItems.map((item) => item.productId);
     await deleteItem(ids);
   };
-  console.log(currentUser);
+
   const handlePlaceOrder = async () => {
     const orderData = {
       products: selectedItems.map((item) => ({
@@ -170,12 +190,7 @@ const Checkout = () => {
       totalAmount: getTotalAmount(),
       shippingMethod,
       paymentMethod: "cod",
-      shippingAddress: {
-        name: "Hoàng Sơn",
-        phone: "(+84) 332454556",
-        address:
-          "132/50, Mễ Trì Thượng, Phường Mễ Trì, Quận Nam Từ Liêm, Hà Nội",
-      },
+      shippingAddress: selectedAddress?._id,
     };
 
     try {
@@ -220,7 +235,7 @@ const Checkout = () => {
         const orderPayload = {
           totalAmount: getTotalAmount(),
           shippingMethod,
-          paymentMethod: "cod", // Luôn sử dụng COD
+          paymentMethod: "cod",
           shippingAddress: orderData.shippingAddress,
           sellerId: order.sellerId,
           products: order.products,
@@ -387,7 +402,6 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Enhanced Address Selection Modal */}
       <Modal
         show={showAddressModal}
         onHide={() => setShowAddressModal(false)}
@@ -856,10 +870,8 @@ const Checkout = () => {
                 <tr className="bg-light">
                   <th
                     className="fs-5 fw-normal text-start"
-                    style={{ width: "50%" }}
-                  >
-                    Sản phẩm
-                  </th>
+                    style={{ width: "60%" }}
+                  ></th>
                   <th
                     className="fs-6 fw-normal text-center"
                     style={{ width: "15%" }}
@@ -881,45 +893,79 @@ const Checkout = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => {
-                  const item = selectedItems.find(
-                    (item) => item.productId === product._id
+                {sellers.map((seller) => {
+                  const sellerProducts = products.filter(
+                    (product) => product.sellerId === seller._id
                   );
-                  return item ? (
-                    <tr key={product._id}>
-                      <td className="text-start">
-                        <img
-                          src={product.avatar}
-                          alt={product.name}
-                          className="img-fluid"
-                          style={{
-                            width: "80px",
-                            height: "100px",
-                            objectFit: "contain",
-                            display: "inline-block",
-                            verticalAlign: "middle",
-                          }}
-                        />
-                        <div
-                          className="ms-3"
-                          style={{
-                            display: "inline-block",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          <p className="mb-1 fw-bold">{product.name}</p>
-                          <p className="text-muted mb-0">
-                            Loại: {product.brand} - {product.color}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="text-center">{product.price}₫</td>
-                      <td className="text-center">{item.quantity}</td>
-                      <td className="text-center text-danger">
-                        {(item.quantity * product.price).toLocaleString()}₫
-                      </td>
-                    </tr>
-                  ) : null;
+
+                  if (sellerProducts.length === 0) {
+                    return null;
+                  }
+                  return (
+                    <React.Fragment key={seller._id}>
+                      <tr className="border-top mt-3">
+                        <td colSpan="6">
+                          <div className="d-flex align-items-center w-100 mb-2">
+                            <img
+                              src={seller?.avatar}
+                              alt="Avatar"
+                              className="rounded-circle"
+                              width="50"
+                              height="50"
+                            />
+                            <span className="ms-3 text-primary-custom">
+                              {seller.fullName || "Loading..."}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {sellerProducts.map((product) => {
+                        const item = selectedItems.find(
+                          (item) => item.productId === product._id
+                        );
+                        return item ? (
+                          <tr key={product._id}>
+                            <td className="text-start">
+                              <img
+                                src={product.avatar}
+                                alt={product.name}
+                                className="img-fluid"
+                                style={{
+                                  width: "80px",
+                                  height: "100px",
+                                  objectFit: "contain",
+                                  display: "inline-block",
+                                  verticalAlign: "middle",
+                                }}
+                              />
+                              <div
+                                className="ms-3"
+                                style={{
+                                  display: "inline-block",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                <p className="mb-1 fw-bold">{product.name}</p>
+                                <p className="text-muted mb-0">
+                                  Loại: {product.brand} - {product.color}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="text-center">
+                              {product.price.toLocaleString("vi-VN")}₫
+                            </td>
+                            <td className="text-center">{item.quantity}</td>
+                            <td className="text-center text-danger">
+                              {(item.quantity * product.price).toLocaleString(
+                                "vi-VN"
+                              )}
+                              ₫
+                            </td>
+                          </tr>
+                        ) : null;
+                      })}
+                    </React.Fragment>
+                  );
                 })}
               </tbody>
             </table>
@@ -1092,7 +1138,7 @@ const Checkout = () => {
             <span className="text-primary">Điều khoản eco-market</span>
           </label>
           <Button
-            className="btn btn-danger float-end"
+            className="btn btn-danger float-end mb-2"
             onClick={handlePlaceOrder}
           >
             Đặt hàng

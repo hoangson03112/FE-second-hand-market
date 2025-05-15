@@ -1,15 +1,16 @@
 .btn-circle {
-  width: 1.9rem; /* Điều chỉnh kích thước theo ý muốn */
-  height: 1.9rem; /* Điều chỉnh kích thước theo ý muốn */
+  width: 1.9rem;
+  height: 1.9rem;
   color: white;
-  border-radius: 50%; /* Đảm bảo hình tròn */
-  font-size: 16px; /* Điều chỉnh kích thước chữ theo ý muốn */
+  border-radius: 50%;
+  font-size: 16px;
   background: var(--primary-gradient) !important;
 }
+
 .quantity-span {
   display: inline-block;
   width: 45px;
-  text-align: center; /* Căn giữa nội dung */
+  text-align: center;
   font-weight: 600;
 }
 

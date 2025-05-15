@@ -43,6 +43,12 @@ import { io } from "socket.io-client";
 import AccountContext from "../../contexts/AccountContext";
 import axios from "axios";
 import "./ChatBox.css";
+import { useChat } from "../../contexts/ChatContext";
+import ImageMessage from "./MessageTypes/ImageMessage";
+import VideoMessage from "./MessageTypes/VideoMessage";
+import FileMessage from "./MessageTypes/FileMessage";
+import ProductMessage from "./MessageTypes/ProductMessage";
+import OrderMessage from "./MessageTypes/OrderMessage";
 const socket = io("http://localhost:2000");
 
 // Styled components with enhanced design
@@ -84,9 +90,183 @@ const MessageBubble = styled(Box)(({ theme, sender }) => ({
   animation: "fadeIn 0.3s ease",
 }));
 
-export const ChatBox = ({ isOpen, toggleChat }) => {
+// AI Message Component
+const AIMessage = ({ message }) => {
+  if (!message.productSuggestions) {
+    return (
+      <Typography
+        variant="body2"
+        sx={{ wordBreak: "break-word", color: "white" }}
+      >
+        {message.text}
+      </Typography>
+    );
+  }
+
+  return (
+    <>
+      <Typography
+        variant="body2"
+        sx={{ wordBreak: "break-word", mb: 2, color: "white" }}
+      >
+        {message.text}
+      </Typography>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        {message.productSuggestions.map((product) => (
+          <Box
+            key={product.id}
+            sx={{
+              display: "flex",
+              p: 1,
+              borderRadius: 2,
+              border: "1px solid rgba(255,255,255,0.2)",
+              backgroundColor: "rgba(255,255,255,0.15)",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.25)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+              },
+            }}
+            onClick={() => {
+              // Handle product click - in a real app this would navigate to product page
+              console.log(`Clicked on product: ${product.id}`);
+            }}
+          >
+            <Box
+              component="img"
+              src={product.image}
+              alt={product.name}
+              sx={{
+                width: 60,
+                height: 60,
+                borderRadius: 1,
+                mr: 1.5,
+                objectFit: "cover",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+              }}
+            />
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 500, color: "white" }}
+              >
+                {product.name}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}
+              >
+                {product.price}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+        <Button
+          variant="contained"
+          size="small"
+          sx={{
+            mt: 1,
+            alignSelf: "flex-start",
+            bgcolor: "white",
+            color: "#36D1DC",
+            fontWeight: 600,
+            "&:hover": {
+              bgcolor: "rgba(255,255,255,0.9)",
+            },
+          }}
+        >
+          Xem thêm sản phẩm
+        </Button>
+      </Box>
+    </>
+  );
+};
+
+// Component for message content based on type
+const MessageContent = ({ message, setFullscreenImage }) => {
+  // Handle AI messages
+  if (message.senderId === "ai-assistant") {
+    return <AIMessage message={message} />;
+  }
+
+  // Handle different message types
+  if (
+    (message.type === "product" && message.product) ||
+    (message.type === "product" && message.productId)
+  ) {
+    // Nếu có trường product đã được populate, sử dụng nó
+    // Nếu không có product nhưng có productId, tạo đối tượng product từ productId
+    const productData = message.product || {
+      id: message.productId,
+      _id: message.productId,
+      name: message.text || "Sản phẩm được chia sẻ",
+      price: "",
+      image:
+        message.media && message.media.length > 0 ? message.media[0].url : null,
+    };
+
+    return <ProductMessage product={productData} />;
+  } else if (message.type === "order" && message.order) {
+    return <OrderMessage order={message.order} />;
+  } else {
+    return (
+      <>
+        {message.text && (
+          <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+            {message.text}
+          </Typography>
+        )}
+
+        {message.media && message.media.length > 0 && (
+          <div className="media-message-container">
+            {message.media.map((attachment) => {
+              const source = attachment.url || "";
+              const fileType = attachment.type || "";
+
+              if (
+                fileType.startsWith("image/") ||
+                source.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+              ) {
+                return (
+                  <ImageMessage
+                    key={attachment.id || attachment._id}
+                    attachment={attachment}
+                    setFullscreenImage={setFullscreenImage}
+                  />
+                );
+              } else if (
+                fileType.startsWith("video/") ||
+                source.match(/\.(mp4|webm|ogg|mov)$/i)
+              ) {
+                return (
+                  <VideoMessage
+                    key={attachment.id || attachment._id}
+                    attachment={attachment}
+                  />
+                );
+              } else {
+                return (
+                  <FileMessage
+                    key={attachment.id || attachment._id}
+                    attachment={attachment}
+                  />
+                );
+              }
+            })}
+          </div>
+        )}
+      </>
+    );
+  }
+};
+
+export const ChatBox = () => {
+  const { selectedUserToShow, openChat, toggleChat, setSelectedUserToShow } =
+    useChat();
   const [hasScroll, setHasScroll] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+
   const chatRef = useRef(null);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -101,18 +281,19 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   const [typingUsers, setTypingUsers] = useState({});
   const [typingTimeout, setTypingTimeout] = useState(null);
 
-  // File upload states
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const [attachmentMenuAnchor, setAttachmentMenuAnchor] = useState(null);
 
-  // Fullscreen image viewer states
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  // AI typing indicator
   const [aiTyping, setAiTyping] = useState(false);
+
+  const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [pagination, setPagination] = useState({});
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Function to handle zoom in
   const handleZoomIn = (e) => {
@@ -147,7 +328,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     const fetchChatPartners = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:2000/eco-market/chat/partners",
+          "http://localhost:2000/eco-market/chat/conversations",
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -228,27 +409,21 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   const handleSendMessage = async () => {
     if (
       (!message.trim() && attachments.length === 0) ||
-      !selectedUser ||
+      !selectedUserToShow ||
       !account?.accountID
     ) {
-      console.warn("[ACTION] Cannot send: missing data", {
-        message,
-        attachments,
-        selectedUser,
-        account,
-      });
       return;
     }
 
     // Handle AI chat differently
-    if (selectedUser.isAI) {
+    if (selectedUserToShow.isAI) {
       setIsLoading(true);
 
       const tempMsgId = `temp-${Date.now()}`;
       const userMessage = {
         _id: tempMsgId,
         senderId: account.accountID,
-        receiverId: selectedUser.id,
+        receiverId: selectedUserToShow._id,
         text: message.trim(),
         createdAt: new Date().toISOString(),
         isRead: true,
@@ -263,64 +438,6 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
         setAiTyping(true);
       }, 500);
 
-      // Simulate AI response after a longer delay
-      setTimeout(() => {
-        // Mock AI response logic - In a real app, this would call your backend AI service
-        let aiResponse = {
-          _id: `ai-${Date.now()}`,
-          senderId: "ai-assistant",
-          receiverId: account.accountID,
-          createdAt: new Date().toISOString(),
-          isRead: true,
-        };
-
-        // Simple keyword-based responses for demonstration
-        const userMessageLower = message.toLowerCase().trim();
-
-        if (
-          userMessageLower.includes("áo") ||
-          userMessageLower.includes("quần") ||
-          userMessageLower.includes("giày")
-        ) {
-          aiResponse.text = `Tôi đã tìm thấy một số sản phẩm phù hợp với "${message.trim()}". Bạn có thể xem chi tiết tại đây:`;
-          aiResponse.productSuggestions = [
-            {
-              id: 1,
-              name: "Sản phẩm tương tự 1",
-              price: "320.000đ",
-              image: "https://via.placeholder.com/80",
-            },
-            {
-              id: 2,
-              name: "Sản phẩm tương tự 2",
-              price: "450.000đ",
-              image: "https://via.placeholder.com/80",
-            },
-          ];
-        } else if (
-          userMessageLower.includes("giá") ||
-          userMessageLower.includes("tiền")
-        ) {
-          aiResponse.text =
-            "Khoảng giá nào bạn đang tìm kiếm? Tôi có thể giúp lọc sản phẩm theo ngân sách của bạn.";
-        } else if (
-          userMessageLower.includes("cảm ơn") ||
-          userMessageLower.includes("thank")
-        ) {
-          aiResponse.text =
-            "Rất vui được giúp đỡ bạn! Bạn có cần tìm thêm sản phẩm nào nữa không?";
-        } else {
-          aiResponse.text = `Tôi sẽ tìm kiếm "${message.trim()}" cho bạn. Bạn có thể cung cấp thêm chi tiết như màu sắc, kích thước hoặc thương hiệu không?`;
-        }
-
-        // Hide the typing indicator when we get the response
-        setAiTyping(false);
-
-        setMessages((prev) => [...prev, aiResponse]);
-        setTimeout(scrollToBottom, 100);
-        setIsLoading(false);
-      }, 2500); // Longer delay to make typing effect visible
-
       return;
     }
 
@@ -330,16 +447,15 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       const tempMsgId = `temp-${Date.now()}`;
       const tempMsg = {
         _id: tempMsgId,
-        senderId: account.accountID,
-        receiverId: selectedUser.id,
+        currentConversationId: currentConversationId,
         text: message.trim(),
-        attachments: attachments.map((attachment) => ({
+        media: attachments.map((attachment) => ({
           id: attachment.id,
           type: attachment.type,
           name: attachment.name,
           url: attachment.preview,
         })),
-        type: "file",
+        type: "text",
         createdAt: new Date().toISOString(),
         isRead: false,
         isPending: true,
@@ -360,8 +476,8 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
           formData.append("fileNames", attachment.name);
         });
 
-        formData.append("receiverId", selectedUser.id);
-        formData.append("text", message.trim());
+        formData.append("currentConversationId", currentConversationId);
+        formData.append("receiverId", selectedUserToShow._id);
         formData.append("tempMsgId", tempMsgId);
 
         const response = await axios.post(
@@ -375,23 +491,39 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
           }
         );
 
-        console.log(
-          "Message with attachments sent via backend:",
-          response.data
-        );
-
         setTimeout(scrollToBottom, 100);
       } else {
-        const newMsg = {
-          senderId: account.accountID,
-          receiverId: selectedUser.id,
-          text: message.trim(),
-          type: "text",
-          attachments: [],
-          tempMsgId: tempMsgId,
-        };
+        // Use the optimized send message endpoint if we have a conversation ID
+        if (currentConversationId) {
+          const response = await axios.post(
+            "http://localhost:2000/eco-market/chat/optimized/send",
+            {
+              conversationId: currentConversationId,
+              text: message.trim(),
+              type: "text",
+              tempMsgId: tempMsgId,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
 
-        socket.emit("send-message", newMsg);
+          console.log("Message sent via optimized endpoint:", response.data);
+        } else {
+          // Fall back to socket if no conversation ID
+          const newMsg = {
+            senderId: account.accountID,
+            receiverId: selectedUserToShow.id,
+            text: message.trim(),
+            type: "text",
+            attachments: [],
+            tempMsgId: tempMsgId,
+          };
+
+          socket.emit("send-message", newMsg);
+        }
       }
 
       setAttachments([]);
@@ -405,12 +537,13 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   };
 
   const handleSelectUser = (user) => {
-    setSelectedUser(user);
+    setSelectedUserToShow(user);
     setIsLoading(true);
-
-    fetchChatHistory(user.id).then(() => {
-      setTimeout(scrollToBottom, 300);
-    });
+    if (user?._id) {
+      fetchChatHistory(user?._id).then(() => {
+        setTimeout(scrollToBottom, 300);
+      });
+    }
   };
 
   useEffect(() => {
@@ -463,6 +596,11 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
         const exists = updatedMessages.some((m) => m._id === msg._id);
         if (exists) return updatedMessages;
 
+        // Store conversationId if it's included
+        if (msg.conversationId && !currentConversationId) {
+          setCurrentConversationId(msg.conversationId);
+        }
+
         return [...updatedMessages, msg];
       });
 
@@ -474,14 +612,23 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
 
       if (
         account?.accountID === msg.receiverId &&
-        selectedUser &&
-        selectedUser.id === msg.senderId
+        selectedUserToShow &&
+        selectedUserToShow.id === msg.senderId
       ) {
         setMessages((prev) => {
           const exists = prev.some((m) => m._id === msg._id);
           if (exists) return prev;
 
-          if (selectedUser && selectedUser.id === msg.senderId && isOpen) {
+          // Store conversationId if it's included
+          if (msg.conversationId && !currentConversationId) {
+            setCurrentConversationId(msg.conversationId);
+          }
+
+          if (
+            selectedUserToShow &&
+            selectedUserToShow.id === msg.senderId &&
+            openChat
+          ) {
             socket.emit("mark-as-read", {
               messageId: msg._id,
               userId: account.accountID,
@@ -502,22 +649,18 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       socket.off("message-sent", handleMessageSent);
       socket.off("receive-message", handleReceiveMessage);
     };
-  }, [account?.accountID, selectedUser?.id, isOpen]);
+  }, [
+    account?.accountID,
+    selectedUserToShow?.id,
+    openChat,
+    currentConversationId,
+  ]);
 
-  const getAttachmentTypeText = (mimeType) => {
-    if (mimeType.startsWith("image/")) {
-      return "Image";
-    } else if (mimeType.startsWith("video/")) {
-      return "Video";
-    } else {
-      return "File";
-    }
-  };
-
-  const fetchChatHistory = async (receiver) => {
+  const fetchChatHistory = async (receiver, page = 0) => {
     try {
+      setIsLoading(true);
       const response = await axios.get(
-        `http://localhost:2000/eco-market/chat/messages/${receiver}`,
+        `http://localhost:2000/eco-market/chat/optimized/messages/${receiver}?page=${page}&limit=50`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -526,34 +669,83 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       );
 
       if (response.data.success) {
-        console.log("Fetched chat history:", response.data.data);
         const processedMessages = response.data.data.map((message) => {
-          const attachments = message.attachments || [];
+          // Xử lý đối tượng media
+          const media = message.media || [];
 
-          return {
+          // Tạo đối tượng tin nhắn với media được định dạng
+          const processedMessage = {
             ...message,
-            attachments: attachments.map((attachment) => ({
-              ...attachment,
-              id: attachment._id || attachment.id || Date.now() + Math.random(),
-              url: attachment.url || attachment.data || "",
-              type:
-                attachment.type ||
-                (attachment.url?.match(/\.(jpg|jpeg|png|gif)$/i)
-                  ? "image/jpeg"
-                  : attachment.url?.match(/\.(mp4|webm|ogg)$/i)
-                  ? "video/mp4"
-                  : "application/octet-stream"),
-              name: attachment.name || "Attached file",
+            media: media.map((item) => ({
+              id: item._id || Date.now() + Math.random(),
+              type: item.type || "application/octet-stream",
+              url: item.url || "",
+              name: item.name || "Attached file",
             })),
           };
+
+          // Nếu là message loại product nhưng không có product (có thể do API không populate)
+          if (
+            message.type === "product" &&
+            !message.product &&
+            message.productId
+          ) {
+            console.log("Processing product message:", message.productId);
+            // Không cần tạo đối tượng product ngay tại đây vì đã xử lý trong MessageContent
+          }
+
+          // Nếu là message loại order nhưng không có order
+          if (message.type === "order" && !message.order && message.orderId) {
+            console.log("Processing order message:", message.orderId);
+            // Không cần tạo đối tượng order ngay tại đây vì đã xử lý trong MessageContent
+          }
+
+          return processedMessage;
         });
 
-        setMessages(processedMessages);
+        // Store conversation ID for sending messages
+        setCurrentConversationId(response.data.conversationId);
+
+        // If loading more messages (page > 0), prepend to existing messages
+        if (page > 0) {
+          setMessages((prev) => [...processedMessages, ...prev]);
+        } else {
+          // First page, replace existing messages
+          setMessages(processedMessages);
+        }
+
+        // Store pagination info
+        setPagination(response.data.pagination);
       }
     } catch (error) {
       console.error("[ERROR] Chi tiết lỗi:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Add function to load more messages when scrolling to top
+  const loadMoreMessages = () => {
+    if (
+      pagination &&
+      pagination.hasMore &&
+      !isLoadingMore &&
+      selectedUserToShow
+    ) {
+      setIsLoadingMore(true);
+      fetchChatHistory(selectedUserToShow._id, pagination.page + 1).finally(
+        () => {
+          setIsLoadingMore(false);
+        }
+      );
+    }
+  };
+
+  // Handle scroll to top to load more messages
+  const handleScroll = (e) => {
+    const { scrollTop } = e.target;
+    if (scrollTop < 50 && !isLoadingMore && pagination && pagination.hasMore) {
+      loadMoreMessages();
     }
   };
 
@@ -584,11 +776,11 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       }
     };
 
-    if (isOpen) {
+    if (openChat) {
       scrollToBottom();
       checkForScroll();
     }
-  }, [isOpen]);
+  }, [openChat]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -599,13 +791,13 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   }, []);
 
   useEffect(() => {
-    if (selectedUser && account?.accountID) {
+    if (selectedUserToShow && account?.accountID) {
       socket.emit("stop-typing", {
         senderId: account.accountID,
-        receiverId: selectedUser.id,
+        receiverId: selectedUserToShow.id,
       });
     }
-  }, [selectedUser, account]);
+  }, [selectedUserToShow, account]);
 
   useEffect(() => {
     socket.on("online-users", (users) => {
@@ -633,8 +825,8 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   useEffect(() => {
     socket.on("user-typing", (data) => {
       if (
-        selectedUser &&
-        data.senderId === selectedUser.id &&
+        selectedUserToShow &&
+        data.senderId === selectedUserToShow.id &&
         data.receiverId === account?.accountID
       ) {
         console.log("[SOCKET] User typing:", data);
@@ -645,13 +837,13 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     return () => {
       socket.off("user-typing");
     };
-  }, [selectedUser, account?.accountID]);
+  }, [selectedUserToShow, account?.accountID]);
 
   useEffect(() => {
     const markMessagesAsRead = () => {
-      if (selectedUser && messages.length > 0 && isOpen) {
+      if (selectedUserToShow && messages.length > 0 && openChat) {
         messages.forEach((msg) => {
-          if (!msg.isRead && msg.senderId === selectedUser.id) {
+          if (!msg.isRead && msg.senderId === selectedUserToShow.id) {
             console.log(`[SOCKET] Marking message as read: ${msg._id}`);
             socket.emit("mark-as-read", {
               messageId: msg._id,
@@ -663,13 +855,13 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     };
 
     markMessagesAsRead();
-  }, [messages, selectedUser, isOpen, account?.accountID]);
+  }, [messages, selectedUserToShow, openChat, account?.accountID]);
 
   useEffect(() => {
     socket.on("new-message-notification", (data) => {
       setChatPartners((prev) => {
         return prev.map((partner) => {
-          if (partner.id === data.senderId) {
+          if (partner._id === data.senderId) {
             return {
               ...partner,
               lastMessage: data.message,
@@ -692,7 +884,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
       setMessages((prev) => {
         return prev.map((msg) => {
           if (msg._id === data.messageId) {
-            return { ...msg, isRead: true };
+            return { ...msg, status: "read" };
           }
           return msg;
         });
@@ -714,6 +906,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     };
   }, [attachments]);
 
+  // Format message timestamp to readable time
   const formatMessageTime = (timestamp) => {
     try {
       const date = new Date(timestamp);
@@ -736,18 +929,18 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
   const handleInputChange = (e) => {
     setMessage(e.target.value);
 
-    if (selectedUser && account?.accountID) {
+    if (selectedUserToShow && account?.accountID) {
       if (typingTimeout) clearTimeout(typingTimeout);
 
       socket.emit("typing", {
         senderId: account.accountID,
-        receiverId: selectedUser.id,
+        receiverId: selectedUserToShow.id,
       });
 
       const timeout = setTimeout(() => {
         socket.emit("stop-typing", {
           senderId: account.accountID,
-          receiverId: selectedUser.id,
+          receiverId: selectedUserToShow.id,
         });
       }, 2000);
 
@@ -755,122 +948,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     }
   };
 
-  const renderAttachments = (attachments) => {
-    if (!attachments || !attachments.length) return null;
-
-    console.log("Rendering attachments:", attachments);
-
-    return (
-      <div className="media-message-container">
-        {attachments.map((attachment) => {
-          const source = attachment.url || "";
-          const fileType = attachment.type || "";
-
-          console.log(
-            `Attachment: ${attachment.name}, Type: ${fileType}, URL: ${source}`
-          );
-
-          if (
-            fileType.startsWith("image/") ||
-            source.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-          ) {
-            return (
-              <div
-                key={attachment.id || attachment._id}
-                className="media-message image-message"
-                onClick={() => {
-                  setFullscreenImage(source);
-                }}
-              >
-                <div className="media-preview">
-                  <div className="media-overlay">
-                    <IconButton
-                      className="media-fullscreen-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFullscreenImage(source);
-                      }}
-                    >
-                      <Search />
-                    </IconButton>
-                  </div>
-                  <img
-                    src={source}
-                    alt={attachment.name || "Image attachment"}
-                    loading="lazy"
-                    onError={(e) => {
-                      console.error("Error loading image:", source);
-                      e.target.src =
-                        "https://via.placeholder.com/300x200?text=Image+Not+Found";
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          } else if (
-            fileType.startsWith("video/") ||
-            source.match(/\.(mp4|webm|ogg|mov)$/i)
-          ) {
-            return (
-              <div
-                key={attachment.id || attachment._id}
-                className="media-message video-message"
-              >
-                <div className="media-preview video-preview">
-                  <video
-                    controls
-                    controlsList="nodownload"
-                    className="chat-video-player"
-                    onError={(e) => {
-                      console.error("Error loading video:", source);
-                      e.target.poster =
-                        "https://via.placeholder.com/300x200?text=Video+Error";
-                    }}
-                  >
-                    <source src={source} type={fileType || "video/mp4"} />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-                <div className="media-caption">
-                  <Typography
-                    variant="caption"
-                    className="media-filename"
-                    noWrap
-                  >
-                    {attachment.name || "Video"}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    className="media-download"
-                    onClick={() => window.open(source, "_blank")}
-                  >
-                    <Search fontSize="small" />
-                  </IconButton>
-                </div>
-              </div>
-            );
-          } else {
-            return (
-              <Chip
-                key={attachment.id || attachment._id}
-                icon={<InsertDriveFile />}
-                label={attachment.name || "File attachment"}
-                variant="outlined"
-                component="a"
-                href={source}
-                target="_blank"
-                rel="noopener noreferrer"
-                clickable
-                className="file-attachment-chip"
-              />
-            );
-          }
-        })}
-      </div>
-    );
-  };
-
-  // Thêm helper function để định dạng hiển thị tin nhắn cuối cùng
+  // Format last message display in the chat partner list
   const formatLastMessage = (partner) => {
     if (!partner.lastMessage && !partner.lastMessageType) {
       return "Bắt đầu cuộc trò chuyện...";
@@ -882,22 +960,16 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
 
     // Nếu có attachment type, hiển thị thông tin về loại file
     if (partner.lastMessageType) {
-      if (partner.lastMessageType.startsWith("image/")) {
-        return `${prefix}${
-          partner.lastMessage
-            ? partner.lastMessage + " (Hình ảnh)"
-            : "Đã gửi hình ảnh"
-        }`;
-      } else if (partner.lastMessageType.startsWith("video/")) {
-        return `${prefix}${
-          partner.lastMessage
-            ? partner.lastMessage + " (Video)"
-            : "Đã gửi video"
-        }`;
+      if (partner.lastMessageType === "image") {
+        return `${prefix}${partner.lastMessage || "Đã gửi một hình ảnh"}`;
+      } else if (partner.lastMessageType === "video") {
+        return `${prefix}${partner.lastMessage || "Đã gửi một video"}`;
+      } else if (partner.lastMessageType === "product") {
+        return `${prefix}${partner.lastMessage || "Đã gửi thông tin sản phẩm"}`;
+      } else if (partner.lastMessageType === "order") {
+        return `${prefix}${partner.lastMessage || "Đã gửi thông tin đơn hàng"}`;
       } else {
-        return `${prefix}${
-          partner.lastMessage ? partner.lastMessage + " (File)" : "Đã gửi file"
-        }`;
+        return `${prefix}${partner.lastMessage}`;
       }
     }
 
@@ -905,7 +977,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     return `${prefix}${partner.lastMessage}`;
   };
 
-  // Hàm cập nhật tin nhắn cuối cùng trong danh sách người chat
+  // Update chat partner with new message
   const updateChatPartnerLastMessage = (msg) => {
     if (
       account?.accountID === msg.receiverId ||
@@ -915,7 +987,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
         // Tìm partner tương ứng
         const partnerId =
           msg.senderId === account?.accountID ? msg.receiverId : msg.senderId;
-        const partnerIndex = prev.findIndex((p) => p.id === partnerId);
+        const partnerIndex = prev.findIndex((p) => p._id === partnerId);
         if (partnerIndex === -1) {
           return prev;
         }
@@ -925,8 +997,8 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
         let lastMessageType = "";
 
         // Kiểm tra nếu có attachments
-        if (msg.attachments && msg.attachments.length > 0) {
-          lastMessageType = msg.attachments[0].type || "";
+        if (msg.media && msg.media.length > 0) {
+          lastMessageType = msg.media[0].type || "";
         }
 
         // Update unread count
@@ -952,104 +1024,20 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
     }
   };
 
-  // Add this new component for rendering AI message with product suggestions
-  const renderAIMessageContent = (message) => {
-    if (!message.productSuggestions) {
-      return (
-        <Typography
-          variant="body2"
-          sx={{ wordBreak: "break-word", color: "white" }}
-        >
-          {message.text}
-        </Typography>
-      );
+  useEffect(() => {
+    if (selectedUserToShow && account?.accountID) {
+      setIsLoading(true);
+      fetchChatHistory(selectedUserToShow._id).then(() => {
+        setTimeout(scrollToBottom, 300);
+        setIsLoading(false);
+      });
     }
-
-    return (
-      <>
-        <Typography
-          variant="body2"
-          sx={{ wordBreak: "break-word", mb: 2, color: "white" }}
-        >
-          {message.text}
-        </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          {message.productSuggestions.map((product) => (
-            <Box
-              key={product.id}
-              sx={{
-                display: "flex",
-                p: 1,
-                borderRadius: 2,
-                border: "1px solid rgba(255,255,255,0.2)",
-                backgroundColor: "rgba(255,255,255,0.15)",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.25)",
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                },
-              }}
-              onClick={() => {
-                // Handle product click - in a real app this would navigate to product page
-                console.log(`Clicked on product: ${product.id}`);
-              }}
-            >
-              <Box
-                component="img"
-                src={product.image}
-                alt={product.name}
-                sx={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 1,
-                  mr: 1.5,
-                  objectFit: "cover",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                }}
-              />
-              <Box sx={{ flex: 1 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: 500, color: "white" }}
-                >
-                  {product.name}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}
-                >
-                  {product.price}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
-          <Button
-            variant="contained"
-            size="small"
-            sx={{
-              mt: 1,
-              alignSelf: "flex-start",
-              bgcolor: "white",
-              color: "#36D1DC",
-              fontWeight: 600,
-              "&:hover": {
-                bgcolor: "rgba(255,255,255,0.9)",
-              },
-            }}
-          >
-            Xem thêm sản phẩm
-          </Button>
-        </Box>
-      </>
-    );
-  };
+  }, [selectedUserToShow]);
 
   return (
     <>
-      {isOpen && (
-        <Zoom in={isOpen} timeout={300}>
+      {openChat && (
+        <Zoom in={openChat} timeout={300}>
           <Box
             className="bg-primary-gradient"
             ref={chatRef}
@@ -1135,7 +1123,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                         },
                       }}
                       onClick={() => {
-                        setSelectedUser({
+                        setSelectedUserToShow({
                           id: "ai-assistant",
                           name: "AI Shopping Assistant",
                           avatar:
@@ -1198,13 +1186,15 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                       {chatPartners.length > 0 ? (
                         chatPartners.map((partner) => (
                           <ListItem
-                            key={partner.id}
+                            key={partner._id}
                             button
-                            selected={selectedUser?.id === partner.id}
+                            selected={selectedUserToShow?._id === partner._id}
                             onClick={() => handleSelectUser(partner)}
                             sx={{ position: "relative" }}
                             className={`chat-partner-item ${
-                              selectedUser?.id === partner.id ? "selected" : ""
+                              selectedUserToShow?._id === partner._id
+                                ? "selected"
+                                : ""
                             }`}
                           >
                             <ListItemAvatar>
@@ -1298,8 +1288,9 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                         height: "100%",
                       }}
                       className="chat-messages-container"
+                      onScroll={handleScroll}
                     >
-                      {isLoading ? (
+                      {isLoading && pagination?.page === 0 ? (
                         <Box
                           sx={{
                             display: "flex",
@@ -1310,7 +1301,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                         >
                           <CircularProgress size={40} color="primary" />
                         </Box>
-                      ) : !selectedUser ? (
+                      ) : !selectedUserToShow ? (
                         <div className="empty-chat-state">
                           <img
                             src="https://cdn-icons-png.flaticon.com/512/1067/1067566.png"
@@ -1342,6 +1333,18 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                         </div>
                       ) : (
                         <>
+                          {isLoadingMore && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                mb: 2,
+                              }}
+                            >
+                              <CircularProgress size={24} color="primary" />
+                            </Box>
+                          )}
+
                           {messages.reduce((result, message, index, array) => {
                             const messageDate = new Date(
                               message.createdAt
@@ -1415,24 +1418,15 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                                     }
                                   >
                                     {isAI ? (
-                                      renderAIMessageContent(message)
+                                      <MessageContent
+                                        message={message}
+                                        setFullscreenImage={setFullscreenImage}
+                                      />
                                     ) : (
-                                      <>
-                                        {message.text && (
-                                          <Typography
-                                            variant="body2"
-                                            sx={{ wordBreak: "break-word" }}
-                                          >
-                                            {message.text}
-                                          </Typography>
-                                        )}
-
-                                        {message.attachments &&
-                                          message.attachments.length > 0 &&
-                                          renderAttachments(
-                                            message.attachments
-                                          )}
-                                      </>
+                                      <MessageContent
+                                        message={message}
+                                        setFullscreenImage={setFullscreenImage}
+                                      />
                                     )}
 
                                     <Box
@@ -1480,7 +1474,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                             return result;
                           }, [])}
 
-                          {typingUsers[selectedUser?.id] && (
+                          {typingUsers[selectedUserToShow?.id] && (
                             <Box sx={{ display: "flex", ml: 2, mb: 1 }}>
                               <div className="typing-indicator">
                                 <span></span>
@@ -1491,7 +1485,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                           )}
 
                           {/* AI typing indicator */}
-                          {aiTyping && selectedUser?.isAI && (
+                          {aiTyping && selectedUserToShow?.isAI && (
                             <Box
                               sx={{
                                 display: "flex",
@@ -1577,7 +1571,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                           <IconButton
                             className="attachment-btn"
                             onClick={handleAttachmentMenuOpen}
-                            disabled={!selectedUser || isLoading}
+                            disabled={!selectedUserToShow || isLoading}
                             color="primary"
                           >
                             <AttachFile />
@@ -1687,7 +1681,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                         <TextField
                           fullWidth
                           placeholder={
-                            selectedUser
+                            selectedUserToShow
                               ? "Nhập tin nhắn..."
                               : "Chọn người để bắt đầu trò chuyện"
                           }
@@ -1705,7 +1699,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                             className: "message-input",
                           }}
                           sx={{ mr: 1 }}
-                          disabled={!selectedUser || isLoading}
+                          disabled={!selectedUserToShow || isLoading}
                         />
                         <Tooltip title="Gửi tin nhắn" arrow>
                           <Button
@@ -1714,7 +1708,7 @@ export const ChatBox = ({ isOpen, toggleChat }) => {
                             onClick={handleSendMessage}
                             disabled={
                               (!message.trim() && attachments.length === 0) ||
-                              !selectedUser ||
+                              !selectedUserToShow ||
                               isLoading
                             }
                             sx={{ minWidth: "auto", p: 1 }}

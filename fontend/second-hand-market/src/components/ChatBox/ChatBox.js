@@ -90,7 +90,6 @@ const MessageBubble = styled(Box)(({ theme, sender }) => ({
   animation: "fadeIn 0.3s ease",
 }));
 
-// AI Message Component
 const AIMessage = ({ message }) => {
   if (!message.productSuggestions) {
     return (
@@ -184,13 +183,11 @@ const AIMessage = ({ message }) => {
   );
 };
 
-// Component for message content based on type
 const MessageContent = ({ message, setFullscreenImage }) => {
   if (message.senderId === "ai-assistant") {
     return <AIMessage message={message} />;
   }
 
-  // Handle different message types
   if (
     (message.type === "product" && message.product) ||
     (message.type === "product" && message.productId)
@@ -293,6 +290,9 @@ export const ChatBox = () => {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [pagination, setPagination] = useState({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
 
   // Function to handle zoom in
   const handleZoomIn = (e) => {
@@ -1024,6 +1024,50 @@ export const ChatBox = () => {
     }
   }, [selectedUserToShow]);
 
+  // Handle message deletion
+  const handleDeleteMessage = (messageId) => {
+    setMessageToDelete(messageId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteMessage = async () => {
+    if (!messageToDelete) return;
+
+    try {
+      const response = await axios.delete(
+        `http://localhost:2000/eco-market/chat/messages/${messageToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Remove message from UI
+        setMessages((prev) =>
+          prev.filter((msg) => msg._id !== messageToDelete)
+        );
+
+        // Emit delete event to socket
+        socket.emit("delete-message", {
+          messageId: messageToDelete,
+          conversationId: currentConversationId,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setMessageToDelete(null);
+    }
+  };
+
+  const cancelDeleteMessage = () => {
+    setShowDeleteConfirm(false);
+    setMessageToDelete(null);
+  };
+
   return (
     <>
       {openChat && (
@@ -1440,6 +1484,26 @@ export const ChatBox = () => {
                                       >
                                         {formatMessageTime(message.createdAt)}
                                       </Typography>
+
+                                      {isMe && !message.isPending && (
+                                        <Tooltip title="Xóa tin nhắn">
+                                          <IconButton
+                                            size="small"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteMessage(message._id);
+                                            }}
+                                            sx={{
+                                              opacity: 0.7,
+                                              "&:hover": { opacity: 1 },
+                                              color: "inherit",
+                                              p: 0.3,
+                                            }}
+                                          >
+                                            <Delete fontSize="small" />
+                                          </IconButton>
+                                        </Tooltip>
+                                      )}
                                     </Box>
                                   </MessageBubble>
 
@@ -1856,6 +1920,63 @@ export const ChatBox = () => {
             </div>
           </div>
         </div>
+      )}
+      {showDeleteConfirm && (
+        <Modal
+          open={showDeleteConfirm}
+          onClose={cancelDeleteMessage}
+          aria-labelledby="delete-confirmation-modal"
+          closeAfterTransition
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 300,
+              bgcolor: "background.paper",
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 3,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Typography
+              id="delete-confirmation-modal"
+              variant="h6"
+              component="h2"
+            >
+              Xác nhận xóa
+            </Typography>
+            <Typography>Bạn có chắc chắn muốn xóa tin nhắn này?</Typography>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 1,
+                mt: 2,
+              }}
+            >
+              <Button
+                onClick={cancelDeleteMessage}
+                color="inherit"
+                variant="outlined"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={confirmDeleteMessage}
+                color="error"
+                variant="contained"
+              >
+                Xóa
+              </Button>
+            </Box>
+          </Box>
+        </Modal>
       )}
     </>
   );

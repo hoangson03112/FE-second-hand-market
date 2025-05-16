@@ -1,10 +1,9 @@
-import React from 'react';
-import { IconButton } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import React, { useState } from "react";
 
 const ImageMessage = ({ attachment, setFullscreenImage }) => {
-  const source = attachment.url || '';
-  
+  const source = attachment.url || "";
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
     <div
       key={attachment.id || attachment._id}
@@ -13,22 +12,41 @@ const ImageMessage = ({ attachment, setFullscreenImage }) => {
         setFullscreenImage(source);
       }}
     >
-      <div className="media-preview">
-        <div className="media-overlay">
-          <IconButton
-            className="media-fullscreen-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              setFullscreenImage(source);
+      <div
+        className="media-preview"
+        style={{ position: "relative" }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div
+          className="media-overlay media-fullscreen-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            setFullscreenImage(source);
+          }}
+        ></div>
+        {isHovered && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              zIndex: 1,
+              transition: "background-color 0.3s ease",
             }}
-          >
-            <Search />
-          </IconButton>
-        </div>
+          />
+        )}
         <img
           src={source}
           alt={attachment.name || "Image attachment"}
           loading="lazy"
+          style={{
+            position: "relative",
+            zIndex: 0,
+          }}
           onError={(e) => {
             console.error("Error loading image:", source);
             e.target.src =
@@ -40,4 +58,4 @@ const ImageMessage = ({ attachment, setFullscreenImage }) => {
   );
 };
 
-export default ImageMessage; 
+export default ImageMessage;

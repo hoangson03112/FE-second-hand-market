@@ -26,7 +26,7 @@ import { useChat } from "../../contexts/ChatContext";
 
 export const Product = () => {
   const location = useLocation();
-  const { findOrCreateWithProduct, setSelectedUserToShow } = useChat();
+  const { findOrCreateWithProduct } = useChat();
   const queryParams = new URLSearchParams(location.search);
   const productID = queryParams.get("productID");
   const navigate = useNavigate();
@@ -182,7 +182,7 @@ export const Product = () => {
 
       // Gọi API để tạo hoặc tìm cuộc trò chuyện với sản phẩm
       const response = await findOrCreateWithProduct(productID, account._id);
-      
+
       if (!response || !response.success) {
         console.error("Failed to create chat conversation:", response);
         // Hiển thị thông báo lỗi (có thể thêm một state cho thông báo)

@@ -186,7 +186,6 @@ const AIMessage = ({ message }) => {
 
 // Component for message content based on type
 const MessageContent = ({ message, setFullscreenImage }) => {
-  // Handle AI messages
   if (message.senderId === "ai-assistant") {
     return <AIMessage message={message} />;
   }
@@ -479,6 +478,7 @@ export const ChatBox = () => {
         formData.append("currentConversationId", currentConversationId);
         formData.append("receiverId", selectedUserToShow._id);
         formData.append("tempMsgId", tempMsgId);
+        formData.append("text", message.trim());
 
         const response = await axios.post(
           "http://localhost:2000/eco-market/chat/upload-and-send",
@@ -512,7 +512,6 @@ export const ChatBox = () => {
 
           console.log("Message sent via optimized endpoint:", response.data);
         } else {
-          // Fall back to socket if no conversation ID
           const newMsg = {
             senderId: account.accountID,
             receiverId: selectedUserToShow.id,
@@ -521,7 +520,6 @@ export const ChatBox = () => {
             attachments: [],
             tempMsgId: tempMsgId,
           };
-
           socket.emit("send-message", newMsg);
         }
       }
@@ -588,8 +586,6 @@ export const ChatBox = () => {
     if (!account?.accountID) return;
 
     const handleMessageSent = (msg) => {
-      console.log("[SOCKET] Message sent confirmation:", msg);
-
       setMessages((prev) => {
         const updatedMessages = prev.filter((m) => !m._id.startsWith("temp-"));
 
@@ -670,10 +666,8 @@ export const ChatBox = () => {
 
       if (response.data.success) {
         const processedMessages = response.data.data.map((message) => {
-          // Xử lý đối tượng media
           const media = message.media || [];
 
-          // Tạo đối tượng tin nhắn với media được định dạng
           const processedMessage = {
             ...message,
             media: media.map((item) => ({
@@ -691,13 +685,10 @@ export const ChatBox = () => {
             message.productId
           ) {
             console.log("Processing product message:", message.productId);
-            // Không cần tạo đối tượng product ngay tại đây vì đã xử lý trong MessageContent
           }
 
-          // Nếu là message loại order nhưng không có order
           if (message.type === "order" && !message.order && message.orderId) {
             console.log("Processing order message:", message.orderId);
-            // Không cần tạo đối tượng order ngay tại đây vì đã xử lý trong MessageContent
           }
 
           return processedMessage;
@@ -784,7 +775,6 @@ export const ChatBox = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("Current token:", token);
     if (!token) {
       console.log("No token found, redirecting to login");
     }

@@ -1,206 +1,362 @@
-import React, { useState } from 'react';
-import { Card, Box, Typography, Chip, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { formatCurrency, formatDate, getStatusColor } from '../../../utils/helpers';
-import CancelOrderModal from '../CancelOrderModal/CancelOrderModal';
-import './OrderItem.css';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Typography, Button, Divider, Paper } from "@mui/material";
+import CancelOrderModal from "../CancelOrderModal/CancelOrderModal";
+import { formatPrice } from "../../../utils/function";
+import { useProduct } from "../../../contexts/ProductContext";
+import { useOrder } from "../../../contexts/OrderContext";
+import AccountContext from "../../../contexts/AccountContext";
+import { useChat } from "../../../contexts/ChatContext";
 
 /**
  * Component hiển thị một đơn hàng trong danh sách đơn hàng
- * 
+ *
  * @param {Object} order - Thông tin đơn hàng
- * @param {function} onCancelOrder - Hàm xử lý khi hủy đơn hàng
+ * @param {function} setOrders - Hàm cập nhật danh sách đơn hàng
  */
-const OrderItem = ({ order, onCancelOrder }) => {
-  const [openCancelModal, setOpenCancelModal] = useState(false);
-  const [openDetailModal, setOpenDetailModal] = useState(false);
+const OrderItem = ({ order, setOrders }) => {
+  const { findOrCreateWithOrder } = useChat();
+  const { getProduct } = useProduct();
+  const { updateOrder } = useOrder();
+  const [products, setProducts] = useState([]);
+  const [sellers, setSellers] = useState({});
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const navigate = useNavigate();
 
-  // Lấy màu trạng thái
-  const statusColor = getStatusColor(order.status);
-
-  // Định dạng trạng thái
-  const getStatusText = (status) => {
-    const statusMap = {
-      'pending': 'Chờ xác nhận',
-      'processing': 'Đang xử lý',
-      'shipped': 'Đang giao hàng',
-      'delivered': 'Đã giao hàng',
-      'cancelled': 'Đã hủy',
-      'completed': 'Hoàn thành'
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        if (order?.products?.length > 0) {
+          const productPromises = order.products.map((item) =>
+            getProduct(item.productId)
+          );
+          const productsData = await Promise.all(productPromises);
+          setProducts(productsData);
+        } else {
+          setProducts([]);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
     };
-    return statusMap[status] || status;
+
+    fetchProducts();
+  }, [getProduct, order]);
+
+  useEffect(() => {
+    setTotalAmount(
+      products.reduce((total, product) => {
+        const orderProduct = order.products.find(
+          (p) => p.productId === product?._id
+        );
+        return total + product?.price * (orderProduct?.quantity || 0);
+      }, 0)
+    );
+  }, [products, order]);
+
+  useEffect(() => {
+    const fetchSellers = async () => {
+      try {
+        const sellerIds = [
+          ...new Set(products.map((product) => product?.sellerId)),
+        ];
+        const sellerPromises = sellerIds.map((id) =>
+          AccountContext.getAccount(id)
+        );
+        const sellersData = await Promise.all(sellerPromises);
+
+        const sellersMap = {};
+        sellersData.forEach((seller) => {
+          sellersMap[seller?._id] = seller;
+        });
+
+        setSellers(sellersMap);
+      } catch (err) {
+        console.error("Error fetching sellers:", err);
+      }
+    };
+
+    if (products.length > 0) {
+      fetchSellers();
+    }
+  }, [products]);
+
+  const handleCancelOrder = async (orderId, reason, status) => {
+    try {
+      const data = await updateOrder(orderId, reason, status);
+      setOrders(data.orders);
+      setShowCancelModal(false);
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+    }
   };
 
-  // Xử lý đóng modal hủy đơn
-  const handleCloseCancelModal = () => {
-    setOpenCancelModal(false);
+  const handleContactSeller = async (order) => {
+    try {
+      const authData = await AccountContext.Authentication();
+      if (!authData || !authData.data || !authData.data.account) {
+        navigate("/eco-market/login");
+        return;
+      }
+
+      const response = await findOrCreateWithOrder(order._id, order.sellerId);
+      if (!response || !response.success) {
+        console.error("Failed to create chat conversation:", response);
+        alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error("Error creating chat conversation:", error);
+      alert("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
+    }
   };
 
-  // Xử lý mở modal hủy đơn
-  const handleOpenCancelModal = () => {
-    setOpenCancelModal(true);
-  };
-
-  // Xử lý đóng modal chi tiết
-  const handleCloseDetailModal = () => {
-    setOpenDetailModal(false);
-  };
-
-  // Xử lý mở modal chi tiết
-  const handleOpenDetailModal = () => {
-    setOpenDetailModal(true);
-  };
-
-  // Xử lý hủy đơn hàng
-  const handleCancelOrder = (reason) => {
-    onCancelOrder(order._id, reason);
-    setOpenCancelModal(false);
-  };
-
-  // Tính tổng sản phẩm
-  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
-
-  return (
-    <>
-      <Card className="order-item-card">
-        <Box className="order-item-header">
-          <Typography variant="subtitle1" className="order-id">
-            Mã đơn hàng: #{order.orderNumber || order._id.substring(0, 8)}
-          </Typography>
-          <Chip 
-            label={getStatusText(order.status)} 
-            style={{ backgroundColor: statusColor, color: 'white' }}
-            className="status-chip"
-          />
-        </Box>
-        
-        <Divider />
-        
-        <Box className="order-item-content">
-          <Box className="order-item-info">
-            <Typography variant="body1" className="info-label">
-              Ngày đặt hàng:
-            </Typography>
-            <Typography variant="body1" className="info-value">
-              {formatDate(order.createdAt, 'long')}
-            </Typography>
-          </Box>
-          
-          <Box className="order-item-info">
-            <Typography variant="body1" className="info-label">
-              Số lượng sản phẩm:
-            </Typography>
-            <Typography variant="body1" className="info-value">
-              {totalItems} sản phẩm
-            </Typography>
-          </Box>
-          
-          <Box className="order-item-info">
-            <Typography variant="body1" className="info-label">
-              Tổng thanh toán:
-            </Typography>
-            <Typography variant="h6" color="primary" className="total-amount">
-              {formatCurrency(order.totalAmount)}
-            </Typography>
-          </Box>
-        </Box>
-        
-        <Divider />
-        
-        <Box className="order-item-actions">
-          <Button 
-            variant="outlined"
-            onClick={handleOpenDetailModal}
-            className="action-button"
-          >
-            Xem chi tiết
-          </Button>
-          
-          {order.status === 'pending' && (
-            <Button 
-              variant="outlined" 
+  const renderStatusButtons = () => {
+    switch (order.status) {
+      case "PENDING":
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{
+                mr: 2,
+                color: "text.secondary",
+                borderColor: "text.secondary",
+              }}
+              onClick={() => handleContactSeller(order)}
+            >
+              Liên hệ với người bán
+            </Button>
+            <Button
+              variant="outlined"
               color="error"
-              onClick={handleOpenCancelModal}
-              className="action-button"
+              size="small"
+              onClick={() => setShowCancelModal(true)}
             >
               Hủy đơn hàng
             </Button>
-          )}
-        </Box>
-      </Card>
-      
-      {/* Modal xem chi tiết */}
-      <Dialog open={openDetailModal} onClose={handleCloseDetailModal} maxWidth="md" fullWidth>
-        <DialogTitle>Chi tiết đơn hàng #{order.orderNumber || order._id.substring(0, 8)}</DialogTitle>
-        <DialogContent>
-          <Box className="order-detail-container">
-            <Box className="order-detail-section">
-              <Typography variant="subtitle1" gutterBottom>Thông tin giao hàng</Typography>
-              <Typography variant="body2">Người nhận: {order.shippingAddress.fullName}</Typography>
-              <Typography variant="body2">Số điện thoại: {order.shippingAddress.phone}</Typography>
-              <Typography variant="body2">Địa chỉ: {order.shippingAddress.addressLine}, {order.shippingAddress.ward}, {order.shippingAddress.district}, {order.shippingAddress.province}</Typography>
-            </Box>
-            
-            <Divider className="detail-divider" />
-            
-            <Box className="order-detail-section">
-              <Typography variant="subtitle1" gutterBottom>Sản phẩm</Typography>
-              {order.items.map((item, index) => (
-                <Box key={index} className="order-product-item">
-                  <img 
-                    src={item.product.images[0]} 
-                    alt={item.product.name} 
-                    className="product-thumbnail"
-                  />
-                  <Box className="product-details">
-                    <Typography variant="body1">{item.product.name}</Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Số lượng: {item.quantity} x {formatCurrency(item.price)}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" className="product-subtotal">
-                    {formatCurrency(item.price * item.quantity)}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-            
-            <Divider className="detail-divider" />
-            
-            <Box className="order-detail-section order-summary">
-              <Box className="summary-row">
-                <Typography variant="body1">Tổng tiền sản phẩm:</Typography>
-                <Typography variant="body1">{formatCurrency(order.subtotal)}</Typography>
+          </Box>
+        );
+      case "SHIPPING":
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              Yêu cầu trả hàng
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              sx={{ mr: 2 }}
+              onClick={() => handleContactSeller(order)}
+            >
+              Liên hệ người bán
+            </Button>
+            <Button variant="outlined" color="error" size="small">
+              Đã nhận được hàng
+            </Button>
+          </Box>
+        );
+      case "COMPLETED":
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              Mua lại
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              sx={{ mr: 2 }}
+              onClick={() => handleContactSeller(order)}
+            >
+              Liên hệ người bán
+            </Button>
+            <Button variant="outlined" color="error" size="small">
+              Đánh giá
+            </Button>
+          </Box>
+        );
+      case "CANCELLED":
+      case "REFUND":
+        return (
+          <Box>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              Mua lại
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => handleContactSeller(order)}
+            >
+              Liên hệ người bán
+            </Button>
+          </Box>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Paper elevation={0} sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2 }}>
+        {Object.values(sellers).map((seller) => {
+          const sellerProducts = products.filter(
+            (product) => product?.sellerId === seller?._id
+          );
+
+          if (sellerProducts.length === 0) {
+            return null;
+          }
+
+          return (
+            <Box
+              key={seller?._id}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={seller?.avatar || "https://default-avatar-url.png"}
+                  alt="User"
+                  sx={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    mr: 2,
+                  }}
+                />
+                <Typography fontWeight="bold">{seller?.fullName}</Typography>
               </Box>
-              <Box className="summary-row">
-                <Typography variant="body1">Phí vận chuyển:</Typography>
-                <Typography variant="body1">{formatCurrency(order.shippingFee)}</Typography>
-              </Box>
-              {order.discount > 0 && (
-                <Box className="summary-row">
-                  <Typography variant="body1">Giảm giá:</Typography>
-                  <Typography variant="body1" color="error">-{formatCurrency(order.discount)}</Typography>
-                </Box>
-              )}
-              <Box className="summary-row total">
-                <Typography variant="h6">Tổng thanh toán:</Typography>
-                <Typography variant="h6" color="primary">{formatCurrency(order.totalAmount)}</Typography>
+              <Typography variant="h6">
+                {{
+                  PENDING: "Chờ xác nhận",
+                  SHIPPING: "Đang vận chuyển",
+                  CANCELLED: "Đã hủy",
+                  COMPLETED: "Hoàn thành",
+                  REFUND: "Trả hàng",
+                }[order.status] || "Trạng thái không xác định"}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
+
+      <Divider sx={{ my: 2, borderWidth: 1, borderColor: 'rgba(0, 0, 0, 0.2)' }} />
+
+      {products?.map((product) => (
+        <Box
+          key={product?._id}
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            py: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              component="img"
+              src={product?.avatar || "/path/to/default-product-image.png"}
+              alt={product?.name || "Product"}
+              sx={{
+                width: "80px",
+                height: "80px",
+                objectFit: "cover",
+                borderRadius: "5px",
+                mr: 2,
+              }}
+            />
+            <Box>
+              <Box
+                component="a"
+                href={`/eco-market/product?productID=${product?._id}`}
+                sx={{
+                  textDecoration: "none",
+                  color: "black",
+                }}
+              >
+                <Typography fontWeight="bold" gutterBottom>
+                  {product?.name}
+                </Typography>
+                <Typography>
+                  Số Lượng:{" "}
+                  {
+                    order?.products.find((p) => p?.productId === product?._id)
+                      ?.quantity
+                  }
+                </Typography>
               </Box>
             </Box>
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDetailModal}>Đóng</Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Modal hủy đơn hàng */}
-      <CancelOrderModal 
-        open={openCancelModal} 
-        onClose={handleCloseCancelModal} 
-        onSubmit={handleCancelOrder}
-      />
-    </>
+          <Typography>
+            Giá:{" "}
+            <Typography
+              component="span"
+              color="error"
+              fontWeight="bold"
+              sx={{ mr: 3 }}
+            >
+              {formatPrice(product?.price)}
+            </Typography>
+          </Typography>
+        </Box>
+      ))}
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          mt: 2,
+        }}
+      >
+        <Typography>Thành tiền:</Typography>
+        <Typography variant="h3" color="error" fontWeight="bold" sx={{ mx: 2 }}>
+          {formatPrice(totalAmount)}
+        </Typography>
+      </Box>
+
+      <Box sx={{ float: "right" }}>
+        {showCancelModal && (
+          <CancelOrderModal
+            orderId={order?._id}
+            onConfirm={handleCancelOrder}
+            onClose={() => setShowCancelModal(false)}
+          />
+        )}
+        {renderStatusButtons()}
+      </Box>
+    </Paper>
   );
 };
 
-export default OrderItem; 
+export default OrderItem;

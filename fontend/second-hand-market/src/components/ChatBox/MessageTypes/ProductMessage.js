@@ -33,7 +33,7 @@ const ProductMessage = ({ product }) => {
               },
             }
           );
-          
+
           if (response.data && response.data.success) {
             setFullProductData(response.data.data);
           }
@@ -44,7 +44,7 @@ const ProductMessage = ({ product }) => {
         }
       }
     };
-    
+
     fetchProductDetails();
   }, [product]);
 
@@ -54,7 +54,7 @@ const ProductMessage = ({ product }) => {
   const handleViewProduct = () => {
     // Sử dụng product._id nếu có, nếu không thì dùng product.id
     const productId = displayProduct._id || displayProduct.id;
-    
+
     if (productId) {
       navigate(`/eco-market/product?productID=${productId}`);
     } else {
@@ -79,7 +79,13 @@ const ProductMessage = ({ product }) => {
         <Skeleton variant="rectangular" height={140} animation="wave" />
         <CardContent sx={{ p: 2 }}>
           <Skeleton variant="text" width="80%" height={24} animation="wave" />
-          <Skeleton variant="text" width="40%" height={20} animation="wave" sx={{ mb: 1 }} />
+          <Skeleton
+            variant="text"
+            width="40%"
+            height={20}
+            animation="wave"
+            sx={{ mb: 1 }}
+          />
           <Skeleton variant="rectangular" height={36} animation="wave" />
         </CardContent>
       </Card>
@@ -88,7 +94,6 @@ const ProductMessage = ({ product }) => {
 
   return (
     <Card
-      className="product-message-card"
       variant="outlined"
       sx={{
         maxWidth: 320,

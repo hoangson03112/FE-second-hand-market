@@ -1,8 +1,8 @@
-import ApiService from './ApiService';
+import ApiService from "./ApiService";
 
 const orderService = {
   getAllOrders: async () => {
-    return await ApiService.get('/orders');
+    return await ApiService.get("/orders");
   },
 
   getOrderById: async (id) => {
@@ -14,7 +14,7 @@ const orderService = {
   },
 
   createOrder: async (orderData) => {
-    return await ApiService.post('/orders', orderData);
+    return await ApiService.post("/orders", orderData);
   },
 
   updateOrderStatus: async (id, status) => {
@@ -28,7 +28,10 @@ const orderService = {
   getOrdersStatistics: async (params = {}) => {
     const queryParams = new URLSearchParams(params).toString();
     return await ApiService.get(`/orders/statistics?${queryParams}`);
-  }
+  },
+  getTotalAmountOfOrder: async (id) => {
+    return await ApiService.get(`/orders/${id}/totalAmount`);
+  },
 };
 
-export default orderService; 
+export default orderService;

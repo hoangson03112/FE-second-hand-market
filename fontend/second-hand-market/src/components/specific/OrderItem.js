@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { useProduct } from "../../contexts/ProductContext";
-import CancelOrderModal from "../../components/specific/CancelOrderModal";
+import { useNavigate } from "react-router-dom";
+import { Box, Typography, Button, Divider, Paper } from "@mui/material";
+import CancelOrderModal from "./CancelOrderModal";
 import { formatPrice } from "../../utils/function";
+import { useProduct } from "../../contexts/ProductContext";
 import { useOrder } from "../../contexts/OrderContext";
 import AccountContext from "../../contexts/AccountContext";
 import { useChat } from "../../contexts/ChatContext";
+
 const OrderItem = ({ order, setOrders }) => {
-  const { setOpenChat } = useChat();
+  const { findOrCreateWithOrder } = useChat();
   const { getProduct } = useProduct();
   const { updateOrder } = useOrder();
   const [products, setProducts] = useState([]);
   const [sellers, setSellers] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -82,92 +86,132 @@ const OrderItem = ({ order, setOrders }) => {
     }
   };
 
+  const handleContactSeller = async (order) => {
+    try {
+      const authData = await AccountContext.Authentication();
+      if (!authData || !authData.data || !authData.data.account) {
+        navigate("/eco-market/login");
+        return;
+      }
+
+      const response = await findOrCreateWithOrder(order._id, order.sellerId);
+      if (!response || !response.success) {
+        console.error("Failed to create chat conversation:", response);
+        alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error("Error creating chat conversation:", error);
+      alert("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
+    }
+  };
+
   const renderStatusButtons = () => {
     switch (order.status) {
       case "PENDING":
         return (
-          <>
-            <button
-              className="btn btn-outline-secondary btn-sm"
+          <Box>
+            <Button
+              variant="outlined"
+              size="small"
+              sx={{
+                mr: 2,
+                color: "text.secondary",
+                borderColor: "text.secondary",
+              }}
               onClick={() => handleContactSeller(order)}
             >
               Liên hệ với người bán
-            </button>
-            <button
-              className="btn btn-outline-danger btn-sm mx-2"
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
               onClick={() => setShowCancelModal(true)}
             >
               Hủy đơn hàng
-            </button>
-          </>
+            </Button>
+          </Box>
         );
       case "SHIPPING":
         return (
-          <>
-            <button className="btn btn-outline-primary btn-sm">
+          <Box>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              sx={{ mr: 2 }}
+            >
               Yêu cầu trả hàng
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              sx={{ mr: 2 }}
               onClick={() => handleContactSeller(order)}
-              className="btn btn-outline-danger btn-sm mx-2"
             >
               Liên hệ người bán
-            </button>
-            <button className="btn btn-outline-danger btn-sm mx-2">
+            </Button>
+            <Button variant="outlined" color="error" size="small">
               Đã nhận được hàng
-            </button>
-          </>
+            </Button>
+          </Box>
         );
       case "COMPLETED":
         return (
-          <>
-            <button className="btn btn-outline-dark btn-sm">Mua lại</button>
-            <button
+          <Box>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              Mua lại
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              sx={{ mr: 2 }}
               onClick={() => handleContactSeller(order)}
-              className="btn btn-outline-danger btn-sm mx-2"
             >
               Liên hệ người bán
-            </button>
-            <button className="btn btn-outline-danger btn-sm mx-2">
+            </Button>
+            <Button variant="outlined" color="error" size="small">
               Đánh giá
-            </button>
-          </>
+            </Button>
+          </Box>
         );
       case "CANCELLED":
       case "REFUND":
         return (
-          <>
-            <button className="btn btn-outline-dark btn-sm">Mua lại</button>
-            <button
+          <Box>
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              Mua lại
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
               onClick={() => handleContactSeller(order)}
-              className="btn btn-outline-danger btn-sm mx-2"
             >
               Liên hệ người bán
-            </button>
-          </>
+            </Button>
+          </Box>
         );
       default:
         return null;
     }
   };
 
-  const handleContactSeller = (order) => {
-    setOpenChat(true);
-    console.log(order);
-    const tempMsgId = `temp-${Date.now()}`;
-    const tempMsg = {
-      _id: tempMsgId,
-      senderId: localStorage.getItem("user")._id,
-      receiverId: order.sellerId,
-      type: "order",
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      isPending: true,
-    };
-  };
   return (
-    <div>
-      <div className="mb-2">
+    <Paper elevation={0} sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2 }}>
         {Object.values(sellers).map((seller) => {
           const sellerProducts = products.filter(
             (product) => product?.sellerId === seller?._id
@@ -176,93 +220,126 @@ const OrderItem = ({ order, setOrders }) => {
           if (sellerProducts.length === 0) {
             return null;
           }
+
           return (
-            <div
+            <Box
               key={seller?._id}
-              className="d-flex justify-content-between align-items-center"
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
             >
-              <div>
-                <div
-                  className="d-flex align-items-center text-decoration-none"
-                  style={{ cursor: "pointer" }}
-                >
-                  <img
-                    src={seller?.avatar || "https://default-avatar-url.png"}
-                    alt="User"
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                    }}
-                    className="me-2"
-                  />
-                  <span className="fw-bold">{seller.fullName}</span>
-                </div>
-              </div>
-              <div>
-                <span className="fs-4">
-                  {{
-                    PENDING: "Chờ xác nhận",
-                    SHIPPING: "Đang vận chuyển",
-                    CANCELLED: "Đã hủy",
-                    COMPLETED: "Hoàn thành",
-                    REFUND: "Trả hàng",
-                  }[order.status] || "Trạng thái không xác định"}
-                </span>
-              </div>
-            </div>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={seller?.avatar || "https://default-avatar-url.png"}
+                  alt="User"
+                  sx={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    mr: 2,
+                  }}
+                />
+                <Typography fontWeight="bold">{seller.fullName}</Typography>
+              </Box>
+              <Typography variant="h6">
+                {{
+                  PENDING: "Chờ xác nhận",
+                  SHIPPING: "Đang vận chuyển",
+                  CANCELLED: "Đã hủy",
+                  COMPLETED: "Hoàn thành",
+                  REFUND: "Trả hàng",
+                }[order.status] || "Trạng thái không xác định"}
+              </Typography>
+            </Box>
           );
         })}
-      </div>
-      <hr className="m-0 mb-2" />
+      </Box>
+
+      <Divider sx={{ my: 1 }} />
+
       {products?.map((product) => (
-        <div
+        <Box
           key={product?._id}
-          className="d-flex justify-content-between align-items-center py-2"
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            py: 2,
+          }}
         >
-          <div className="row align-items-center">
-            <div className="col-auto">
-              <img
-                src={product?.avatar || "/path/to/default-product-image.png"}
-                alt={product?.name || "Product"}
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  objectFit: "cover",
-                  borderRadius: "5px",
-                }}
-              />
-            </div>
-            <div className="col">
-              <a
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box
+              component="img"
+              src={product?.avatar || "/path/to/default-product-image.png"}
+              alt={product?.name || "Product"}
+              sx={{
+                width: "80px",
+                height: "80px",
+                objectFit: "cover",
+                borderRadius: "5px",
+                mr: 2,
+              }}
+            />
+            <Box>
+              <Box
+                component="a"
                 href={`/eco-market/product?productID=${product?._id}`}
-                className="text-black text-decoration-none"
+                sx={{
+                  textDecoration: "none",
+                  color: "black",
+                }}
               >
-                <p className="mb-0 fw-bold">{product?.name}</p>
-                <p className="mb-0">
+                <Typography fontWeight="bold" gutterBottom>
+                  {product?.name}
+                </Typography>
+                <Typography>
                   Số Lượng:{" "}
                   {
                     order?.products.find((p) => p?.productId === product?._id)
                       ?.quantity
                   }
-                </p>
-              </a>
-            </div>
-          </div>
-          <p>
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Typography>
             Giá:{" "}
-            <span className="text-danger me-3 fw-bold">
-              {" "}
-              {formatPrice(product.price)}
-            </span>
-          </p>
-        </div>
+            <Typography
+              component="span"
+              color="error"
+              fontWeight="bold"
+              sx={{ mr: 3 }}
+            >
+              {formatPrice(product?.price)}
+            </Typography>
+          </Typography>
+        </Box>
       ))}
-      <div className="d-flex justify-content-end align-items-center mt-2">
-        <span>Thành tiền:</span>
-        <h3 className="text-danger mx-2">{formatPrice(totalAmount)}</h3>
-      </div>
-      <div className="float-end">
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          mt: 2,
+        }}
+      >
+        <Typography>Thành tiền:</Typography>
+        <Typography variant="h5" color="error" fontWeight="bold" sx={{ mx: 2 }}>
+          {formatPrice(totalAmount)}
+        </Typography>
+      </Box>
+
+      <Box sx={{ float: "right" }}>
         {showCancelModal && (
           <CancelOrderModal
             orderId={order?._id}
@@ -270,9 +347,9 @@ const OrderItem = ({ order, setOrders }) => {
             onClose={() => setShowCancelModal(false)}
           />
         )}
-        {renderStatusButtons()}
-      </div>
-    </div>
+        <Box sx={{ my: 2 }}> {renderStatusButtons()}</Box>
+      </Box>
+    </Paper>
   );
 };
 

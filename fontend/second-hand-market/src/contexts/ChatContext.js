@@ -41,7 +41,7 @@ export const ChatProvider = ({ children }) => {
           });
         }
         setOpenChat(true);
-        console.log(response.data);
+
         return response.data;
       }
     } catch (error) {
@@ -50,6 +50,38 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
+  const findOrCreateWithOrder = async (orderId, sellerId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${BASE_URL}/chat/conversations/findOrCreateWithOrder`,
+        {
+          orderId,
+          sellerId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data && response.data.success) {
+        if (response.data.partner) {
+          setSelectedUserToShow({
+            _id: response.data.partner._id,
+            name: response.data.partner.name,
+            avatar: response.data.partner.avatar,
+          });
+        }
+        setOpenChat(true);
+        return response.data;
+      }
+    } catch (error) {
+      console.error("Error in findOrCreateWithProduct:", error);
+      throw error;
+    }
+  };
   const contextValue = {
     openChat,
     setOpenChat,
@@ -57,6 +89,7 @@ export const ChatProvider = ({ children }) => {
     setSelectedUserToShow,
     toggleChat,
     findOrCreateWithProduct,
+    findOrCreateWithOrder,
   };
 
   return (

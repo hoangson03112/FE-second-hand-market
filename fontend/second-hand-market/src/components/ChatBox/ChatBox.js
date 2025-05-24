@@ -414,7 +414,7 @@ export const ChatBox = () => {
       return;
     }
 
-    // Handle AI chat differently
+
     if (selectedUserToShow.isAI) {
       setIsLoading(true);
 
@@ -480,7 +480,7 @@ export const ChatBox = () => {
         formData.append("tempMsgId", tempMsgId);
         formData.append("text", message.trim());
 
-        const response = await axios.post(
+        await axios.post(
           "http://localhost:2000/eco-market/chat/upload-and-send",
           formData,
           {

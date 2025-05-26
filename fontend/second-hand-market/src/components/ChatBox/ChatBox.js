@@ -414,29 +414,84 @@ export const ChatBox = () => {
       return;
     }
 
-
     if (selectedUserToShow.isAI) {
       setIsLoading(true);
-
-      const tempMsgId = `temp-${Date.now()}`;
-      const userMessage = {
-        _id: tempMsgId,
+      const userMessage = message.trim();
+      
+      // Thêm tin nhắn của người dùng vào danh sách tin nhắn ngay lập tức
+      const userMsgId = `user-${Date.now()}`;
+      const userMsg = {
+        _id: userMsgId,
         senderId: account.accountID,
-        receiverId: selectedUserToShow._id,
-        text: message.trim(),
+        text: userMessage,
+        type: "text",
         createdAt: new Date().toISOString(),
-        isRead: true,
       };
-
-      setMessages((prev) => [...prev, userMessage]);
-      setTimeout(scrollToBottom, 100);
+      
+      setMessages((prev) => [...prev, userMsg]);
       setMessage("");
-
-      // Show AI typing indicator after a short delay
-      setTimeout(() => {
-        setAiTyping(true);
-      }, 500);
-
+      setTimeout(scrollToBottom, 100);
+      
+      // Hiển thị trạng thái AI đang nhập
+      setAiTyping(true);
+      
+      try {
+        const token = localStorage.getItem("token");
+        const data = await axios.post(
+          "http://localhost:2000/eco-market/chat/send-message-with-AI",
+          {
+            message: userMessage,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        
+        console.log("AI response:", data);
+        
+        // Thêm tin nhắn từ AI vào danh sách
+        const aiMsgId = `ai-${Date.now()}`;
+        const aiMsg = {
+          _id: aiMsgId,
+          senderId: "ai-assistant",
+          currentConversationId: currentConversationId,
+          text: data.data.reply,
+          type: "text",
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Thêm cả payload vào tin nhắn AI nếu có
+        if (data.data.payload) {
+          aiMsg.payload = data.data.payload;
+          
+          // Nếu có danh sách sản phẩm
+          if (data.data.payload.type === "productList") {
+            aiMsg.productSuggestions = data.data.payload.items;
+          }
+        }
+        
+        setMessages((prev) => [...prev, aiMsg]);
+        setTimeout(scrollToBottom, 100);
+      } catch (error) {
+        console.error("Error getting AI response:", error);
+        // Hiển thị thông báo lỗi dưới dạng tin nhắn từ AI
+        const errorMsg = {
+          _id: `error-${Date.now()}`,
+          senderId: "ai-assistant",
+          text: "Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.",
+          type: "text",
+          createdAt: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      } finally {
+        // Tắt trạng thái loading và typing
+        setIsLoading(false);
+        setAiTyping(false);
+        setTimeout(scrollToBottom, 100);
+      }
+      
       return;
     }
 
@@ -510,7 +565,6 @@ export const ChatBox = () => {
             }
           );
 
-          console.log("Message sent via optimized endpoint:", response.data);
         } else {
           const newMsg = {
             senderId: account.accountID,
@@ -563,15 +617,46 @@ export const ChatBox = () => {
     const handleError = (error) => {
       console.error("[SOCKET] Connection error:", error);
     };
+    
+    const handleMessageError = (error) => {
+      console.error("[SOCKET] Message error:", error);
+      
+      // Identify and handle specific error types
+      if (error.error === "Invalid message ID format" && error.messageId) {
+        // Check for different message ID formats
+        if (error.messageId.startsWith("temp-")) {
+          console.log("[SOCKET] Ignoring temporary message ID error for:", error.messageId);
+          return;
+        } else if (error.messageId.startsWith("ai-")) {
+          console.log("[SOCKET] Ignoring AI message ID error for:", error.messageId);
+          return;
+        } else if (error.messageId.startsWith("user-")) {
+          console.log("[SOCKET] Ignoring user message ID error for:", error.messageId);
+          return;
+        }
+        
+        // For other invalid message IDs, log more details
+        console.error(`[SOCKET] Invalid message ID format: ${error.messageId}. This ID is not being properly filtered.`);
+      } else if (error.error === "Message not found") {
+        console.log(`[SOCKET] Message not found: ${error.messageId}. It may have been deleted.`);
+      } else if (error.error === "Missing required data for mark-as-read") {
+        console.error("[SOCKET] Missing required data for mark-as-read:", error);
+      }
+      
+      // For other errors, can show a toast notification if needed
+      // toast.error(`Message error: ${error.error}`);
+    };
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleError);
+    socket.on("message-error", handleMessageError);
 
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleError);
+      socket.off("message-error", handleMessageError);
     };
   }, []);
 
@@ -620,10 +705,14 @@ export const ChatBox = () => {
             setCurrentConversationId(msg.conversationId);
           }
 
+          // Only mark real messages (not temporary or AI ones) as read
           if (
             selectedUserToShow &&
             selectedUserToShow.id === msg.senderId &&
-            openChat
+            openChat &&
+            !msg._id.startsWith("temp-") &&
+            !msg._id.startsWith("ai-") &&
+            msg.senderId !== "ai-assistant"
           ) {
             socket.emit("mark-as-read", {
               messageId: msg._id,
@@ -651,6 +740,51 @@ export const ChatBox = () => {
     openChat,
     currentConversationId,
   ]);
+
+  const fetchChatHistoryAI = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:2000/eco-market/chat/ai/messages`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      const processedMessages = response.data.data.map((message) => {
+        const media = message.media || [];
+
+        const processedMessage = {
+          ...message,
+          media: media.map((item) => ({
+            id: item._id || Date.now() + Math.random(),
+            type: item.type || "application/octet-stream",
+            url: item.url || "",
+            name: item.name || "Attached file",
+          })),
+        };
+
+        // Nếu là message loại product nhưng không có product (có thể do API không populate)
+        if (
+          message.type === "product" &&
+          !message.product &&
+          message.productId
+        ) {
+          console.log("Processing product message:", message.productId);
+        }
+
+        if (message.type === "order" && !message.order && message.orderId) {
+          console.log("Processing order message:", message.orderId);
+        }
+
+        return processedMessage;
+      });
+      setMessages(processedMessages);
+    } catch (error) {
+      console.error("[ERROR] Chi tiết lỗi:", error);
+    }
+  };
 
   const fetchChatHistory = async (receiver, page = 0) => {
     try {
@@ -833,7 +967,12 @@ export const ChatBox = () => {
     const markMessagesAsRead = () => {
       if (selectedUserToShow && messages.length > 0 && openChat) {
         messages.forEach((msg) => {
-          if (!msg.isRead && msg.senderId === selectedUserToShow.id) {
+          // Skip temporary messages, AI messages, and validate message ID format
+          if (!msg.isRead && 
+              msg.senderId === selectedUserToShow.id && 
+              !msg._id.startsWith("temp-") &&
+              !msg._id.startsWith("ai-") && 
+              msg.senderId !== "ai-assistant") {
             console.log(`[SOCKET] Marking message as read: ${msg._id}`);
             socket.emit("mark-as-read", {
               messageId: msg._id,
@@ -1015,12 +1154,14 @@ export const ChatBox = () => {
   };
 
   useEffect(() => {
-    if (selectedUserToShow && account?.accountID) {
+    if (selectedUserToShow && !selectedUserToShow.isAI && account?.accountID) {
       setIsLoading(true);
       fetchChatHistory(selectedUserToShow._id).then(() => {
         setTimeout(scrollToBottom, 300);
         setIsLoading(false);
       });
+    } else {
+      fetchChatHistoryAI();
     }
   }, [selectedUserToShow]);
 

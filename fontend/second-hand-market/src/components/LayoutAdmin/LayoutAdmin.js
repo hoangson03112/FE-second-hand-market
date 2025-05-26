@@ -37,6 +37,7 @@ import {
   Settings as SettingsIcon,
   Person as PersonIcon
 } from "@mui/icons-material";
+import ArticleIcon from "@mui/icons-material/Article"; 
 import { alpha } from '@mui/material/styles';
 
 const drawerWidth = 370;
@@ -85,6 +86,7 @@ const LayoutAdmin = ({ children }) => {
     { text: "Sản phẩm", icon: <LocalCafeIcon />, path: "/eco-market/admin/products" },
     { text: "Khách hàng", icon: <PeopleIcon />, path: "/eco-market/admin/customers" },
     { text: "Đơn hàng", icon: <ShoppingBasketIcon />, path: "/eco-market/admin/orders" },
+      { text: "Blog", icon: <ArticleIcon />, path: "/eco-market/admin/blogs" },
     
   ];
 

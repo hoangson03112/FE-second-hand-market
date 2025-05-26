@@ -29,6 +29,14 @@ import Verification from "./pages/Verification/Verification";
 import ApiService from "./services/ApiService";
 import authService from "./services/authService";
 
+// Blog Components - Public
+import BlogList from './pages/Blog/BlogList';
+import BlogDetail from './pages/Blog/BlogDetail';
+
+// Blog Components - Admin
+import AdminBlogList from './pages/Admin/BlogManagement/AdminBlogList';
+import BlogForm from './pages/Admin/BlogManagement/BlogForm';
+
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
 if (token) {
@@ -66,6 +74,33 @@ function App() {
                       element={
                         <LayoutAdmin>
                           <CategoryManagement />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                     <Route
+                       path="/eco-market/admin/blogs" 
+                      element={
+                        <LayoutAdmin>
+                           <AdminBlogList />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                      <Route
+                        path="/eco-market/admin/blogs/new" 
+                      element={
+                        <LayoutAdmin>
+                           <BlogForm />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                      <Route
+                 path="/eco-market/admin/blogs/edit/:id" 
+                      element={
+                        <LayoutAdmin>
+                           <BlogForm />
                         </LayoutAdmin>
                       }
                     />
@@ -178,6 +213,26 @@ function App() {
                         </Layout>
                       }
                     />
+                       {/* Blog Routes - Public */}
+                         <Route
+                           path="/eco-market/blogs"
+                           element={
+                             <Layout>
+                               <BlogList />
+                             </Layout>
+                           }
+                         />
+
+                          <Route
+                            path="/eco-market/blogs/:id"
+                           element={
+                             <Layout>
+                              <BlogDetail />
+                             </Layout>
+                           }
+                         />
+
+            
                   </Routes>
                 </BrowserRouter>
               </ChatProvider>

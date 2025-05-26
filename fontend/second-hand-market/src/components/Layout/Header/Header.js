@@ -82,6 +82,14 @@ const Header = () => {
               >
                 Đăng Bán
               </Link>
+
+               <Link
+                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
+                to="/eco-market/blogs"
+                style={{marginLeft:5}}
+              >
+               Blog
+              </Link>
               {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center  ">
                   <div

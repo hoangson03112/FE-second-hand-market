@@ -1,71 +1,71 @@
 import React, { useEffect, useState } from "react";
 import OrderItem from "../../components/specific/OrderItem";
 import { useOrder } from "../../contexts/OrderContext";
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Tabs, 
-  Tab, 
-  Paper, 
+import {
+  Box,
+  Container,
+  Typography,
+  Tabs,
+  Tab,
+  Paper,
   Divider,
-  CircularProgress
+  CircularProgress,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 // Custom styled tabs
 const OrderTabs = styled(Tabs)(({ theme }) => ({
-  '& .MuiTabs-indicator': {
+  "& .MuiTabs-indicator": {
     backgroundColor: theme.palette.error.main,
-    height: 3
+    height: 3,
   },
 }));
 
 const OrderTab = styled(Tab)(({ theme }) => ({
-  textTransform: 'none',
+  textTransform: "none",
   fontWeight: 500,
-  fontSize: '0.9rem',
+  fontSize: "0.9rem",
   minWidth: 90,
-  '&.Mui-selected': {
+  "&.Mui-selected": {
     color: theme.palette.error.main,
-    fontWeight: 600
+    fontWeight: 600,
   },
-  '&:hover': {
+  "&:hover": {
     color: theme.palette.error.main,
-    opacity: 0.8
-  }
+    opacity: 0.8,
+  },
 }));
 
 const OrderContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   marginBottom: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
-  boxShadow: 'rgba(0, 0, 0, 0.04) 0px 3px 5px'
+  boxShadow: "rgba(0, 0, 0, 0.04) 0px 3px 5px",
 }));
 
 const EmptyStateContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '50vh',
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "50vh",
   padding: theme.spacing(4),
-  color: theme.palette.text.secondary
+  color: theme.palette.text.secondary,
 }));
 
 const MyOrder = () => {
   const { getOrder } = useOrder();
-  const [activeTab, setActiveTab] = useState("ALL");
+  const [activeTab, setActiveTab] = useState("all");
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const tabs = [
-    { label: "Tất cả", value: "ALL" },
-    { label: "Chờ xác nhận", value: "PENDING" },
-    { label: "Đang vận chuyển", value: "SHIPPING" },
-    { label: "Hoàn thành", value: "COMPLETED" },
-    { label: "Đã hủy", value: "CANCELLED" },
+    { label: "Tất cả", value: "all" },
+    { label: "Chờ xác nhận", value: "pending" },
+    { label: "Đang vận chuyển", value: "shipping" },
+    { label: "Hoàn thành", value: "completed" },
+    { label: "Đã hủy", value: "cancelled" },
     { label: "Trả hàng/Hoàn tiền", value: "REFUND" },
   ];
 
@@ -87,7 +87,7 @@ const MyOrder = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "ALL") {
+    if (activeTab === "all") {
       setFilteredOrders(orders);
     } else {
       const filtered = orders.filter((order) => order.status === activeTab);
@@ -119,7 +119,7 @@ const MyOrder = () => {
           </Typography>
           <Typography variant="body2">
             Bạn chưa có đơn hàng nào{" "}
-            {activeTab !== "ALL" ? "ở trạng thái này" : ""}
+            {activeTab !== "all" ? "ở trạng thái này" : ""}
           </Typography>
         </EmptyStateContainer>
       );
@@ -135,7 +135,14 @@ const MyOrder = () => {
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
       <Container maxWidth="lg">
-        <Paper sx={{ borderRadius: 2, overflow: 'hidden', mb: 2, boxShadow: 'rgba(0, 0, 0, 0.04) 0px 3px 5px' }}>
+        <Paper
+          sx={{
+            borderRadius: 2,
+            overflow: "hidden",
+            mb: 2,
+            boxShadow: "rgba(0, 0, 0, 0.04) 0px 3px 5px",
+          }}
+        >
           <Box sx={{ px: 3, pt: 3, pb: 2 }}>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
               Đơn hàng của tôi
@@ -154,9 +161,7 @@ const MyOrder = () => {
           </Box>
         </Paper>
 
-        <Box sx={{ minHeight: "60vh" }}>
-          {renderOrders()}
-        </Box>
+        <Box sx={{ minHeight: "60vh" }}>{renderOrders()}</Box>
       </Container>
     </Box>
   );

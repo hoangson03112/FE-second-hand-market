@@ -371,7 +371,7 @@ const Checkout = () => {
   };
 
   return (
-    <div className="container pt-4">
+    <div className="container py-4">
       <div className="card mb-4 p-4 shadow-sm border-0">
         <h5 className="card-title text-danger d-flex align-items-center mb-3">
           <i className="bi bi-geo-alt me-2"></i>Địa Chỉ Nhận Hàng

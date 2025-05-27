@@ -49,7 +49,30 @@ import VideoMessage from "./MessageTypes/VideoMessage";
 import FileMessage from "./MessageTypes/FileMessage";
 import ProductMessage from "./MessageTypes/ProductMessage";
 import OrderMessage from "./MessageTypes/OrderMessage";
-const socket = io("http://localhost:2000");
+
+// Socket connection với cấu hình tối ưu
+let socket = null;
+
+const initializeSocket = () => {
+  if (socket && socket.connected) {
+    return socket;
+  }
+
+  socket = io("http://localhost:2000", {
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 20000,
+    transports: ["websocket", "polling"],
+    auth: { token: localStorage.getItem("token") },
+    query: { clientTime: Date.now() },
+    forceNew: true,
+  });
+
+  return socket;
+};
+
+// Khởi tạo socket
+socket = initializeSocket();
 
 // Styled components with enhanced design
 const StyledChatCard = styled(Card)(({ theme }) => ({
@@ -293,6 +316,7 @@ export const ChatBox = () => {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [messageToDelete, setMessageToDelete] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
 
   // Function to handle zoom in
   const handleZoomIn = (e) => {
@@ -300,7 +324,6 @@ export const ChatBox = () => {
     setZoomLevel((prev) => Math.min(prev + 0.5, 3));
   };
 
-  // Function to handle zoom out
   const handleZoomOut = (e) => {
     e.stopPropagation();
     setZoomLevel((prev) => Math.max(prev - 0.5, 1));
@@ -417,7 +440,7 @@ export const ChatBox = () => {
     if (selectedUserToShow.isAI) {
       setIsLoading(true);
       const userMessage = message.trim();
-      
+
       // Thêm tin nhắn của người dùng vào danh sách tin nhắn ngay lập tức
       const userMsgId = `user-${Date.now()}`;
       const userMsg = {
@@ -427,14 +450,14 @@ export const ChatBox = () => {
         type: "text",
         createdAt: new Date().toISOString(),
       };
-      
+
       setMessages((prev) => [...prev, userMsg]);
       setMessage("");
       setTimeout(scrollToBottom, 100);
-      
+
       // Hiển thị trạng thái AI đang nhập
       setAiTyping(true);
-      
+
       try {
         const token = localStorage.getItem("token");
         const data = await axios.post(
@@ -448,9 +471,7 @@ export const ChatBox = () => {
             },
           }
         );
-        
-        console.log("AI response:", data);
-        
+
         // Thêm tin nhắn từ AI vào danh sách
         const aiMsgId = `ai-${Date.now()}`;
         const aiMsg = {
@@ -461,17 +482,17 @@ export const ChatBox = () => {
           type: "text",
           createdAt: new Date().toISOString(),
         };
-        
+
         // Thêm cả payload vào tin nhắn AI nếu có
         if (data.data.payload) {
           aiMsg.payload = data.data.payload;
-          
+
           // Nếu có danh sách sản phẩm
           if (data.data.payload.type === "productList") {
             aiMsg.productSuggestions = data.data.payload.items;
           }
         }
-        
+
         setMessages((prev) => [...prev, aiMsg]);
         setTimeout(scrollToBottom, 100);
       } catch (error) {
@@ -491,7 +512,7 @@ export const ChatBox = () => {
         setAiTyping(false);
         setTimeout(scrollToBottom, 100);
       }
-      
+
       return;
     }
 
@@ -520,7 +541,10 @@ export const ChatBox = () => {
       setTimeout(scrollToBottom, 100);
 
       setMessage("");
-
+      console.log(
+        "🚀 Sending via Socket with conversationId:",
+        currentConversationId
+      );
       if (attachments.length > 0) {
         const formData = new FormData();
 
@@ -548,9 +572,18 @@ export const ChatBox = () => {
 
         setTimeout(scrollToBottom, 100);
       } else {
-        // Use the optimized send message endpoint if we have a conversation ID
         if (currentConversationId) {
-          const response = await axios.post(
+          const newMsg = {
+            senderId: account.accountID,
+            conversationId: currentConversationId,
+            receiverId: selectedUserToShow.id,
+            text: message.trim(),
+            type: "text",
+            tempMsgId: tempMsgId,
+          };
+          console.log("🚀 Sending via Socket with conversationId:", newMsg);
+          await socket.emit("send-message", newMsg);
+          await axios.post(
             "http://localhost:2000/eco-market/chat/optimized/send",
             {
               conversationId: currentConversationId,
@@ -564,17 +597,6 @@ export const ChatBox = () => {
               },
             }
           );
-
-        } else {
-          const newMsg = {
-            senderId: account.accountID,
-            receiverId: selectedUserToShow.id,
-            text: message.trim(),
-            type: "text",
-            attachments: [],
-            tempMsgId: tempMsgId,
-          };
-          socket.emit("send-message", newMsg);
         }
       }
 
@@ -591,6 +613,8 @@ export const ChatBox = () => {
   const handleSelectUser = (user) => {
     setSelectedUserToShow(user);
     setIsLoading(true);
+    setCurrentConversationId(user.conversationId);
+
     if (user?._id) {
       fetchChatHistory(user?._id).then(() => {
         setTimeout(scrollToBottom, 300);
@@ -599,7 +623,9 @@ export const ChatBox = () => {
   };
 
   useEffect(() => {
-    console.log("[SOCKET] Component mounted, ensuring connection");
+    if (!socket) {
+      socket = initializeSocket();
+    }
 
     if (!socket.connected) {
       console.log("[SOCKET] Connecting socket...");
@@ -608,57 +634,92 @@ export const ChatBox = () => {
 
     const handleConnect = () => {
       console.log("[SOCKET] Connected with socket ID:", socket.id);
+      setConnectionStatus("connected");
+      // Emit join-room ngay sau khi connected nếu có account
+      if (account?.accountID) {
+        socket.emit("join-room", account.accountID);
+      }
     };
 
-    const handleDisconnect = () => {
-      console.log("[SOCKET] Disconnected");
+    const handleDisconnect = (reason) => {
+      setConnectionStatus("disconnected");
+      if (reason !== "io client disconnect") {
+        setConnectionStatus("reconnecting");
+        setTimeout(() => {
+          if (!socket.connected) {
+            socket.connect();
+          }
+        }, 1000);
+      }
     };
 
     const handleError = (error) => {
       console.error("[SOCKET] Connection error:", error);
     };
-    
+
+    const handleReconnect = (attemptNumber) => {
+      setConnectionStatus("connected");
+      if (account?.accountID) {
+        socket.emit("join-room", account.accountID);
+      }
+    };
+
     const handleMessageError = (error) => {
       console.error("[SOCKET] Message error:", error);
-      
+
       // Identify and handle specific error types
       if (error.error === "Invalid message ID format" && error.messageId) {
         // Check for different message ID formats
         if (error.messageId.startsWith("temp-")) {
-          console.log("[SOCKET] Ignoring temporary message ID error for:", error.messageId);
+          console.log(
+            "[SOCKET] Ignoring temporary message ID error for:",
+            error.messageId
+          );
           return;
         } else if (error.messageId.startsWith("ai-")) {
-          console.log("[SOCKET] Ignoring AI message ID error for:", error.messageId);
+          console.log(
+            "[SOCKET] Ignoring AI message ID error for:",
+            error.messageId
+          );
           return;
         } else if (error.messageId.startsWith("user-")) {
-          console.log("[SOCKET] Ignoring user message ID error for:", error.messageId);
+          console.log(
+            "[SOCKET] Ignoring user message ID error for:",
+            error.messageId
+          );
           return;
         }
-        
+
         // For other invalid message IDs, log more details
-        console.error(`[SOCKET] Invalid message ID format: ${error.messageId}. This ID is not being properly filtered.`);
+        console.error(
+          `[SOCKET] Invalid message ID format: ${error.messageId}. This ID is not being properly filtered.`
+        );
       } else if (error.error === "Message not found") {
-        console.log(`[SOCKET] Message not found: ${error.messageId}. It may have been deleted.`);
+        console.log(
+          `[SOCKET] Message not found: ${error.messageId}. It may have been deleted.`
+        );
       } else if (error.error === "Missing required data for mark-as-read") {
-        console.error("[SOCKET] Missing required data for mark-as-read:", error);
+        console.error(
+          "[SOCKET] Missing required data for mark-as-read:",
+          error
+        );
       }
-      
-      // For other errors, can show a toast notification if needed
-      // toast.error(`Message error: ${error.error}`);
     };
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleError);
+    socket.on("reconnect", handleReconnect);
     socket.on("message-error", handleMessageError);
 
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleError);
+      socket.off("reconnect", handleReconnect);
       socket.off("message-error", handleMessageError);
     };
-  }, []);
+  }, [account?.accountID]);
 
   useEffect(() => {
     if (account?.accountID && socket.connected) {
@@ -677,7 +738,6 @@ export const ChatBox = () => {
         const exists = updatedMessages.some((m) => m._id === msg._id);
         if (exists) return updatedMessages;
 
-        // Store conversationId if it's included
         if (msg.conversationId && !currentConversationId) {
           setCurrentConversationId(msg.conversationId);
         }
@@ -689,8 +749,6 @@ export const ChatBox = () => {
     };
 
     const handleReceiveMessage = (msg) => {
-      console.log("[SOCKET] Received new message:", msg);
-
       if (
         account?.accountID === msg.receiverId &&
         selectedUserToShow &&
@@ -812,26 +870,9 @@ export const ChatBox = () => {
             })),
           };
 
-          // Nếu là message loại product nhưng không có product (có thể do API không populate)
-          if (
-            message.type === "product" &&
-            !message.product &&
-            message.productId
-          ) {
-            console.log("Processing product message:", message.productId);
-          }
-
-          if (message.type === "order" && !message.order && message.orderId) {
-            console.log("Processing order message:", message.orderId);
-          }
-
           return processedMessage;
         });
 
-        // Store conversation ID for sending messages
-        setCurrentConversationId(response.data.conversationId);
-
-        // If loading more messages (page > 0), prepend to existing messages
         if (page > 0) {
           setMessages((prev) => [...processedMessages, ...prev]);
         } else {
@@ -968,11 +1009,13 @@ export const ChatBox = () => {
       if (selectedUserToShow && messages.length > 0 && openChat) {
         messages.forEach((msg) => {
           // Skip temporary messages, AI messages, and validate message ID format
-          if (!msg.isRead && 
-              msg.senderId === selectedUserToShow.id && 
-              !msg._id.startsWith("temp-") &&
-              !msg._id.startsWith("ai-") && 
-              msg.senderId !== "ai-assistant") {
+          if (
+            !msg.isRead &&
+            msg.senderId === selectedUserToShow.id &&
+            !msg._id.startsWith("temp-") &&
+            !msg._id.startsWith("ai-") &&
+            msg.senderId !== "ai-assistant"
+          ) {
             console.log(`[SOCKET] Marking message as read: ${msg._id}`);
             socket.emit("mark-as-read", {
               messageId: msg._id,
@@ -1020,8 +1063,15 @@ export const ChatBox = () => {
       });
     });
 
+    socket.on("message-deleted", (data) => {
+      setMessages((prev) => {
+        return prev.filter((msg) => msg._id !== data.messageId);
+      });
+    });
+
     return () => {
       socket.off("message-read");
+      socket.off("message-deleted");
     };
   }, []);
 
@@ -1160,10 +1210,25 @@ export const ChatBox = () => {
         setTimeout(scrollToBottom, 300);
         setIsLoading(false);
       });
-    } else {
+    } else if (selectedUserToShow && selectedUserToShow.isAI) {
       fetchChatHistoryAI();
     }
   }, [selectedUserToShow]);
+
+  // Định kỳ kiểm tra kết nối socket
+  useEffect(() => {
+    const checkConnection = () => {
+      if (socket && !socket.connected) {
+        console.log("[SOCKET] Connection lost, attempting to reconnect...");
+        setConnectionStatus("reconnecting");
+        socket.connect();
+      }
+    };
+
+    const intervalId = setInterval(checkConnection, 30000); // Kiểm tra mỗi 30 giây
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   // Handle message deletion
   const handleDeleteMessage = (messageId) => {
@@ -1229,9 +1294,38 @@ export const ChatBox = () => {
             <StyledChatCard className="chat-container">
               <CardHeader
                 title={
-                  <Typography variant="h6" className="chat-header-title">
-                    Tin nhắn hỗ trợ
-                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="h6" className="chat-header-title">
+                      Tin nhắn hỗ trợ
+                    </Typography>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor:
+                          connectionStatus === "connected"
+                            ? "#4caf50"
+                            : connectionStatus === "reconnecting"
+                            ? "#ff9800"
+                            : "#f44336",
+                        animation:
+                          connectionStatus === "reconnecting"
+                            ? "pulse 1.5s infinite"
+                            : "none",
+                      }}
+                    />
+                    {connectionStatus !== "connected" && (
+                      <Typography
+                        variant="caption"
+                        sx={{ color: "rgba(255,255,255,0.7)" }}
+                      >
+                        {connectionStatus === "reconnecting"
+                          ? "Đang kết nối lại..."
+                          : "Mất kết nối"}
+                      </Typography>
+                    )}
+                  </Box>
                 }
                 action={
                   <IconButton onClick={toggleChat} sx={{ color: "white" }}>
@@ -1359,75 +1453,77 @@ export const ChatBox = () => {
 
                     <div className="chat-partner-list">
                       {chatPartners.length > 0 ? (
-                        chatPartners.map((partner) => (
-                          <ListItem
-                            key={partner._id}
-                            button
-                            selected={selectedUserToShow?._id === partner._id}
-                            onClick={() => handleSelectUser(partner)}
-                            sx={{ position: "relative" }}
-                            className={`chat-partner-item ${
-                              selectedUserToShow?._id === partner._id
-                                ? "selected"
-                                : ""
-                            }`}
-                          >
-                            <ListItemAvatar>
-                              <Badge
-                                badgeContent={
-                                  partner.unread > 0 ? partner.unread : null
+                        chatPartners.map((partner) => {
+                          return (
+                            <ListItem
+                              key={partner._id}
+                              button
+                              selected={selectedUserToShow?._id === partner._id}
+                              onClick={() => handleSelectUser(partner)}
+                              sx={{ position: "relative" }}
+                              className={`chat-partner-item ${
+                                selectedUserToShow?._id === partner._id
+                                  ? "selected"
+                                  : ""
+                              }`}
+                            >
+                              <ListItemAvatar>
+                                <Badge
+                                  badgeContent={
+                                    partner.unread > 0 ? partner.unread : null
+                                  }
+                                  color="error"
+                                  overlap="circular"
+                                  anchorOrigin={{
+                                    vertical: "bottom",
+                                    horizontal: "right",
+                                  }}
+                                >
+                                  <StyledAvatar
+                                    src={partner.avatar}
+                                    alt={partner.name}
+                                    isonline={
+                                      onlineUsers.includes(partner.id)
+                                        ? "true"
+                                        : "false"
+                                    }
+                                    className={
+                                      onlineUsers.includes(partner.id)
+                                        ? "online-indicator"
+                                        : ""
+                                    }
+                                  />
+                                </Badge>
+                              </ListItemAvatar>
+                              <ListItemText
+                                primary={
+                                  <Typography className="partner-name" noWrap>
+                                    {partner.name}
+                                  </Typography>
                                 }
-                                color="error"
-                                overlap="circular"
-                                anchorOrigin={{
-                                  vertical: "bottom",
-                                  horizontal: "right",
-                                }}
-                              >
-                                <StyledAvatar
-                                  src={partner.avatar}
-                                  alt={partner.name}
-                                  isonline={
-                                    onlineUsers.includes(partner.id)
-                                      ? "true"
-                                      : "false"
-                                  }
-                                  className={
-                                    onlineUsers.includes(partner.id)
-                                      ? "online-indicator"
-                                      : ""
-                                  }
-                                />
-                              </Badge>
-                            </ListItemAvatar>
-                            <ListItemText
-                              primary={
-                                <Typography className="partner-name" noWrap>
-                                  {partner.name}
-                                </Typography>
-                              }
-                              secondary={
-                                <>
-                                  <Typography
-                                    className="partner-last-message"
-                                    noWrap
-                                    component="span"
-                                  >
-                                    {formatLastMessage(partner)}
-                                  </Typography>
-                                  <Typography
-                                    className="partner-timestamp"
-                                    display="block"
-                                  >
-                                    {new Date(
-                                      partner.lastMessageAt
-                                    ).toLocaleString()}
-                                  </Typography>
-                                </>
-                              }
-                            />
-                          </ListItem>
-                        ))
+                                secondary={
+                                  <>
+                                    <Typography
+                                      className="partner-last-message"
+                                      noWrap
+                                      component="span"
+                                    >
+                                      {formatLastMessage(partner)}
+                                    </Typography>
+                                    <Typography
+                                      className="partner-timestamp"
+                                      display="block"
+                                    >
+                                      {new Date(
+                                        partner.lastMessageAt
+                                      ).toLocaleString()}
+                                    </Typography>
+                                  </>
+                                }
+                              />
+                            </ListItem>
+                          );
+                        })
                       ) : (
                         <Box
                           sx={{
@@ -1955,6 +2051,21 @@ export const ChatBox = () => {
           }
           100% {
             transform: translateY(0px);
+          }
+        }
+
+        @keyframes pulse {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: scale(1.2);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
           }
         }
       `}</style>

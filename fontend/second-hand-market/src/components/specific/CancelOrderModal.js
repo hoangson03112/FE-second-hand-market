@@ -25,7 +25,7 @@ const CancelOrderModal = ({ orderId, onConfirm, onClose }) => {
       setError("Vui lòng chọn hoặc nhập lý do hủy đơn hàng");
       return;
     }
-    onConfirm(orderId, finalReason,"CANCELLED");
+    onConfirm(orderId, finalReason, "cancelled");
     setIsSubmitting(true);
     try {
       onClose();

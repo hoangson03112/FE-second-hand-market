@@ -30,6 +30,17 @@ import {
   createTheme,
   ThemeProvider,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  ListItemIcon,
+  ListItemSecondaryAction,
+  Switch,
+  FormControlLabel,
+  Tooltip,
+  Fade,
+  Slide,
 } from "@mui/material";
 import {
   CameraAlt as CameraIcon,
@@ -45,6 +56,16 @@ import {
   Visibility,
   VisibilityOff,
   PhotoCamera,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Home as HomeIcon,
+  Business as BusinessIcon,
+  Person as PersonIcon,
+  Settings as SettingsIcon,
+  Security as SecurityIcon,
+  AccountCircle as AccountCircleIcon,
+  Dashboard as DashboardIcon,
+  CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import AccountContext from "../../contexts/AccountContext";
@@ -57,38 +78,79 @@ import authService from "../../services/authService";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#344960",
-      light: "#496883",
-      dark: "#2a3b4c",
+      main: "#2D1B69", // Deep purple
+      light: "#4A3B8C",
+      dark: "#1A0F3D",
       contrastText: "#ffffff",
     },
     secondary: {
-      main: "#a68a64",
-      light: "#c8b6a6",
-      dark: "#8a7253",
-      contrastText: "#ffffff",
-    },
-    warning: {
-      main: "#d4ac6e",
-    },
-    error: {
-      main: "#c26d66",
+      main: "#D4AF37", // Gold
+      light: "#E6C866",
+      dark: "#B8941F",
+      contrastText: "#1A0F3D",
     },
     success: {
-      main: "#698474",
+      main: "#2E7D32",
+      light: "#4CAF50",
+      dark: "#1B5E20",
     },
-    info: {
-      main: "#6e99b4",
+    warning: {
+      main: "#FF8F00",
+      light: "#FFB74D",
+      dark: "#E65100",
+    },
+    error: {
+      main: "#C62828",
+      light: "#EF5350",
+      dark: "#B71C1C",
     },
     background: {
-      default: "#f8f9fa",
-      paper: "#ffffff",
+      default: "#F8F6FF", // Very light purple
+      paper: "#FFFFFF",
     },
     text: {
-      primary: "#333333",
-      secondary: "#6c757d",
+      primary: "#1A0F3D", // Dark purple
+      secondary: "#6B5B95", // Medium purple
+    },
+    info: {
+      main: "#6B5B95",
+      light: "#9C89B8",
+      dark: "#4A3B8C",
     },
   },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+      fontSize: '2rem',
+    },
+    h5: {
+      fontWeight: 600,
+      fontSize: '1.5rem',
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1.25rem',
+    },
+    subtitle1: {
+      fontWeight: 500,
+    },
+    body1: {
+      fontSize: '1rem',
+      lineHeight: 1.6,
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  shadows: [
+    'none',
+    '0px 2px 4px rgba(0,0,0,0.05)',
+    '0px 4px 8px rgba(0,0,0,0.08)',
+    '0px 8px 16px rgba(0,0,0,0.1)',
+    '0px 12px 24px rgba(0,0,0,0.12)',
+    // ... other shadow levels
+  ],
 });
 
 const UserProfile = () => {
@@ -126,6 +188,47 @@ const UserProfile = () => {
   // Thêm state cho phân trang
   const [page, setPage] = useState(1);
   const [productsPerPage] = useState(6);
+
+  // State cho quản lý địa chỉ
+  const [addresses, setAddresses] = useState([
+    {
+      id: 1,
+      type: "home",
+      label: "Nhà riêng",
+      fullName: "Nguyễn Văn A",
+      phoneNumber: "0123456789",
+      province: "TP. Hồ Chí Minh",
+      district: "Quận 1",
+      ward: "Phường Bến Nghé",
+      specificAddress: "123 Đường Lê Lợi",
+      isDefault: true,
+    },
+    {
+      id: 2,
+      type: "office",
+      label: "Văn phòng",
+      fullName: "Nguyễn Văn A",
+      phoneNumber: "0987654321",
+      province: "TP. Hồ Chí Minh",
+      district: "Quận 3",
+      ward: "Phường Võ Thị Sáu",
+      specificAddress: "456 Đường Cách Mạng Tháng 8",
+      isDefault: false,
+    },
+  ]);
+  const [openAddressDialog, setOpenAddressDialog] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(null);
+  const [newAddress, setNewAddress] = useState({
+    type: "home",
+    label: "",
+    fullName: "",
+    phoneNumber: "",
+    province: "",
+    district: "",
+    ward: "",
+    specificAddress: "",
+    isDefault: false,
+  });
 
   const reviews = [
     {
@@ -250,6 +353,66 @@ const UserProfile = () => {
     setPage(value);
   };
 
+  // Functions cho quản lý địa chỉ
+  const handleAddAddress = () => {
+    setEditingAddress(null);
+    setNewAddress({
+      type: "home",
+      label: "",
+      fullName: "",
+      phoneNumber: "",
+      province: "",
+      district: "",
+      ward: "",
+      specificAddress: "",
+      isDefault: false,
+    });
+    setOpenAddressDialog(true);
+  };
+
+  const handleEditAddress = (address) => {
+    setEditingAddress(address);
+    setNewAddress(address);
+    setOpenAddressDialog(true);
+  };
+
+  const handleSaveAddress = () => {
+    if (editingAddress) {
+      setAddresses(addresses.map(addr => 
+        addr.id === editingAddress.id ? { ...newAddress, id: editingAddress.id } : addr
+      ));
+    } else {
+      setAddresses([...addresses, { ...newAddress, id: Date.now() }]);
+    }
+    setOpenAddressDialog(false);
+    setSnackbar({
+      open: true,
+      message: editingAddress ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!",
+      severity: "success",
+    });
+  };
+
+  const handleDeleteAddress = (addressId) => {
+    setAddresses(addresses.filter(addr => addr.id !== addressId));
+    setSnackbar({
+      open: true,
+      message: "Xóa địa chỉ thành công!",
+      severity: "success",
+    });
+  };
+
+  const handleSetDefaultAddress = (addressId) => {
+    setAddresses(addresses.map(addr => ({
+      ...addr,
+      isDefault: addr.id === addressId
+    })));
+    setSnackbar({
+      open: true,
+      message: "Đã đặt làm địa chỉ mặc định!",
+      severity: "success",
+    });
+  };
+
   const renderInfoSection = () => {
     if (loading) {
       return (
@@ -278,11 +441,7 @@ const UserProfile = () => {
         <Box component="form" sx={{ mt: 2 }}>
           <Grid container spacing={3}>
             {/* Nhóm thông tin cơ bản */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Thông tin cá nhân
-              </Typography>
-            </Grid>
+   
 
             <Grid item xs={12} md={6}>
               <TextField
@@ -326,86 +485,7 @@ const UserProfile = () => {
               />
             </Grid>
 
-            {/* Nhóm thông tin địa chỉ */}
-            <Grid item xs={12} sx={{ mt: 2 }}>
-              <Typography variant="h6" gutterBottom color="primary">
-                Địa chỉ
-              </Typography>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Tỉnh/Thành phố"
-                variant="outlined"
-                value={accountUpdate.address?.province || ""}
-                onChange={(e) =>
-                  setAccountUpdate({
-                    ...accountUpdate,
-                    address: {
-                      ...accountUpdate.address,
-                      province: e.target.value,
-                    },
-                  })
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Quận/Huyện"
-                variant="outlined"
-                value={accountUpdate.address?.district || ""}
-                onChange={(e) =>
-                  setAccountUpdate({
-                    ...accountUpdate,
-                    address: {
-                      ...accountUpdate.address,
-                      district: e.target.value,
-                    },
-                  })
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Phường/Xã"
-                variant="outlined"
-                value={accountUpdate.address?.ward || ""}
-                onChange={(e) =>
-                  setAccountUpdate({
-                    ...accountUpdate,
-                    address: {
-                      ...accountUpdate.address,
-                      ward: e.target.value,
-                    },
-                  })
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Địa chỉ cụ thể"
-                variant="outlined"
-                multiline
-                rows={2}
-                value={accountUpdate.address?.specificAddress || ""}
-                onChange={(e) =>
-                  setAccountUpdate({
-                    ...accountUpdate,
-                    address: {
-                      ...accountUpdate.address,
-                      specificAddress: e.target.value,
-                    },
-                  })
-                }
-              />
-            </Grid>
+  
 
             {/* Nhóm nút điều khiển */}
             <Grid
@@ -648,6 +728,364 @@ const UserProfile = () => {
     );
   };
 
+  const renderPersonalInfoTab = () => {
+    return (
+      <Box>
+        <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
+          Thông tin cá nhân
+        </Typography>
+        {renderInfoSection()}
+      </Box>
+    );
+  };
+
+  const renderAddressTab = () => {
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            Quản lý địa chỉ
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddAddress}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 500,
+            }}
+          >
+            Thêm địa chỉ mới
+          </Button>
+        </Box>
+
+        <Grid container spacing={3}>
+          {addresses.map((address) => (
+            <Grid item xs={12} md={6} key={address.id}>
+              <Card 
+                sx={{ 
+                  height: '100%',
+                  border: address.isDefault ? '2px solid' : '1px solid',
+                  borderColor: address.isDefault ? 'primary.main' : 'divider',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: 3,
+                    transform: 'translateY(-2px)',
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {address.type === 'home' ? <HomeIcon color="primary" /> : <BusinessIcon color="primary" />}
+                      <Typography variant="h6" sx={{ ml: 1, fontWeight: 600 }}>
+                        {address.label}
+                      </Typography>
+                    </Box>
+                    {address.isDefault && (
+                      <Chip 
+                        label="Mặc định" 
+                        color="primary" 
+                        size="small"
+                        icon={<CheckCircleIcon />}
+                        sx={{ fontWeight: 500 }}
+                      />
+                    )}
+                  </Box>
+
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      {address.fullName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {address.phoneNumber}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {`${address.specificAddress}, ${address.ward}, ${address.district}, ${address.province}`}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEditAddress(address)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Sửa
+                    </Button>
+                    {!address.isDefault && (
+                      <>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="success"
+                          onClick={() => handleSetDefaultAddress(address.id)}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          Đặt mặc định
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => handleDeleteAddress(address.id)}
+                          sx={{ textTransform: 'none' }}
+                        >
+                          Xóa
+                        </Button>
+                      </>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Dialog thêm/sửa địa chỉ */}
+        <Dialog 
+          open={openAddressDialog} 
+          onClose={() => setOpenAddressDialog(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 2 }
+          }}
+        >
+          <DialogTitle sx={{ pb: 1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {editingAddress ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới'}
+            </Typography>
+          </DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Nhãn địa chỉ"
+                  value={newAddress.label}
+                  onChange={(e) => setNewAddress({...newAddress, label: e.target.value})}
+                  placeholder="VD: Nhà riêng, Văn phòng"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Họ và tên"
+                  value={newAddress.fullName}
+                  onChange={(e) => setNewAddress({...newAddress, fullName: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Số điện thoại"
+                  value={newAddress.phoneNumber}
+                  onChange={(e) => setNewAddress({...newAddress, phoneNumber: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Tỉnh/Thành phố"
+                  value={newAddress.province}
+                  onChange={(e) => setNewAddress({...newAddress, province: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Quận/Huyện"
+                  value={newAddress.district}
+                  onChange={(e) => setNewAddress({...newAddress, district: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label="Phường/Xã"
+                  value={newAddress.ward}
+                  onChange={(e) => setNewAddress({...newAddress, ward: e.target.value})}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Địa chỉ cụ thể"
+                  value={newAddress.specificAddress}
+                  onChange={(e) => setNewAddress({...newAddress, specificAddress: e.target.value})}
+                  multiline
+                  rows={2}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newAddress.isDefault}
+                      onChange={(e) => setNewAddress({...newAddress, isDefault: e.target.checked})}
+                    />
+                  }
+                  label="Đặt làm địa chỉ mặc định"
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 3, pt: 1 }}>
+            <Button onClick={() => setOpenAddressDialog(false)} sx={{ textTransform: 'none' }}>
+              Hủy
+            </Button>
+            <Button 
+              onClick={handleSaveAddress} 
+              variant="contained"
+              sx={{ textTransform: 'none', fontWeight: 500 }}
+            >
+              {editingAddress ? 'Cập nhật' : 'Thêm địa chỉ'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  };
+
+  const renderSecurityTab = () => {
+    return (
+      <Box>
+        <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
+          Bảo mật tài khoản
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={8}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                Đổi mật khẩu
+              </Typography>
+              
+              {openChangePassword ? (
+                <Box>
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    label="Mật khẩu cũ"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordData.oldPassword}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        oldPassword: e.target.value,
+                      })
+                    }
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    label="Mật khẩu mới"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordData.newPassword}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        newPassword: e.target.value,
+                      })
+                    }
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <TextField
+                    margin="normal"
+                    fullWidth
+                    label="Xác nhận mật khẩu mới"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordData.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordData({
+                        ...passwordData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LockIcon />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword(!showPassword)}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  <Box sx={{ display: "flex", gap: 2, mt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => setOpenChangePassword(false)}
+                      sx={{ textTransform: 'none' }}
+                    >
+                      Hủy
+                    </Button>
+                    <Button
+                      variant="contained"
+                      disabled={
+                        !passwordData.oldPassword ||
+                        !passwordData.newPassword ||
+                        !passwordData.confirmPassword
+                      }
+                      onClick={handleChangePassword}
+                      sx={{ textTransform: 'none', fontWeight: 500 }}
+                    >
+                      Đổi mật khẩu
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Để bảo mật tài khoản, bạn nên thay đổi mật khẩu định kỳ
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<LockIcon />}
+                    onClick={() => setOpenChangePassword(true)}
+                    sx={{ textTransform: 'none', fontWeight: 500 }}
+                  >
+                    Đổi mật khẩu
+                  </Button>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  };
+
   const renderProductsTab = () => {
     if (loading) {
       return (
@@ -692,13 +1130,15 @@ const UserProfile = () => {
             variant="contained"
             color="primary"
             sx={{
-              background:
-                "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
+              background: "linear-gradient(135deg, #2D1B69, #4A3B8C)",
               "&:hover": {
-                background:
-                  "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
-                filter: "brightness(1.1)",
+                background: "linear-gradient(135deg, #1A0F3D, #2D1B69)",
+                transform: "translateY(-2px)",
+                boxShadow: "0 8px 25px rgba(45,27,105,0.3)",
               },
+              transition: "all 0.3s ease",
+              textTransform: "none",
+              fontWeight: 600,
             }}
           >
             Đăng sản phẩm mới
@@ -728,7 +1168,7 @@ const UserProfile = () => {
                   flexDirection: "column",
                   transition: "transform 0.3s",
                   "&:hover": { transform: "translateY(-5px)", boxShadow: 5 },
-                  borderTop: "3px solid #344960",
+                  borderTop: "3px solid #2D1B69",
                 }}
               >
                 <Box sx={{ position: "relative" }}>
@@ -823,9 +1263,14 @@ const UserProfile = () => {
               sx={{
                 "& .MuiPaginationItem-root": {
                   "&.Mui-selected": {
-                    background:
-                      "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
+                    background: "linear-gradient(135deg, #2D1B69, #4A3B8C)",
                     color: "white",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, #1A0F3D, #2D1B69)",
+                    },
+                  },
+                  "&:hover": {
+                    backgroundColor: "rgba(45,27,105,0.1)",
                   },
                 },
               }}
@@ -974,120 +1419,187 @@ const UserProfile = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container maxWidth="lg" sx={{ mt: 0, mb: 4, pt: 5 }}>
-        <Paper
-          sx={{
-            p: { xs: 2, md: 4 },
-            borderRadius: 3,
-            boxShadow: 2,
-            overflow: "hidden",
-          }}
-          elevation={2}
-        >
-          <Box
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
+        <Container maxWidth="lg">
+          {/* Header Section */}
+          <Paper
+            elevation={0}
             sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              mb: 4,
-              alignItems: { xs: "center", md: "flex-start" },
-              gap: 4,
+              p: 4,
+              mb: 3,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #2D1B69 0%, #4A3B8C 50%, #6B5B95 100%)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '200px',
+                height: '200px',
+                background: 'rgba(255,255,255,0.1)',
+                borderRadius: '50%',
+                transform: 'translate(50px, -50px)',
+              }
             }}
           >
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: { xs: "center", md: "flex-start" },
+                gap: 3,
+                position: 'relative',
+                zIndex: 1,
               }}
             >
-              <Box sx={{ position: "relative" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {loading ? (
-                  <Skeleton variant="circular" width={150} height={150} />
+                  <Skeleton variant="circular" width={120} height={120} />
                 ) : (
                   <Badge
                     overlap="circular"
                     anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                     badgeContent={
-                      <IconButton
-                        sx={{
-                          background:
-                            "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
-                          color: "white",
-                          "&:hover": {
-                            background:
-                              "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
-                            filter: "brightness(1.1)",
-                          },
-                        }}
-                        size="small"
-                      >
-                        <PhotoCamera fontSize="small" sx={{ color: "white" }} />
-                      </IconButton>
+                      <Tooltip title="Thay đổi ảnh đại diện">
+                        <IconButton
+                          sx={{
+                            bgcolor: 'white',
+                            color: 'primary.main',
+                            width: 40,
+                            height: 40,
+                            "&:hover": {
+                              bgcolor: 'grey.100',
+                            },
+                            boxShadow: 2,
+                          }}
+                          size="small"
+                        >
+                          <PhotoCamera fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     }
                   >
                     <Avatar
                       sx={{
-                        width: 150,
-                        height: 150,
-                        border: "4px solid white",
-                        boxShadow: 2,
+                        width: 120,
+                        height: 120,
+                        border: "4px solid rgba(255,255,255,0.3)",
+                        boxShadow: 3,
+                        fontSize: '3rem',
+                        fontWeight: 600,
                       }}
                       alt={account.fullName}
-                      src="/static/images/avatar/default.jpg"
-                    />
+                      src={account.avatar || "/static/images/avatar/default.jpg"}
+                    >
+                      {account.fullName?.charAt(0)?.toUpperCase()}
+                    </Avatar>
                   </Badge>
                 )}
               </Box>
+              
+              <Box sx={{ flexGrow: 1, textAlign: { xs: 'center', md: 'left' } }}>
+                <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+                  {loading ? <Skeleton width={200} /> : account.fullName || 'Người dùng'}
+                </Typography>
+                <Typography variant="h6" sx={{ opacity: 0.9, mb: 2 }}>
+                  {loading ? <Skeleton width={150} /> : account.email || 'email@example.com'}
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                  <Chip 
+                    icon={<WatchIcon />} 
+                    label={`Tham gia từ ${formatDate(account?.createdAt) || '2024'}`}
+                    sx={{ 
+                      bgcolor: 'rgba(212,175,55,0.3)', 
+                      color: 'white',
+                      fontWeight: 500,
+                      border: '1px solid rgba(212,175,55,0.5)',
+                    }} 
+                  />
+                  <Chip 
+                    icon={<ShoppingBagIcon />} 
+                    label={`${userProducts.length} sản phẩm`}
+                    sx={{ 
+                      bgcolor: 'rgba(212,175,55,0.3)', 
+                      color: 'white',
+                      fontWeight: 500,
+                      border: '1px solid rgba(212,175,55,0.5)',
+                    }} 
+                  />
+                </Box>
+              </Box>
             </Box>
-            <Box sx={{ flexGrow: 1, width: "100%" }}>{renderInfoSection()}</Box>
-          </Box>
+          </Paper>
 
-          <Box sx={{ width: "100%", mt: 2 }}>
-            <Paper
-              elevation={0}
+          {/* Main Content */}
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              overflow: "hidden",
+              boxShadow: '0 8px 32px rgba(45,27,105,0.15)',
+              border: '1px solid rgba(212,175,55,0.1)',
+            }}
+          >
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              aria-label="profile tabs"
+              variant="fullWidth"
               sx={{
-                borderRadius: 2,
-                overflow: "hidden",
+                bgcolor: "background.paper",
+                "& .MuiTab-root": {
+                  minHeight: "64px",
+                  fontWeight: 500,
+                  textTransform: 'none',
+                },
+                "& .MuiTabs-indicator": {
+                  background: "linear-gradient(90deg, #2D1B69, #D4AF37)",
+                  height: 3,
+                },
               }}
             >
-              <Tabs
-                value={activeTab}
-                onChange={handleTabChange}
-                aria-label="profile tabs"
-                variant="fullWidth"
-                sx={{
-                  bgcolor: "background.paper",
-                  "& .MuiTab-root": {
-                    minHeight: "64px",
-                    fontWeight: 500,
-                  },
-                  "& .MuiTabs-indicator": {
-                    background:
-                      "linear-gradient(to right, #2a3b4c, #344960, #3e5871, #496883)",
-                  },
-                }}
-              >
-                <Tab
-                  icon={<ShoppingBagIcon />}
-                  iconPosition="start"
-                  label="Sản phẩm đã đăng"
-                />
-                <Tab
-                  icon={<StarIcon />}
-                  iconPosition="start"
-                  label="Đánh giá"
-                />
-              </Tabs>
-              <Box sx={{ p: { xs: 2, md: 3 } }}>
-                {activeTab === 0 && renderProductsTab()}
-                {activeTab === 1 && renderReviewsTab()}
-              </Box>
-            </Paper>
-          </Box>
-        </Paper>
+              <Tab
+                icon={<AccountCircleIcon />}
+                iconPosition="start"
+                label="Thông tin cá nhân"
+              />
+              <Tab
+                icon={<ShoppingBagIcon />}
+                iconPosition="start"
+                label="Sản phẩm"
+              />
+              <Tab
+                icon={<LocationIcon />}
+                iconPosition="start"
+                label="Địa chỉ"
+              />
+              <Tab
+                icon={<StarIcon />}
+                iconPosition="start"
+                label="Đánh giá"
+              />
+              <Tab
+                icon={<SecurityIcon />}
+                iconPosition="start"
+                label="Bảo mật"
+              />
+            </Tabs>
+            
+            <Box sx={{ p: { xs: 2, md: 3 } }}>
+              {activeTab === 0 && renderPersonalInfoTab()}
+              {activeTab === 1 && renderProductsTab()}
+              {activeTab === 2 && renderAddressTab()}
+              {activeTab === 3 && renderReviewsTab()}
+              {activeTab === 4 && renderSecurityTab()}
+            </Box>
+          </Paper>
 
-        {renderSnackbar()}
-      </Container>
+          {renderSnackbar()}
+        </Container>
+      </Box>
     </ThemeProvider>
   );
 };

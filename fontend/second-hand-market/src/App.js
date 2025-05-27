@@ -28,6 +28,7 @@ import Verification from "./pages/Verification/Verification";
 // Thiết lập axios interceptor khi ứng dụng khởi động
 import ApiService from "./services/ApiService";
 import authService from "./services/authService";
+import OrderDetails from "./pages/OrderDetails/OrderDetails";
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
@@ -177,6 +178,18 @@ function App() {
                           <PostProduct />
                         </Layout>
                       }
+                    />
+                    <Route
+                      path="/eco-market/order-details/:orderId"
+                      element={
+                        <Layout>
+                          <OrderDetails />
+                        </Layout>
+                      }
+                    />
+                    <Route
+                      path="/eco-market/order-details"
+                      element={<Navigate to="/eco-market/customer/orders" />}
                     />
                   </Routes>
                 </BrowserRouter>

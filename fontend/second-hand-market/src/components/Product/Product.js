@@ -173,19 +173,17 @@ export const Product = () => {
 
   const handleOpenChat = async () => {
     try {
-      // Kiểm tra đăng nhập trước
       const authData = await AccountContext.Authentication();
       if (!authData || !authData.data || !authData.data.account) {
         navigate("/eco-market/login");
         return;
       }
 
-      // Gọi API để tạo hoặc tìm cuộc trò chuyện với sản phẩm
       const response = await findOrCreateWithProduct(productID, account._id);
-
+      console.log(response);
       if (!response || !response.success) {
         console.error("Failed to create chat conversation:", response);
-        // Hiển thị thông báo lỗi (có thể thêm một state cho thông báo)
+
         alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");
       }
     } catch (error) {
@@ -203,7 +201,7 @@ export const Product = () => {
             <Breadcrumbs aria-label="breadcrumb">
               <Typography
                 component="a"
-                href="/eco-market"
+                href="/eco-market/home"
                 color="primary"
                 sx={{ textDecoration: "none", fontWeight: 500 }}
               >
@@ -211,7 +209,7 @@ export const Product = () => {
               </Typography>
               <Typography
                 component="a"
-                href="/eco-market/category"
+                href="/eco-market/home"
                 color="primary"
                 sx={{ textDecoration: "none", fontWeight: 500 }}
               >

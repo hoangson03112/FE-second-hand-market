@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button, Divider, Paper } from "@mui/material";
+import { Visibility } from "@mui/icons-material";
 import CancelOrderModal from "./CancelOrderModal";
 import { formatPrice } from "../../utils/function";
 import { useProduct } from "../../contexts/ProductContext";
@@ -105,11 +106,30 @@ const OrderItem = ({ order, setOrders }) => {
     }
   };
 
+  const handleViewDetails = () => {
+    console.log("🔍 Navigating to order details with ID:", order._id);
+    navigate(`/eco-market/order-details/${order._id}`);
+  };
+
+  const ViewDetailsButton = () => (
+    <Button
+      variant="contained"
+      color="primary"
+      size="small"
+      sx={{ mr: 2 }}
+      onClick={handleViewDetails}
+      startIcon={<Visibility />}
+    >
+      Xem chi tiết
+    </Button>
+  );
+
   const renderStatusButtons = () => {
     switch (order.status) {
-      case "PENDING":
+      case "pending":
         return (
           <Box>
+            <ViewDetailsButton />
             <Button
               variant="outlined"
               size="small"
@@ -132,9 +152,10 @@ const OrderItem = ({ order, setOrders }) => {
             </Button>
           </Box>
         );
-      case "SHIPPING":
+      case "shipping":
         return (
           <Box>
+            <ViewDetailsButton />
             <Button
               variant="outlined"
               color="primary"
@@ -157,9 +178,10 @@ const OrderItem = ({ order, setOrders }) => {
             </Button>
           </Box>
         );
-      case "COMPLETED":
+      case "completed":
         return (
           <Box>
+            <ViewDetailsButton />
             <Button
               variant="outlined"
               color="inherit"
@@ -182,10 +204,11 @@ const OrderItem = ({ order, setOrders }) => {
             </Button>
           </Box>
         );
-      case "CANCELLED":
-      case "REFUND":
+      case "cancelled":
+      case "refund":
         return (
           <Box>
+            <ViewDetailsButton />
             <Button
               variant="outlined"
               color="inherit"
@@ -252,11 +275,11 @@ const OrderItem = ({ order, setOrders }) => {
               </Box>
               <Typography variant="h6">
                 {{
-                  PENDING: "Chờ xác nhận",
-                  SHIPPING: "Đang vận chuyển",
-                  CANCELLED: "Đã hủy",
-                  COMPLETED: "Hoàn thành",
-                  REFUND: "Trả hàng",
+                  pending: "Chờ xác nhận",
+                  shipping: "Đang vận chuyển",
+                  cancelled: "Đã hủy",
+                  completed: "Hoàn thành",
+                  refund: "Trả hàng",
                 }[order.status] || "Trạng thái không xác định"}
               </Typography>
             </Box>

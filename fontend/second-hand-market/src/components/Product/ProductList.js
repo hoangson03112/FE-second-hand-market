@@ -12,7 +12,6 @@ import {
   FaMapMarkerAlt,
   FaShoppingCart,
   FaEye,
-
 } from "react-icons/fa";
 import { BsFilterLeft } from "react-icons/bs";
 import { formatPrice } from "../../utils/function";
@@ -264,7 +263,17 @@ function ProductList() {
                       className="text-decoration-none text-dark h-100"
                     >
                       <div className="card product-card h-100">
-                        <div className="product-image-container">
+                        <div 
+                          className="product-image-container" 
+                          style={{ 
+                            height: "220px", 
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            position: "relative"
+                          }}
+                        >
                           <img
                             src={
                               product.avatar || "/images/default-product.png"
@@ -275,6 +284,12 @@ function ProductList() {
                               e.target.src = "/images/default-product.png";
                             }}
                             loading="lazy"
+                            style={{ 
+                              objectFit: "contain", 
+                              width: "100%",
+                              height: "100%",
+                              padding: "10px"
+                            }}
                           />
                           <div className="product-action">
                             <button className="btn btn-sm btn-light">

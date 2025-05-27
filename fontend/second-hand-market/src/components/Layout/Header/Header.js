@@ -10,11 +10,19 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const [account, setAccount] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
-
+  const navigate = useNavigate();
   const handleLogout = () => {
     localStorage.clear();
-    window.location.reload();
+    navigate("/eco-market/home");
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/eco-market?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   useEffect(() => {
@@ -63,15 +71,31 @@ const Header = () => {
               width={"170px"}
             />
           </Link>
-          <div className="input-group-password w-25">
-            <i className="bi bi-search input-icon" id="basic-addon1"></i>
-            <input
-              type="text"
-              className="form-control bg-body-secondary border-end-0 rounded-5 border-danger"
-              placeholder="Tìm Kiếm Sản Phẩm"
-              aria-label="Tìm Kiếm Sản Phẩm"
-              aria-describedby="basic-addon1"
-            />
+          <div className="modern-search-container w-25">
+            <form onSubmit={handleSearch} className="modern-search-form">
+              <div className="search-box">
+                <i className="bi bi-search search-icon"></i>
+                <input
+                  type="text"
+                  className="modern-search-input"
+                  placeholder="Tìm kiếm sản phẩm, thương hiệu, danh mục..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button 
+                    type="button" 
+                    className="clear-btn"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <i className="bi bi-x"></i>
+                  </button>
+                )}
+                <button type="submit" className="search-submit-btn">
+                  <i className="bi bi-search"></i>
+                </button>
+              </div>
+            </form>
           </div>
 
           <div id="navbarNav" className="ms-5 ">
@@ -84,8 +108,53 @@ const Header = () => {
               </Link>
               {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center  ">
+                  {/* Notification Icon */}
                   <div
-                    className="position-relative mx-5"
+                    className="position-relative mx-3"
+                    style={{ width: "45px", height: "45px" }}
+                  >
+                    <button
+                      className="notification-icon-btn"
+                      style={{
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100%",
+                        width: "100%",
+                        border: "none",
+                        background: "transparent",
+                      }}
+                    >
+                      <i className="bi bi-bell-fill fs-4 text-dark"></i>
+                    </button>
+
+                    <sup
+                      className="notification-badge"
+                      style={{
+                        position: "absolute",
+                        top: "2px",
+                        right: "2px",
+                        backgroundColor: "#ff4757",
+                        color: "white",
+                        borderRadius: "50%",
+                        padding: "0.3rem 0.4rem",
+                        fontSize: "0.7rem",
+                        fontWeight: "bold",
+                        minWidth: "18px",
+                        height: "18px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      3
+                    </sup>
+                  </div>
+
+                  {/* Cart Icon */}
+                  <div
+                    className="position-relative mx-3"
                     style={{ width: "45px", height: "45px" }}
                   >
                     <Link
@@ -93,7 +162,7 @@ const Header = () => {
                       style={{ textDecoration: "none" }}
                     >
                       <i
-                        className="bi bi-cart4 fs-4 rounded-circle text-center cart shadow text-dark"
+                        className="bi bi-bag-heart-fill fs-4 rounded-circle text-center cart shadow text-dark"
                         style={{
                           cursor: "pointer",
                           display: "flex",

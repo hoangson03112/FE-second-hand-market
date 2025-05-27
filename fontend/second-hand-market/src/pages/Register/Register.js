@@ -23,6 +23,7 @@ function Register() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showVerify, setShowVerify] = useState(false);
   const [userID, setUserID] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -65,23 +66,40 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
-    console.log(formData);
+    setErrorMessage("");
+    setIsLoading(true);
+    
+    try {
+      if (validateFields()) {
+        const response = await AccountContext.Register(
+          formData.username,
+          formData.email,
+          formData.password,
+          formData.phoneNumber,
+          formData.fullName
+        );
 
-    if (validateFields()) {
-      const error = await AccountContext.Register(
-        formData.username,
-        formData.email,
-        formData.password,
-        formData.phoneNumber,
-        formData.fullName
-      );
-
-      if (error.status === "success") {
-        setShowVerify(true);
-        setUserID(error.accountID);
-      } else {
-        setErrorMessage(`Lỗi: ${error.type} đã tồn tại!`);
+        if (response.status === "success") {
+          setShowVerify(true);
+          setUserID(response.accountID);
+        } else {
+          // Xử lý các loại lỗi khác nhau
+          if (response.type === "username") {
+            setErrorMessage("Tên đăng nhập đã tồn tại. Vui lòng chọn tên đăng nhập khác.");
+          } else if (response.type === "email") {
+            setErrorMessage("Email này đã được đăng ký. Vui lòng sử dụng email khác hoặc đăng nhập.");
+          } else if (response.type === "phoneNumber") {
+            setErrorMessage("Số điện thoại này đã được đăng ký với tài khoản khác.");
+          } else {
+            setErrorMessage(`Đăng ký không thành công: ${response.message || 'Vui lòng thử lại sau.'}`);
+          }
+        }
       }
+    } catch (error) {
+      console.error("Registration error:", error);
+      setErrorMessage("Đã xảy ra lỗi trong quá trình đăng ký. Vui lòng thử lại sau.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -110,7 +128,7 @@ function Register() {
               </div>
             </div>
 
-            <div className="col-md-5 mb-5 card shadow">
+            <div className="col-md-5 mb-5 card shadow" style={{ transition: "none", transform: "none" }}>
               <form onSubmit={handleSubmit}>
                 <div className="text-center">
                   <img
@@ -122,6 +140,19 @@ function Register() {
                     Chào mừng bạn đến với eco-market
                   </h4>
                 </div>
+                
+                {/* Error message alert */}
+                {errorMessage && (
+                  <div className="alert alert-danger mx-auto mb-4 w-75 text-center" role="alert" style={{
+                    borderRadius: "15px",
+                    animation: "fadeIn 0.5s",
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.1)"
+                  }}>
+                    <i className="fa fa-exclamation-circle me-2"></i>
+                    {errorMessage}
+                  </div>
+                )}
+                
                 <p className="text-center">
                   Vui lòng điền thông tin để tạo tài khoản
                 </p>
@@ -222,46 +253,51 @@ function Register() {
                   <button
                     type="submit"
                     className="btn text-white mb-4 p-2 w-75 gradient-custom-2"
+                    style={{ 
+                      transition: "all 0.3s ease", 
+                      boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.transform = "translateY(-3px)";
+                      e.currentTarget.style.boxShadow = "0 6px 12px rgba(0,0,0,0.15)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
+                    }}
+                    disabled={isLoading}
                   >
-                    Đăng ký
+                    {isLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Đang xử lý...
+                      </>
+                    ) : (
+                      "Đăng ký"
+                    )}
                   </button>
-
-                  {errorMessage && (
-                    <div
-                      className="modal fade show"
-                      role="dialog"
-                      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-                    >
-                      <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                          <div className="modal-header">
-                            <h5 className="modal-title">Thông báo </h5>
-                            <button
-                              type="button"
-                              className="btn-close"
-                              onClick={handleCloseModal}
-                            ></button>
-                          </div>
-                          <div className="modal-body">
-                            <p>{errorMessage}</p>
-                          </div>
-                          <div className="modal-footer">
-                            <button
-                              type="button"
-                              className="btn gradient-custom-2 text-white"
-                              onClick={handleCloseModal}
-                            >
-                              Đóng!
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   <p className="text-muted">
                     Đã có tài khoản?{" "}
-                    <a href="/eco-market/login" className="text-decoration-none">
+                    <a
+                      href="/eco-market/login"
+                      className="text-decoration-none"
+                      style={{ 
+                        position: "relative",
+                        transition: "all 0.3s ease", 
+                        color: "#6c757d"
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.color = "#0d6efd";
+                        e.currentTarget.style.textDecoration = "underline";
+                        e.currentTarget.style.fontWeight = "500";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.color = "#6c757d";
+                        e.currentTarget.style.textDecoration = "none";
+                        e.currentTarget.style.fontWeight = "normal";
+                      }}
+                    >
                       Đăng nhập ngay
                     </a>
                   </p>
@@ -271,6 +307,22 @@ function Register() {
           </div>
         </div>
       </div>
+      
+      {/* Add a keyframe animation for the error message */}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .error-message {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            text-align: center;
+          }
+        `}
+      </style>
     </div>
   );
 }

@@ -232,7 +232,15 @@ const Cart = () => {
             />
           </Table>
         </div>
-        <Card className="shadow-sm sticky-bottom mt-4">
+        <Card
+          className="shadow-sm sticky-bottom mt-4"
+          style={{
+            transition: "none",
+            transform: "none !important",
+            boxShadow: "0 .125rem .25rem rgba(0,0,0,.075)",
+            borderRadius: "8px",
+          }}
+        >
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center">
               <div>
@@ -257,11 +265,61 @@ const Cart = () => {
                   </strong>
                 </p>
                 <Button
-                  className="mt-2 float-end btn-primary"
+                  className="mt-2 float-end btn-primary buy-now-btn"
                   onClick={handleCheckout}
+                  style={{
+                    position: "relative",
+                    overflow: "hidden",
+                    transition: "all 0.3s ease",
+
+                    border: "none",
+                    fontSize: "16px",
+                    fontWeight: "bold",
+                    paddingLeft: "20px",
+                    paddingRight: "20px",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "translateY(-3px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
                 >
-                  Mua Hàng
+                  <span style={{ position: "relative", zIndex: 2 }}>
+                    Mua Hàng
+                  </span>
+                  <div
+                    className="btn-shine"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: "-100%",
+                      width: "100%",
+                      height: "100%",
+                      background:
+                        "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                      animation: "shine 2s infinite",
+                      zIndex: 1,
+                    }}
+                  ></div>
                 </Button>
+                <style jsx>{`
+                  @keyframes shine {
+                    0% {
+                      left: -100%;
+                    }
+                    20% {
+                      left: 100%;
+                    }
+                    100% {
+                      left: 100%;
+                    }
+                  }
+                  .buy-now-btn:active {
+                    transform: scale(0.95) !important;
+                    box-shadow: 0 2px 6px rgba(238, 77, 45, 0.3) !important;
+                  }
+                `}</style>
               </div>
             </div>
           </Card.Body>

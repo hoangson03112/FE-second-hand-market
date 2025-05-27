@@ -127,13 +127,13 @@ const OrderMessage = ({ order }) => {
           <Chip
             size="small"
             label={
-              order.status === "CANCELLED"
+              order.status === "cancelled"
                 ? "Đã hủy"
-                : order.status === "PENDING"
+                : order.status === "pending"
                 ? "Chờ xác nhận"
-                : order.status === "SHIPPING"
+                : order.status === "shipping"
                 ? "Đang vận chuyển"
-                : order.status === "COMPLETED"
+                : order.status === "completed"
                 ? "Hoàn thành"
                 : order.status
             }

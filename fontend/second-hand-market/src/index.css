@@ -14,4 +14,14 @@ html {
 
 body {
   overflow-x: hidden;
+
+}
+
+.ui-text {
+  font-family: 'Roboto', sans-serif;
+}
+
+
+.content-text {
+  font-family: 'Open Sans', sans-serif;
 }

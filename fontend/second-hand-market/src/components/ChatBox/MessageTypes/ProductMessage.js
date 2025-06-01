@@ -66,14 +66,14 @@ const ProductMessage = ({ product }) => {
   if (isLoading) {
     return (
       <Card
-        className="product-message-card"
         variant="outlined"
         sx={{
           maxWidth: 320,
-          borderRadius: "12px",
+          borderRadius: 2,
           overflow: "hidden",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          border: "1px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+          border: "1px solid rgba(230, 230, 230, 0.7)",
+          bgcolor: "rgba(255, 255, 255, 0.8)",
         }}
       >
         <Skeleton variant="rectangular" height={140} animation="wave" />
@@ -97,10 +97,16 @@ const ProductMessage = ({ product }) => {
       variant="outlined"
       sx={{
         maxWidth: 320,
-        borderRadius: "12px",
+        borderRadius: 2,
         overflow: "hidden",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        border: "1px solid rgba(0,0,0,0.08)",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
+        border: "1px solid rgba(230, 230, 230, 0.7)",
+        bgcolor: "rgba(255, 255, 255, 0.8)",
+        transition: "all 0.2s",
+        "&:hover": {
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+          transform: "translateY(-1px)",
+        },
       }}
     >
       {displayProduct.image ? (
@@ -126,7 +132,7 @@ const ProductMessage = ({ product }) => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "primary.light",
+            bgcolor: "#324155",
             color: "white",
           }}
         >
@@ -135,10 +141,25 @@ const ProductMessage = ({ product }) => {
         </Box>
       )}
       <CardContent sx={{ p: 2 }}>
-        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+        <Typography 
+          variant="subtitle1" 
+          sx={{
+            fontWeight: 600,
+            color: "#324155",
+            fontSize: "0.95rem",
+            mb: 0.5,
+          }}
+        >
           {displayProduct.name || "Sản phẩm được chia sẻ"}
         </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Typography 
+          variant="body2" 
+          sx={{
+            color: "#324155",
+            fontWeight: 500,
+            mb: 1.5,
+          }}
+        >
           {typeof displayProduct.price === "number"
             ? displayProduct.price.toLocaleString("vi-VN", {
                 style: "currency",
@@ -151,7 +172,15 @@ const ProductMessage = ({ product }) => {
           size="small"
           fullWidth
           onClick={handleViewProduct}
-          sx={{ mt: 1 }}
+          sx={{ 
+            bgcolor: "#324155",
+            color: "#fff",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+            "&:hover": {
+              bgcolor: "#455a74",
+              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
+            }
+          }}
           startIcon={<ShoppingCart fontSize="small" />}
         >
           Xem sản phẩm

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import "./PostProduct.css";
 import Select from "react-select";
-import CategoryContext from "../../contexts/CategoryContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import ButtonBack from "./../../components/common/ButtomBack/ButtomBack";
 import Swal from "sweetalert2";
 import { useCategory } from "../../contexts/CategoryContext";
 import AppContext from "../../contexts/AppContext";
 import { useProduct } from "../../contexts/ProductContext";
+import ButtonBack from "../../components/common/Button";
+
+
 const PostProduct = () => {
   const { getCategories } = useCategory();
   const { postProduct } = useProduct();

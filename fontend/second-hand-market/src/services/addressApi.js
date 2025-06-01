@@ -1,15 +1,15 @@
-import axios from "axios";
-const API_URL = "http://localhost:2000/eco-market/addresses";
+import ApiService from "./ApiService";
+
 
 export const getAddresses = async (token) => {
-  const res = await axios.get(API_URL, {
+  const res = await ApiService.get("/addresses", {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
 };
 
 export const addAddress = async (address, token) => {
-  const res = await axios.post(API_URL, address, {
+  const res = await ApiService.post("/addresses", address, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;

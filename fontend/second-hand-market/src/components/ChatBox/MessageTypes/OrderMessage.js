@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { Assignment, LocalShipping } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import orderService from "../../../services/orderService";
+import orderService from './../../../services/orderService';
 
 const getStatusColor = (status) => {
   switch (status?.toLowerCase()) {
@@ -67,7 +67,7 @@ const OrderMessage = ({ order }) => {
 
   const handleViewOrder = () => {
     if (orderId) {
-      navigate(`/eco-market/order/detail/${orderId}`);
+      navigate(`/eco-market/order-details/${orderId}`);
     } else {
       console.error("Order ID not found in order object:", order);
     }
@@ -130,12 +130,12 @@ const OrderMessage = ({ order }) => {
               order.status === "cancelled"
                 ? "Đã hủy"
                 : order.status === "pending"
-                ? "Chờ xác nhận"
-                : order.status === "shipping"
-                ? "Đang vận chuyển"
-                : order.status === "completed"
-                ? "Hoàn thành"
-                : order.status
+                  ? "Chờ xác nhận"
+                  : order.status === "shipping"
+                    ? "Đang vận chuyển"
+                    : order.status === "completed"
+                      ? "Hoàn thành"
+                      : order.status
             }
             color={getStatusColor(order.status)}
             variant="outlined"

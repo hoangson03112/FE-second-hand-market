@@ -1,18 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Image } from "react-bootstrap";
 import AccountContext from "../../../contexts/AccountContext";
 import { Link, useNavigate } from "react-router-dom";
-import "./Header.css";
+import styles from "./Header.module.css";
 import emitter from "../../../utils/mitt";
 import { useCategory } from "../../../contexts/CategoryContext";
+import SearchBar from "../../common/Input";
+
 const Header = () => {
   const { getCategories } = useCategory();
   const [categories, setCategories] = useState([]);
   const [account, setAccount] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const dropdownRef = useRef(null);
+
   const handleDropdownToggle = () => setShowDropdown(!showDropdown);
   const navigate = useNavigate();
+
   const handleLogout = () => {
     localStorage.clear();
     navigate("/eco-market/home");
@@ -48,14 +53,26 @@ const Header = () => {
     const fetchCategories = async () => {
       try {
         const categories = await getCategories();
-
         setCategories(categories);
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
     };
-
     fetchCategories();
+  }, []);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   return (
@@ -71,130 +88,45 @@ const Header = () => {
               width={"170px"}
             />
           </Link>
-          <div className="modern-search-container w-25">
-            <form onSubmit={handleSearch} className="modern-search-form">
-              <div className="search-box">
-                <i className="bi bi-search search-icon"></i>
-                <input
-                  type="text"
-                  className="modern-search-input"
-                  placeholder="Tìm kiếm sản phẩm, thương hiệu, danh mục..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <button 
-                    type="button" 
-                    className="clear-btn"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <i className="bi bi-x"></i>
-                  </button>
-                )}
-                <button type="submit" className="search-submit-btn">
-                  <i className="bi bi-search"></i>
-                </button>
-              </div>
-            </form>
+
+          <div className={`${styles.modernSearchContainer} w-25`}>
+            <SearchBar onSearch={handleSearch} />
           </div>
 
-          <div id="navbarNav" className="ms-5 ">
-            <nav className="nav nav-pills d-flex justify-content-evenly">
+          <div id="navbarNav" className="">
+            <nav className="nav nav-pills d-flex justify-content-evenly align-items-center">
+              {/* Nút Đăng Bán với icon mới */}
               <Link
-                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
+                className={`${styles.sellButton} flex-sm-fill text-center nav-link px-4 py-2`}
                 to="/eco-market/seller/products/new"
               >
-                Đăng Bán
+                <i className="bi bi-plus-circle-fill me-2"></i>
+                <span className={styles.sellText}>Đăng Bán</span>
               </Link>
-              {Object.keys(account).length > 0 ? (
-                <div className="d-flex align-items-center  ">
-                  {/* Notification Icon */}
-                  <div
-                    className="position-relative mx-3"
-                    style={{ width: "45px", height: "45px" }}
-                  >
-                    <button
-                      className="notification-icon-btn"
-                      style={{
-                        cursor: "pointer",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        height: "100%",
-                        width: "100%",
-                        border: "none",
-                        background: "transparent",
-                      }}
-                    >
-                      <i className="bi bi-bell-fill fs-4 text-dark"></i>
-                    </button>
 
-                    <sup
-                      className="notification-badge"
-                      style={{
-                        position: "absolute",
-                        top: "2px",
-                        right: "2px",
-                        backgroundColor: "#ff4757",
-                        color: "white",
-                        borderRadius: "50%",
-                        padding: "0.3rem 0.4rem",
-                        fontSize: "0.7rem",
-                        fontWeight: "bold",
-                        minWidth: "18px",
-                        height: "18px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      3
-                    </sup>
+              {Object.keys(account).length > 0 ? (
+                <div className="d-flex align-items-center">
+                  {/* Notification Icon */}
+                  <div className={`${styles.iconContainer} position-relative`}>
+                    <button className={styles.notificationBtn}>
+                      <i className="bi bi-bell-fill"></i>
+                      <span className={styles.badge}>3</span>
+                    </button>
                   </div>
 
                   {/* Cart Icon */}
-                  <div
-                    className="position-relative mx-3"
-                    style={{ width: "45px", height: "45px" }}
-                  >
-                    <Link
-                      to="/eco-market/my-cart"
-                      style={{ textDecoration: "none" }}
-                    >
-                      <i
-                        className="bi bi-bag-heart-fill fs-4 rounded-circle text-center cart shadow text-dark"
-                        style={{
-                          cursor: "pointer",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "100%",
-                          width: "100%",
-                        }}
-                      />
+                  <div className={`${styles.iconContainer} position-relative`}>
+                    <Link to="/eco-market/my-cart" className={styles.cartBtn}>
+                      <i className="bi bi-bag-heart-fill"></i>
+                      <span className={styles.badge}>{account.cart?.length || 0}</span>
                     </Link>
-
-                    <sup
-                      style={{
-                        position: "absolute",
-                        top: "0",
-                        right: "0",
-                        backgroundColor: "red",
-                        color: "white",
-                        borderRadius: "50%",
-                        padding: "0.6rem 0.5rem",
-                        fontSize: "0.8rem",
-                      }}
-                    >
-                      {account.cart.length}
-                    </sup>
                   </div>
 
-                  <div className="d-inline-block ms-2">
+                  {/* User Profile */}
+                  <div className={`${styles.userProfile} d-inline-block`} ref={dropdownRef}>
                     <div
-                      className="d-flex align-items-center text-decoration-none"
+                      className={styles.profileToggle}
                       onClick={handleDropdownToggle}
-                      style={{ cursor: "pointer" }}
                     >
                       <img
                         src={
@@ -202,39 +134,27 @@ const Header = () => {
                           "https://w7.pngwing.com/pngs/178/595/png-transparent-user-profile-computer-icons-login-user-avatars-thumbnail.png"
                         }
                         alt="User"
-                        style={{
-                          width: "40px",
-                          height: "40px",
-                          borderRadius: "50%",
-                        }}
-                        className="me-2"
+                        className={styles.avatar}
                       />
-                      <span>{account?.fullName}</span>
+                      <span className={styles.userName}>{account?.fullName}</span>
+                      <i className={`bi bi-chevron-down ${styles.chevron}`}></i>
                     </div>
+
                     {showDropdown && (
-                      <div className="dropdown-menu show mt-2">
-                        <Link
-                          className="dropdown-item"
-                          to="/eco-market/user/profile"
-                        >
-                          Hồ sơ
+                      <div className={`${styles.dropdownMenu} dropdown-menu show mt-2`}>
+                        <Link className="dropdown-item" to="/eco-market/user/profile">
+                          <i className="bi bi-person me-2"></i>Hồ sơ
                         </Link>
-                        <Link
-                          className="dropdown-item"
-                          to="/eco-market/customer/orders"
-                        >
-                          Đơn Hàng
+                        <Link className="dropdown-item" to="/eco-market/customer/orders">
+                          <i className="bi bi-box-seam me-2"></i>Đơn Hàng
                         </Link>
                         {account?.role === "admin" && (
-                          <Link
-                            className="dropdown-item"
-                            to="/eco-market/admin"
-                          >
-                            Admin
+                          <Link className="dropdown-item" to="/eco-market/admin">
+                            <i className="bi bi-gear me-2"></i>Admin
                           </Link>
                         )}
                         <span className="dropdown-item" onClick={handleLogout}>
-                          Đăng xuất
+                          <i className="bi bi-box-arrow-right me-2"></i>Đăng xuất
                         </span>
                       </div>
                     )}
@@ -242,19 +162,22 @@ const Header = () => {
                 </div>
               ) : (
                 <Link
-                  className="flex-sm-fill text-sm-center shadow nav-link text-black mx-4"
+                  className={`${styles.loginButton} flex-sm-fill text-sm-center nav-link mx-4`}
                   to="/eco-market/login"
                 >
-                  Đăng nhập / Đăng ký
+                  <i className="bi bi-person-circle me-2"></i>
+                  <span>Đăng nhập / Đăng ký</span>
                 </Link>
               )}
             </nav>
           </div>
         </div>
       </nav>
+
       <hr className="mt-0" />
+
       <div className="d-flex justify-content-center mb-1">
-        <nav className="nav ">
+        <nav className="nav">
           <div className="dropdown">
             <span className="nav-link pt-0">
               <i className="fs-4 bi bi-list text-black"></i>
@@ -297,7 +220,7 @@ const Header = () => {
               >
                 {category.name}
               </Link>
-              <ul className="dropdown-menu ">
+              <ul className="dropdown-menu">
                 {category.subcategories
                   .filter((subcate) => subcate.status === "active")
                   ?.map((subcategory, index) => {
@@ -317,6 +240,7 @@ const Header = () => {
           ))}
         </nav>
       </div>
+
       <hr className="m-0" />
     </>
   );

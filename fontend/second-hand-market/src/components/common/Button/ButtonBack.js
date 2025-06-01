@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
-const ButtonBack = ({ url }) => {
+ const ButtonBack = ({ url }) => {
   return (
     <StyledWrapper>
       <Link to={url} className='text-decoration-none'>
@@ -48,5 +48,6 @@ const StyledWrapper = styled.div`
    box-shadow: 9px 9px 33px #d1d1d1, -9px -9px 33px #ffffff;
    transform: translateY(-2px);
   }`;
+
 
 export default ButtonBack;

@@ -17,18 +17,32 @@ import ProductManagement from "./pages/Admin/ProductManagement/ProductManagement
 import UserProfile from "./pages/UserProfile/UserProfile";
 import UserManagement from "./pages/Admin/ManageUser/ManageUser";
 import OrderManage from "./pages/Admin/OrderManage/OrderManage";
+
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { ProductProvider } from "./contexts/ProductContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { ChatProvider } from "./contexts/ChatContext";
+import { VoucherProvider } from "./contexts/VoucherContext";
+
 import Verification from "./pages/Verification/Verification";
 
 // Thiết lập axios interceptor khi ứng dụng khởi động
 import ApiService from "./services/ApiService";
 import authService from "./services/authService";
 import OrderDetails from "./pages/OrderDetails/OrderDetails";
+
+import BlogList from './pages/Blog/BlogList';
+import BlogDetail from './pages/Blog/BlogDetail';
+
+import AdminBlogList from './pages/Admin/BlogManagement/AdminBlogList';
+import BlogForm from './pages/Admin/BlogManagement/BlogForm';
+
+
+import VoucherList from "./pages/Voucher/VoucherList";
+import VoucherManagement from "./pages/Admin/VoucherManagement/VoucherManagement";
+
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
@@ -43,6 +57,7 @@ function App() {
         <ProductProvider>
           <CategoryProvider>
             <OrderProvider>
+             <VoucherProvider>
               <ChatProvider>
                 <BrowserRouter>
                   <Routes>
@@ -70,6 +85,42 @@ function App() {
                         </LayoutAdmin>
                       }
                     />
+
+                     <Route
+                       path="/eco-market/admin/blogs" 
+                      element={
+                        <LayoutAdmin>
+                           <AdminBlogList />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                      <Route
+                        path="/eco-market/admin/blogs/new" 
+                      element={
+                        <LayoutAdmin>
+                           <BlogForm />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                      <Route
+                 path="/eco-market/admin/blogs/edit/:id" 
+                      element={
+                        <LayoutAdmin>
+                           <BlogForm />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                    <Route
+                        path="/eco-market/admin/vouchers"
+                        element={
+                          <LayoutAdmin>
+                            <VoucherManagement />
+                          </LayoutAdmin>
+                        }
+                      />
 
                     <Route
                       path="/"
@@ -194,6 +245,7 @@ function App() {
                   </Routes>
                 </BrowserRouter>
               </ChatProvider>
+              </VoucherProvider>
             </OrderProvider>
           </CategoryProvider>
         </ProductProvider>

@@ -9,6 +9,7 @@ import { useProduct } from "../../contexts/ProductContext";
 import AddressContext from "../../contexts/AddressContext";
 import { useAuth } from "../../contexts/AuthContext";
 import AccountContext from "../../contexts/AccountContext";
+import VoucherSelector from "../../pages/Voucher/VoucherSelector"; 
 const Checkout = () => {
   const { getProduct } = useProduct();
   const { deleteItem } = useCart();
@@ -31,6 +32,10 @@ const Checkout = () => {
     province: "",
     isDefault: false,
   });
+
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
 
   // States for location suggestions
   const [provinces, setProvinces] = useState([]);
@@ -176,18 +181,28 @@ const Checkout = () => {
     }, 0);
   };
 
+  const getFinalAmount = () => {
+    return Math.max(0, getTotalAmount() - voucherDiscount);
+  };
+
+    const handleVoucherSelect = (voucher, discount) => {
+    setSelectedVoucher(voucher);
+    setVoucherDiscount(discount);
+    setShowVoucherModal(false);
+  };
+
   const handleDeleteItems = async () => {
     const ids = selectedItems.map((item) => item.productId);
     await deleteItem(ids);
   };
 
-  const handlePlaceOrder = async () => {
+      const handlePlaceOrder = async () => {
     const orderData = {
       products: selectedItems.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
       })),
-      totalAmount: getTotalAmount(),
+      totalAmount: getFinalAmount(),
       shippingMethod,
       paymentMethod: "cod",
       shippingAddress: selectedAddress?._id,
@@ -231,9 +246,10 @@ const Checkout = () => {
         })
         .filter((order) => order.products.length > 0);
 
+      // Tạo các đơn hàng
       for (const order of ordersBySeller) {
         const orderPayload = {
-          totalAmount: getTotalAmount(),
+          totalAmount: getFinalAmount(),
           shippingMethod,
           paymentMethod: "cod",
           shippingAddress: orderData.shippingAddress,
@@ -250,6 +266,24 @@ const Checkout = () => {
             },
           }
         );
+      }
+
+      // Cập nhật lượt sử dụng voucher nếu có voucher được áp dụng
+      if (selectedVoucher && selectedVoucher.id) {
+        try {
+          await axios.post(
+            "http://localhost:2000/eco-market/vouchers/use",
+            { voucherId: selectedVoucher.id },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+        } catch (voucherError) {
+          console.error("Error updating voucher usage:", voucherError);
+          // Không hiển thị lỗi voucher cho user vì đơn hàng đã thành công
+        }
       }
 
       Swal.fire({
@@ -860,6 +894,40 @@ const Checkout = () => {
           cursor: default;
           font-weight: 400;
         }
+           .voucher-section {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-radius: 12px;
+          color: white;
+          position: relative;
+          overflow: hidden;
+        }
+        .voucher-section::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          right: -50%;
+          width: 100%;
+          height: 100%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          transform: rotate(45deg);
+        }
+        .voucher-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+        .voucher-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.5);
+          color: white;
+          transform: translateY(-2px);
+        }
+        .voucher-selected {
+          background: rgba(34, 197, 94, 0.2);
+          border: 1px solid rgba(34, 197, 94, 0.5);
+        }
       `}</style>
 
       <div className="card mb-4">
@@ -972,6 +1040,48 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+       {/* Voucher Section */}
+      <div className="card mb-4 voucher-section">
+        <div className="card-body">
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 className="mb-1 d-flex align-items-center">
+                <i className="bi bi-ticket-perforated me-2"></i>
+                Mã giảm giá
+              </h5>
+              {selectedVoucher ? (
+                <div>
+                  <p className="mb-1">
+                    <strong>{selectedVoucher.name}</strong>
+                  </p>
+                  <p className="mb-0 small opacity-75">
+                    Mã: {selectedVoucher.code} | Giảm: {voucherDiscount.toLocaleString("vi-VN")}₫
+                  </p>
+                </div>
+              ) : (
+                <p className="mb-0 opacity-75">Chọn hoặc nhập mã giảm giá</p>
+              )}
+            </div>
+            <button
+              className={`btn ${selectedVoucher ? 'voucher-selected' : 'voucher-btn'}`}
+              onClick={() => setShowVoucherModal(true)}
+            >
+              <i className="bi bi-plus-circle me-2"></i>
+              {selectedVoucher ? 'Đổi voucher' : 'Chọn voucher'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+          <VoucherSelector
+        open={showVoucherModal}
+        onClose={() => setShowVoucherModal(false)}
+        orderAmount={getTotalAmount()}
+        onVoucherSelect={handleVoucherSelect}
+        selectedVoucher={selectedVoucher}
+        discount={voucherDiscount}
+      />
 
       <div className="card mb-3">
         <div className="card-header">
@@ -1125,10 +1235,16 @@ const Checkout = () => {
             <span>{getTotalAmount().toLocaleString()}₫</span>
           </div>
 
+             <div className="d-flex justify-content-between mb-2">
+            <span>Voucher Giảm Giá</span>
+            <span className="text-danger">- {voucherDiscount.toLocaleString()}₫</span>
+          </div>
+
+
           <div className="d-flex justify-content-between mb-2 fw-bold">
             <span>Tổng thanh toán</span>
             <span className="text-danger">
-              {getTotalAmount().toLocaleString()}₫
+              {getFinalAmount().toLocaleString()}₫
             </span>
           </div>
         </div>

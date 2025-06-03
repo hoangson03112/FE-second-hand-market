@@ -97,12 +97,50 @@ const Header = () => {
             <nav className="nav nav-pills d-flex justify-content-evenly align-items-center">
               {/* Nút Đăng Bán với icon mới */}
               <Link
+<<<<<<< HEAD
                 className={`${styles.sellButton} flex-sm-fill text-center nav-link px-4 py-2`}
+=======
+                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-3"
+>>>>>>> luongdz
                 to="/eco-market/seller/products/new"
               >
                 <i className="bi bi-plus-circle-fill me-2"></i>
                 <span className={styles.sellText}>Đăng Bán</span>
               </Link>
+<<<<<<< HEAD
+=======
+
+               <Link
+            className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-3"
+                to="/eco-market/blogs"
+                style={{marginLeft:5}}
+              >
+               Blog
+              </Link>
+
+              {Object.keys(account).length > 0 ? (
+                <div className="d-flex align-items-center  ">
+                  <div
+                    className="position-relative mx-5"
+                    style={{ width: "45px", height: "45px" }}
+                  >
+                    <Link
+                      to="/eco-market/my-cart"
+                      style={{ textDecoration: "none" }}
+                    >
+                      <i
+                        className="bi bi-cart4 fs-4 rounded-circle text-center cart shadow text-dark"
+                        style={{
+                          cursor: "pointer",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "100%",
+                          width: "100%",
+                        }}
+                      />
+                    </Link>
+>>>>>>> luongdz
 
               {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center">

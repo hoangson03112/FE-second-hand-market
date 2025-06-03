@@ -16,6 +16,8 @@ const OrderItem = ({ order, setOrders }) => {
   const [products, setProducts] = useState([]);
   const [sellers, setSellers] = useState({});
   const [totalAmount, setTotalAmount] = useState(0);
+  const [totalDiscount, setTotalDiscount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const navigate = useNavigate();
 
@@ -40,14 +42,23 @@ const OrderItem = ({ order, setOrders }) => {
   }, [getProduct, order]);
 
   useEffect(() => {
-    setTotalAmount(
-      products.reduce((total, product) => {
-        const orderProduct = order.products.find(
-          (p) => p.productId === product?._id
-        );
-        return total + product?.price * (orderProduct?.quantity || 0);
-      }, 0)
-    );
+    // Tính tổng tiền gốc (giá sản phẩm × số lượng)
+    const originalTotal = products.reduce((total, product) => {
+      const orderProduct = order.products.find(
+        (p) => p.productId === product?._id
+      );
+      return total + product?.price * (orderProduct?.quantity || 0);
+    }, 0);
+
+    // order.totalAmount là số tiền cuối cùng sau khi đã trừ voucher
+    const finalTotal = order?.totalAmount || originalTotal;
+    
+    // Tính tiền giảm giá = tiền gốc - tiền cuối cùng
+    const discountTotal = Math.max(0, originalTotal - finalTotal);
+
+    setTotalAmount(originalTotal);
+    setTotalDiscount(discountTotal);
+    setFinalAmount(finalTotal);
   }, [products, order]);
 
   useEffect(() => {
@@ -289,77 +300,99 @@ const OrderItem = ({ order, setOrders }) => {
 
       <Divider sx={{ my: 1 }} />
 
-      {products?.map((product) => (
-        <Box
-          key={product?._id}
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            py: 2,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box
-              component="img"
-              src={product?.avatar || "/path/to/default-product-image.png"}
-              alt={product?.name || "Product"}
-              sx={{
-                width: "80px",
-                height: "80px",
-                objectFit: "cover",
-                borderRadius: "5px",
-                mr: 2,
-              }}
-            />
-            <Box>
+      {products?.map((product) => {
+        const orderProduct = order.products.find((p) => p.productId === product?._id);
+        const quantity = orderProduct?.quantity || 0;
+        const originalPrice = product?.price || 0;
+        
+        return (
+          <Box
+            key={product?._id}
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              py: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
               <Box
-                component="a"
-                href={`/eco-market/product?productID=${product?._id}`}
+                component="img"
+                src={product?.avatar || "/path/to/default-product-image.png"}
+                alt={product?.name || "Product"}
                 sx={{
-                  textDecoration: "none",
-                  color: "black",
+                  width: "80px",
+                  height: "80px",
+                  objectFit: "cover",
+                  borderRadius: "5px",
+                  mr: 2,
                 }}
-              >
-                <Typography fontWeight="bold" gutterBottom>
-                  {product?.name}
-                </Typography>
-                <Typography>
-                  Số Lượng:{" "}
-                  {
-                    order?.products.find((p) => p?.productId === product?._id)
-                      ?.quantity
-                  }
-                </Typography>
+              />
+              <Box>
+                <Box
+                  component="a"
+                  href={`/eco-market/product?productID=${product?._id}`}
+                  sx={{
+                    textDecoration: "none",
+                    color: "black",
+                  }}
+                >
+                  <Typography fontWeight="bold" gutterBottom>
+                    {product?.name}
+                  </Typography>
+                  <Typography>
+                    Số Lượng: {quantity}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
+            <Box sx={{ textAlign: "right" }}>
+              <Typography>
+                Giá:{" "}
+                <Typography
+                  component="span"
+                  color="error"
+                  fontWeight="bold"
+                  sx={{ mr: 3 }}
+                >
+                  {formatPrice(originalPrice)}
+                </Typography>
+              </Typography>
+            </Box>
           </Box>
-          <Typography>
-            Giá:{" "}
-            <Typography
-              component="span"
-              color="error"
-              fontWeight="bold"
-              sx={{ mr: 3 }}
-            >
-              {formatPrice(product?.price)}
-            </Typography>
-          </Typography>
-        </Box>
-      ))}
+        );
+      })}
 
       <Box
         sx={{
           display: "flex",
-          justifyContent: "flex-end",
-          alignItems: "center",
+          flexDirection: "column",
+          alignItems: "flex-end",
           mt: 2,
         }}
       >
-        <Typography>Thành tiền:</Typography>
-        <Typography variant="h5" color="error" fontWeight="bold" sx={{ mx: 2 }}>
-          {formatPrice(totalAmount)}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+          <Typography>Tổng tiền hàng:</Typography>
+          <Typography variant="h6" sx={{ mx: 2 }}>
+            {formatPrice(totalAmount)}
+          </Typography>
+        </Box>
+        
+        {totalDiscount > 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            <Typography>Tổng giảm giá:</Typography>
+            <Typography variant="h6" color="success.main" sx={{ mx: 2 }}>
+              -{formatPrice(totalDiscount)}
+            </Typography>
+          </Box>
+        )}
+        
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography>Thành tiền:</Typography>
+          <Typography variant="h5" color="error" fontWeight="bold" sx={{ mx: 2 }}>
+            {formatPrice(finalAmount)}
+          </Typography>
+        </Box>
       </Box>
 
       <Box sx={{ float: "right" }}>

@@ -247,15 +247,15 @@ const Cart = () => {
                 {Object.values(checkedItems).some(
                   (value) => typeof value === "boolean" && value === true
                 ) && (
-                  <Button
-                    variant="link"
-                    className="d-flex font-monospace fs-5 align-items-center text-danger text-decoration-none"
-                    onClick={handleDeleteSelected}
-                  >
-                    <DeleteOutlineIcon className="delete-icon" />
-                    <span>Xóa</span>
-                  </Button>
-                )}
+                    <Button
+                      variant="link"
+                      className="d-flex font-monospace fs-5 align-items-center text-danger text-decoration-none"
+                      onClick={handleDeleteSelected}
+                    >
+                      <DeleteOutlineIcon className="delete-icon" />
+                      <span>Xóa</span>
+                    </Button>
+                  )}
               </div>
               <div className="text-right">
                 <p className="mb-0 font-weight-bold me-3">
@@ -265,13 +265,13 @@ const Cart = () => {
                   </strong>
                 </p>
                 <Button
-                  className="mt-2 float-end btn-primary buy-now-btn"
+         
+                  className="mt-2 float-end btn-bg buy-now-btn"
                   onClick={handleCheckout}
                   style={{
                     position: "relative",
                     overflow: "hidden",
                     transition: "all 0.3s ease",
-
                     border: "none",
                     fontSize: "16px",
                     fontWeight: "bold",

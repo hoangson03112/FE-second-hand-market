@@ -1,7 +1,6 @@
 /* CSS Variables for consistency */
 :root {
   --primary-color: #344960;
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --primary-light: #f0f4f8;
   --border-color: #e5e7eb;
   --success-color: #10b981;
@@ -62,7 +61,7 @@
 
 /* Sell Button Styles */
 .sellButton {
-  background: var(--primary-gradient) !important;
+  background: var(--primary-color) !important;
   color: white !important;
   border: none;
   border-radius: 25px;
@@ -95,7 +94,8 @@
 }
 
 /* Icon Container */
-.iconContainer {width: 48px;
+.iconContainer {
+  width: 48px;
   height: 48px;
   display: flex;
   align-items: center;
@@ -179,7 +179,6 @@
   position: absolute;
   top: -8px;
   right: -8px;
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
   color: white;
   border-radius: 50%;
   min-width: 22px;
@@ -192,6 +191,7 @@
   border: 2px solid white;
   box-shadow: var(--shadow-md);
   animation: pulseNotification 2s infinite;
+  background: red;
 }
 
 @keyframes pulseNotification {
@@ -210,6 +210,8 @@
 .userProfile {
   position: relative;
   margin-left: 16px;
+  width: 100%;
+  min-width: 200px;
   /* Tăng khoảng cách từ cart đến user profile */
 }
 
@@ -248,7 +250,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 200px;
 }
 
 .chevron {
@@ -512,4 +514,24 @@
 /* Smooth transitions for all interactive elements */
 * {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fixedHeaderWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1050;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.fixed-category-bar {
+  position: fixed;
+  top: 80px;
+  left: 0;
+  width: 100%;
+  z-index: 1040;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
 }

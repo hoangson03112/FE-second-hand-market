@@ -2,8 +2,9 @@ import ApiService from "./ApiService";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
-
 const authService = {
+
+
   login: async (username, password) => {
     const response = await ApiService.post("/accounts/login", {
       username,
@@ -21,10 +22,7 @@ const authService = {
     return await ApiService.post("/auth/register", userData);
   },
 
-  logout: () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  },
+
 
   getCurrentUser: () => {
     const userStr = localStorage.getItem(USER_KEY);

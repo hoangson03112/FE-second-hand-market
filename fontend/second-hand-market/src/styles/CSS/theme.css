@@ -33,26 +33,26 @@
 }
 
 /* Áp dụng màu cho nút */
-.btn-primary {
-  background-image: var(--primary-gradient) !important;
+.btn-bg {
+  background-color: var(--primary-color) !important;
   border-color: transparent !important;
   color: var(--text-on-primary) !important;
 }
 
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-  background-image: var(--primary-gradient) !important;
+.btn-bg:hover, .btn-bg:focus, .btn-bg:active {
+  background-image: var(--primary-color) !important;
   filter: brightness(1.1) !important;
   border-color: transparent !important;
 }
 
-.btn-outline-primary {
+.btn-outline-bg {
   border-color: var(--primary-color) !important;
   color: var(--primary-color) !important;
   background-color: transparent !important;
 }
 
-.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
-  background-image: var(--primary-gradient) !important;
+.btn-outline-bg:hover, .btn-outline-bg:focus, .btn-outline-bg:active {
+    background-image: var(--primary-color) !important;
   color: var(--text-on-primary) !important;
   border-color: transparent !important;
 }

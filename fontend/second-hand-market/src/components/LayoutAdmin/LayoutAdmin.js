@@ -38,6 +38,8 @@ import {
   Person as PersonIcon
 } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article"; 
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+
 import { alpha } from '@mui/material/styles';
 
 const drawerWidth = 370;
@@ -87,7 +89,8 @@ const LayoutAdmin = ({ children }) => {
     { text: "Khách hàng", icon: <PeopleIcon />, path: "/eco-market/admin/customers" },
     { text: "Đơn hàng", icon: <ShoppingBasketIcon />, path: "/eco-market/admin/orders" },
       { text: "Blog", icon: <ArticleIcon />, path: "/eco-market/admin/blogs" },
-    
+      { text: "Voucher", icon: <CardGiftcardIcon />, path: "/eco-market/admin/vouchers" }
+
   ];
 
   const bottomMenuItems = [

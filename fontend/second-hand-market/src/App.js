@@ -17,12 +17,14 @@ import ProductManagement from "./pages/Admin/ProductManagement/ProductManagement
 import UserProfile from "./pages/UserProfile/UserProfile";
 import UserManagement from "./pages/Admin/ManageUser/ManageUser";
 import OrderManage from "./pages/Admin/OrderManage/OrderManage";
+
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { ProductProvider } from "./contexts/ProductContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { ChatProvider } from "./contexts/ChatContext";
+
 import Verification from "./pages/Verification/Verification";
 
 // Thiết lập axios interceptor khi ứng dụng khởi động
@@ -37,6 +39,11 @@ import BlogDetail from './pages/Blog/BlogDetail';
 import AdminBlogList from './pages/Admin/BlogManagement/AdminBlogList';
 import BlogForm from './pages/Admin/BlogManagement/BlogForm';
 
+
+import VoucherList from "./pages/Voucher/VoucherList";
+import { VoucherProvider } from "./contexts/VoucherContext";
+import VoucherManagement from "./pages/Admin/VoucherManagement/VoucherManagement";
+
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
 if (token) {
@@ -50,6 +57,7 @@ function App() {
         <ProductProvider>
           <CategoryProvider>
             <OrderProvider>
+             <VoucherProvider>
               <ChatProvider>
                 <BrowserRouter>
                   <Routes>
@@ -104,6 +112,15 @@ function App() {
                         </LayoutAdmin>
                       }
                     />
+
+                    <Route
+                        path="/eco-market/admin/vouchers"
+                        element={
+                          <LayoutAdmin>
+                            <VoucherManagement />
+                          </LayoutAdmin>
+                        }
+                      />
 
                     <Route
                       path="/"
@@ -232,10 +249,20 @@ function App() {
                            }
                          />
 
+                        <Route
+                        path="/eco-market/vouchers"
+                        element={
+                          <Layout>
+                            <VoucherList />
+                          </Layout>
+                        }
+                      />
+
             
                   </Routes>
                 </BrowserRouter>
               </ChatProvider>
+              </VoucherProvider>
             </OrderProvider>
           </CategoryProvider>
         </ProductProvider>

@@ -77,19 +77,20 @@ const Header = () => {
           <div id="navbarNav" className="ms-5 ">
             <nav className="nav nav-pills d-flex justify-content-evenly">
               <Link
-                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
+                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-3"
                 to="/eco-market/seller/products/new"
               >
                 Đăng Bán
               </Link>
 
                <Link
-                className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-5"
+            className="gradient-custom-2 flex-sm-fill  text-center nav-link active px-3"
                 to="/eco-market/blogs"
                 style={{marginLeft:5}}
               >
                Blog
               </Link>
+
               {Object.keys(account).length > 0 ? (
                 <div className="d-flex align-items-center  ">
                   <div

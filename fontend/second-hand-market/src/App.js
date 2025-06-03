@@ -242,6 +242,25 @@ function App() {
                       path="/eco-market/order-details"
                       element={<Navigate to="/eco-market/customer/orders" />}
                     />
+
+                         {/* Blog Routes - Public */}
+                         <Route
+                           path="/eco-market/blogs"
+                           element={
+                             <Layout>
+                               <BlogList />
+                             </Layout>
+                           }
+                         />
+
+                          <Route
+                            path="/eco-market/blogs/:id"
+                           element={
+                             <Layout>
+                              <BlogDetail />
+                             </Layout>
+                           }
+                         />
                   </Routes>
                 </BrowserRouter>
               </ChatProvider>

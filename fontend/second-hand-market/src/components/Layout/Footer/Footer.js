@@ -66,6 +66,23 @@ const Footer = () => {
               <Link href="/eco-market/news" color="inherit" underline="hover" sx={{ fontSize: 13 }}>
                 Tin tức
               </Link>
+                <Link
+                href="/eco-market/blogs"
+                color="inherit"
+               underline="hover"
+               sx={{
+                  fontSize: 13,
+                  display: "flex",
+                 alignItems: "center",
+                transition: "color 0.3s",
+                  "&:hover": {
+                  color: "#fff",
+                 },
+                }}
+                >
+             <Box component="span" sx={{ fontWeight: 500 }}>📝</Box> Blogs
+           </Link>
+
             </Stack>
           </Grid>
 

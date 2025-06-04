@@ -15,45 +15,47 @@ const Header = React.forwardRef((props, ref) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef(null);
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-  const handleOpenMenu = (event) => {
-    if (anchorEl) return;
-    setAnchorEl(event.currentTarget);
-  };
 
+  // Notification state
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: 'Bạn có lời mời kết bạn mới.', timestamp: new Date(Date.now() - 5 * 60 * 1000), read: false },
+    { id: 2, message: 'Dự án "ABC" đã được cập nhật.', timestamp: new Date(Date.now() - 30 * 60 * 1000), read: false },
+    { id: 3, message: 'Sếp đã duyệt yêu cầu nghỉ phép của bạn.', timestamp: new Date(Date.now() - 2 * 3600 * 1000), read: true },
+    { id: 4, message: 'Nhắc nhở: Cuộc họp vào lúc 10h sáng.', timestamp: new Date(Date.now() - 24 * 3600 * 1000), read: true },
+    { id: 5, message: 'Bạn có 2 tin nhắn chưa đọc.', timestamp: new Date(Date.now() - 2 * 24 * 3600 * 1000), read: false },
+    { id: 6, message: 'Bạn đã đạt được huy hiệu "Người giải quyết vấn đề"!', timestamp: new Date(Date.now() - 3 * 24 * 3600 * 1000), read: true },
+  ]);
+
+  const navigate = useNavigate();
+
+  // Notification menu handlers
+  const handleOpenMenu = (event) => {
+    if (!anchorEl) setAnchorEl(event.currentTarget);
+  };
   const handleCloseMenu = () => {
     setAnchorEl(null);
-    // Khi đóng menu, bạn có thể đánh dấu tất cả các thông báo đã đọc
     setNotifications(prev => prev.map(noti => ({ ...noti, read: true })));
   };
-  // Danh sách thông báo giả định
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'Bạn có lời mời kết bạn mới.', timestamp: new Date(Date.now() - 5 * 60 * 1000), read: false }, // 5 phút trước
-    { id: 2, message: 'Dự án "ABC" đã được cập nhật.', timestamp: new Date(Date.now() - 30 * 60 * 1000), read: false }, // 30 phút trước
-    { id: 3, message: 'Sếp đã duyệt yêu cầu nghỉ phép của bạn.', timestamp: new Date(Date.now() - 2 * 3600 * 1000), read: true }, // 2 giờ trước
-    { id: 4, message: 'Nhắc nhở: Cuộc họp vào lúc 10h sáng.', timestamp: new Date(Date.now() - 24 * 3600 * 1000), read: true }, // Hôm qua
-    { id: 5, message: 'Bạn có 2 tin nhắn chưa đọc.', timestamp: new Date(Date.now() - 2 * 24 * 3600 * 1000), read: false }, // 2 ngày trước
-    { id: 6, message: 'Bạn đã đạt được huy hiệu "Người giải quyết vấn đề"!', timestamp: new Date(Date.now() - 3 * 24 * 3600 * 1000), read: true }, // 3 ngày trước
-  ]);
-  const unreadCount = notifications.filter(noti => !noti.read).length;
-  const handleDropdownToggle = () => setShowDropdown(!showDropdown);
-  const navigate = useNavigate();
   const handleNotificationClick = (id) => {
-    // Logic xử lý khi click vào thông báo (ví dụ: chuyển hướng, mở chi tiết)
-    console.log(`Clicked notification: ${id}`);
-    // Đánh dấu thông báo đã đọc khi click
     setNotifications(prev => prev.map(noti =>
       noti.id === id ? { ...noti, read: true } : noti
     ));
-    handleCloseMenu(); // Đóng menu sau khi click
+    handleCloseMenu();
   };
+
+  // User dropdown
+  const handleDropdownToggle = () => setShowDropdown(v => !v);
+
+  // Logout
   const handleLogout = () => {
     localStorage.clear();
     navigate("/eco-market/home");
     window.location.reload();
   };
 
+  // Search
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -61,13 +63,12 @@ const Header = React.forwardRef((props, ref) => {
     }
   };
 
+  // Fetch account info
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
         const data = await AccountContext.Authentication();
-        if (data) {
-          setAccount(data.data.account);
-        }
+        if (data) setAccount(data.data.account);
       } catch (error) {
         localStorage.clear();
         console.error("Error fetching", error);
@@ -80,6 +81,7 @@ const Header = React.forwardRef((props, ref) => {
     };
   }, []);
 
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -92,24 +94,23 @@ const Header = React.forwardRef((props, ref) => {
     fetchCategories();
   }, []);
 
-  // Handle click outside to close dropdown
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // Hàm format thời gian kiểu "5 phút trước", "2 giờ trước", ...
+  // Format time ago
   function timeAgo(date) {
     const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000); // giây
+    const diff = Math.floor((now - new Date(date)) / 1000);
     if (diff < 60) return `${diff} giây trước`;
     if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
     if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
@@ -135,20 +136,17 @@ const Header = React.forwardRef((props, ref) => {
             <SearchBar onSearch={handleSearch} />
           </div>
 
-          <div id="navbarNav" className="">
+          <div id="navbarNav">
             <nav className="nav nav-pills d-flex justify-content-evenly align-items-center">
-
               <Link
-
                 className={`${styles.sellButton} flex-sm-fill text-center nav-link px-4 py-2`}
-
-
                 to="/eco-market/seller/products/new"
               >
                 <i className="bi bi-plus-circle-fill me-2"></i>
                 <span className={styles.sellText}>Đăng Bán</span>
               </Link>
 
+              {/* Notification Icon & Menu */}
               <div className={`${styles.iconContainer} position-relative ms-4`}>
                 <button className={`${styles.notificationBtn} ${open ? styles.active : ''}`}
                   aria-controls={open ? 'basic-menu' : undefined}
@@ -158,7 +156,7 @@ const Header = React.forwardRef((props, ref) => {
                   style={open ? { outline: '2px solid #344960', outlineOffset: 2 } : {}}
                 >
                   <i className="bi bi-bell-fill"></i>
-                  {Object.keys(account).length > 0 && (
+                  {account && Object.keys(account).length > 0 && (
                     <span className={styles.badge}>{notifications.length}</span>
                   )}
                 </button>
@@ -173,14 +171,8 @@ const Header = React.forwardRef((props, ref) => {
                       style: { minWidth: 340, padding: 0 }
                     },
                   }}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                   PaperProps={{
                     style: {
                       borderRadius: 14,
@@ -206,7 +198,7 @@ const Header = React.forwardRef((props, ref) => {
                     <i className="bi bi-bell-fill" style={{ color: '#ff6b6b', fontSize: 20 }}></i>
                     Thông báo
                   </div>
-                  {Object.keys(account).length === 0 ? (
+                  {(!account || Object.keys(account).length === 0) ? (
                     <MenuItem
                       style={{
                         justifyContent: 'center',
@@ -268,7 +260,7 @@ const Header = React.forwardRef((props, ref) => {
                   ) : (
                     notifications.map((noti, idx) => (
                       <MenuItem
-                        key={idx}
+                        key={noti.id}
                         onClick={() => handleNotificationClick(noti.id)}
                         style={{
                           alignItems: 'flex-start',
@@ -298,7 +290,9 @@ const Header = React.forwardRef((props, ref) => {
                   )}
                 </Menu>
               </div>
-              {Object.keys(account).length > 0 && (
+
+              {/* Cart Icon */}
+              {account && Object.keys(account).length > 0 && (
                 <div className={`${styles.iconContainer} position-relative`}>
                   <Link to="/eco-market/my-cart" className={styles.cartBtn}>
                     <i className="bi bi-bag-heart-fill"></i>
@@ -306,9 +300,10 @@ const Header = React.forwardRef((props, ref) => {
                   </Link>
                 </div>
               )}
-              {Object.keys(account).length > 0 ? (
-                <div className="d-flex align-items-center">
 
+              {/* User Profile Dropdown */}
+              {account && Object.keys(account).length > 0 ? (
+                <div className="d-flex align-items-center">
                   <div className={`${styles.userProfile} d-inline-block`} ref={dropdownRef}>
                     <div
                       className={styles.profileToggle}
@@ -325,7 +320,6 @@ const Header = React.forwardRef((props, ref) => {
                       <span className={styles.userName}>{account?.fullName}</span>
                       <i className={`bi bi-chevron-down ${styles.chevron}`}></i>
                     </div>
-
                     {showDropdown && (
                       <div className={`${styles.dropdownMenu} dropdown-menu show mt-2`}>
                         <Link className="dropdown-item" to="/eco-market/user/profile">
@@ -359,6 +353,7 @@ const Header = React.forwardRef((props, ref) => {
           </div>
         </div>
       </nav>
+      {/* Category Navigation */}
       <div>
         <div className="d-flex justify-content-center mb-1">
           <nav className="nav">
@@ -368,7 +363,7 @@ const Header = React.forwardRef((props, ref) => {
               </span>
               <ul className="dropdown-menu">
                 {categories?.map((category, index) => (
-                  <li key={index} className="dropdown-submenu">
+                  <li key={category._id || index} className="dropdown-submenu">
                     <Link
                       className="dropdown-item dropdown-toggle"
                       to={`/eco-market?categoryID=${category._id}`}
@@ -378,26 +373,23 @@ const Header = React.forwardRef((props, ref) => {
                     <ul className="dropdown-menu">
                       {category.subcategories
                         .filter((subcate) => subcate.status === "active")
-                        ?.map((subcategory, index) => {
-                          return (
-                            <li key={index}>
-                              <Link
-                                className="dropdown-item"
-                                to={`/eco-market?subcategoryID=${subcategory._id}`}
-                              >
-                                {subcategory?.name}
-                              </Link>
-                            </li>
-                          );
-                        })}
+                        ?.map((subcategory) => (
+                          <li key={subcategory._id}>
+                            <Link
+                              className="dropdown-item"
+                              to={`/eco-market?subcategoryID=${subcategory._id}`}
+                            >
+                              {subcategory?.name}
+                            </Link>
+                          </li>
+                        ))}
                     </ul>
                   </li>
                 ))}
               </ul>
             </div>
-
-            {categories?.map((category, index) => (
-              <div key={index} className="dropdown">
+            {categories?.map((category) => (
+              <div key={category._id} className="dropdown">
                 <Link
                   className="nav-link ps-2 text-black d-flex align-items-center"
                   to={`/eco-market?categoryID=${category._id}`}
@@ -407,18 +399,16 @@ const Header = React.forwardRef((props, ref) => {
                 <ul className="dropdown-menu">
                   {category.subcategories
                     .filter((subcate) => subcate.status === "active")
-                    ?.map((subcategory, index) => {
-                      return (
-                        <li key={index}>
-                          <Link
-                            className="dropdown-item"
-                            to={`/eco-market?subcategoryID=${subcategory._id}`}
-                          >
-                            {subcategory?.name}
-                          </Link>
-                        </li>
-                      );
-                    })}
+                    ?.map((subcategory) => (
+                      <li key={subcategory._id}>
+                        <Link
+                          className="dropdown-item"
+                          to={`/eco-market?subcategoryID=${subcategory._id}`}
+                        >
+                          {subcategory?.name}
+                        </Link>
+                      </li>
+                    ))}
                 </ul>
               </div>
             ))}

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useRef, useLayoutEffect, useState } from "react";
 import Header from "./Header/Header";
-import { Footer } from "./Footer/Footer";
+import Footer from "./Footer/Footer";
 import { ChatBox } from "../ChatBox/ChatBox";
 import "./Layout.css";
 import { useChat } from "../../contexts/ChatContext";
@@ -34,6 +34,7 @@ const Layout = ({ children }) => {
       <div className="bg-body-secondary " style={{ minHeight: "100vh", marginTop: headerHeight }}>
         {children}
       </div>
+      <Footer />
       <span
         onClick={toggleChat}
         className="position-fixed bottom-0 end-0 m-5 icon-primary"

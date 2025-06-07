@@ -23,7 +23,7 @@ export const Home = () => {
 
   return (
     <div>
-      <div className="container-fluid p-0 text-white text-center">
+      <div className="min-h container-fluid p-0 text-white text-center">
         <div
           id="carouselExampleRide"
           className="carousel slide"

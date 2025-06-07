@@ -6,8 +6,8 @@ import Swal from "sweetalert2";
 import { useCategory } from "../../contexts/CategoryContext";
 import AppContext from "../../contexts/AppContext";
 import { useProduct } from "../../contexts/ProductContext";
-import ButtonBack from "../../components/common/Button";
-
+import ButtonBack from './../../components/common/Button/ButtonBack';
+import AccountContext from "../../contexts/AccountContext";
 
 const PostProduct = () => {
   const { getCategories } = useCategory();
@@ -16,6 +16,7 @@ const PostProduct = () => {
   const [categories, setCategories] = useState([]);
   const [provinces, setProvinces] = useState([]);
   const [files, setFiles] = useState([]);
+  const [account, setAccount] = useState(null);
   const [product, setProduct] = useState({
     name: "",
     price: "",
@@ -28,6 +29,20 @@ const PostProduct = () => {
     location: "",
     avatar: "",
   });
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const data = await AccountContext.Authentication();
+        if (data) setAccount(data.data.account);
+      } catch (error) {
+        localStorage.clear();
+        console.error("Error fetching", error);
+      }
+    };
+    checkAuthentication();
+
+  }, []);
 
   const categoryOptions = categories.map((cate) => ({
     value: cate._id,
@@ -142,6 +157,127 @@ const PostProduct = () => {
       return newFiles;
     });
   };
+
+  if (!account) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (account.role === "buyer") {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          width: '100vw',
+          background: 'rgba(0,0,0,0.08)',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 24,
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+            maxWidth: 420,
+            width: '90%',
+            padding: '40px 32px 32px 32px',
+            textAlign: 'center',
+            position: 'relative',
+            animation: 'popIn 0.4s cubic-bezier(.68,-0.55,.27,1.55)'
+          }}
+        >
+          <div
+            style={{
+              width: 88,
+              height: 88,
+              margin: '0 auto 18px auto',
+              background: 'linear-gradient(135deg, #ffe066 60%, #ffd43b 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px #ffe06655'
+            }}
+          >
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+              alt="Seller"
+              style={{ width: 54, height: 54, objectFit: 'contain' }}
+            />
+          </div>
+          <h2
+            style={{
+              fontWeight: 700,
+              fontSize: 26,
+              color: '#ff6f00',
+              marginBottom: 10,
+              letterSpacing: 0.5
+            }}
+          >
+            Đăng ký trở thành Người bán
+          </h2>
+          <div style={{ color: '#555', fontSize: 16, marginBottom: 28 }}>
+            Bạn hiện là <b>Người mua</b>. Để đăng sản phẩm, hãy đăng ký tài khoản <span style={{ color: '#1976d2', fontWeight: 600 }}>Người bán</span> trên hệ thống.
+          </div>
+          <button
+            className="btn"
+            style={{
+              background: 'linear-gradient(90deg, #ffb700 0%, #ff922b 100%)',
+              color: '#222',
+              fontWeight: 700,
+              fontSize: 18,
+              border: 'none',
+              borderRadius: 24,
+              padding: '12px 36px',
+              boxShadow: '0 4px 16px #ffd43b55',
+              marginBottom: 12,
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = 'linear-gradient(90deg, #ff922b 0%, #ffb700 100%)';
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = 'linear-gradient(90deg, #ffb700 0%, #ff922b 100%)';
+              e.currentTarget.style.transform = 'none';
+            }}
+            onClick={() => navigate("/eco-market/register-seller")}
+          >
+            Đăng ký ngay
+          </button>
+          <button
+            className="btn btn-link mt-2 text-decoration-none"
+            style={{ color: '#888', fontSize: 15, width: '100%' }}
+            onClick={() => navigate("/eco-market/home")}
+          >
+            Quay về trang chủ
+          </button>
+        </div>
+        <style>
+          {`
+            @keyframes popIn {
+              0% { transform: scale(0.7); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+          `}
+        </style>
+      </div>
+    );
+  }
 
   return (
     <div className="sell-product-page">

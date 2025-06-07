@@ -201,16 +201,17 @@ const Header = React.forwardRef((props, ref) => {
                   {(!account || Object.keys(account).length === 0) ? (
                     <MenuItem
                       style={{
+                        opacity: 1,
                         justifyContent: 'center',
                         padding: '32px 20px',
                         flexDirection: 'column',
                         alignItems: 'center',
                         background: '#fff'
                       }}
-                      disabled
+
                     >
                       <i className="bi bi-exclamation-triangle-fill" style={{ color: '#ff9800', fontSize: 32, marginBottom: 8 }}></i>
-                      <div style={{ color: '#344960', fontWeight: 500, fontSize: 15, marginBottom: 10, textAlign: 'center' }}>
+                      <div style={{ fontWeight: 500, fontSize: 15, marginBottom: 10, textAlign: 'center' }}>
                         Bạn chưa đăng nhập<br />Vui lòng đăng nhập để xem thông báo
                       </div>
                       <Link
@@ -226,17 +227,10 @@ const Header = React.forwardRef((props, ref) => {
                           fontWeight: 600,
                           fontSize: 15,
                           boxShadow: 'none',
-                          marginTop: 4
+                          marginTop: 4,
                         }}
                         onClick={handleCloseMenu}
-                        onMouseOver={e => {
-                          e.currentTarget.style.background = '#344960';
-                          e.currentTarget.style.color = '#fff';
-                        }}
-                        onMouseOut={e => {
-                          e.currentTarget.style.background = '#344960';
-                          e.currentTarget.style.color = '#fff';
-                        }}
+
                       >
                         Đăng nhập
                       </Link>

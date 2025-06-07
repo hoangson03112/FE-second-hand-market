@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { Home } from "./pages/Home/Home";
 import ProductList from "./components/Product/ProductList";
 import { Product } from "./components/Product/Product";
@@ -57,9 +57,9 @@ function App() {
         <ProductProvider>
           <CategoryProvider>
             <OrderProvider>
-             <VoucherProvider>
-              <ChatProvider>
-                <BrowserRouter>
+              <VoucherProvider>
+                <ChatProvider>
+
                   <Routes>
                     <Route
                       path="/eco-market/admin"
@@ -86,41 +86,41 @@ function App() {
                       }
                     />
 
-                     <Route
-                       path="/eco-market/admin/blogs" 
+                    <Route
+                      path="/eco-market/admin/blogs"
                       element={
                         <LayoutAdmin>
-                           <AdminBlogList />
-                        </LayoutAdmin>
-                      }
-                    />
-
-                      <Route
-                        path="/eco-market/admin/blogs/new" 
-                      element={
-                        <LayoutAdmin>
-                           <BlogForm />
-                        </LayoutAdmin>
-                      }
-                    />
-
-                      <Route
-                 path="/eco-market/admin/blogs/edit/:id" 
-                      element={
-                        <LayoutAdmin>
-                           <BlogForm />
+                          <AdminBlogList />
                         </LayoutAdmin>
                       }
                     />
 
                     <Route
-                        path="/eco-market/admin/vouchers"
-                        element={
-                          <LayoutAdmin>
-                            <VoucherManagement />
-                          </LayoutAdmin>
-                        }
-                      />
+                      path="/eco-market/admin/blogs/new"
+                      element={
+                        <LayoutAdmin>
+                          <BlogForm />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                    <Route
+                      path="/eco-market/admin/blogs/edit/:id"
+                      element={
+                        <LayoutAdmin>
+                          <BlogForm />
+                        </LayoutAdmin>
+                      }
+                    />
+
+                    <Route
+                      path="/eco-market/admin/vouchers"
+                      element={
+                        <LayoutAdmin>
+                          <VoucherManagement />
+                        </LayoutAdmin>
+                      }
+                    />
 
                     <Route
                       path="/"
@@ -243,27 +243,27 @@ function App() {
                       element={<Navigate to="/eco-market/customer/orders" />}
                     />
 
-                         {/* Blog Routes - Public */}
-                         <Route
-                           path="/eco-market/blogs"
-                           element={
-                             <Layout>
-                               <BlogList />
-                             </Layout>
-                           }
-                         />
+                    {/* Blog Routes - Public */}
+                    <Route
+                      path="/eco-market/blogs"
+                      element={
+                        <Layout>
+                          <BlogList />
+                        </Layout>
+                      }
+                    />
 
-                          <Route
-                            path="/eco-market/blogs/:id"
-                           element={
-                             <Layout>
-                              <BlogDetail />
-                             </Layout>
-                           }
-                         />
+                    <Route
+                      path="/eco-market/blogs/:id"
+                      element={
+                        <Layout>
+                          <BlogDetail />
+                        </Layout>
+                      }
+                    />
                   </Routes>
-                </BrowserRouter>
-              </ChatProvider>
+
+                </ChatProvider>
               </VoucherProvider>
             </OrderProvider>
           </CategoryProvider>

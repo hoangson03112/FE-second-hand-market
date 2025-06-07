@@ -7,7 +7,7 @@
   z-index: 1;
 }
 
-.dropdown:hover > .dropdown-menu {
+.dropdown:hover>.dropdown-menu {
   display: block;
   border-bottom: #ff0000;
 }
@@ -16,18 +16,18 @@
   position: relative;
 }
 
-.dropdown-submenu > .dropdown-menu {
+.dropdown-submenu>.dropdown-menu {
   top: 0;
   left: 100%;
   margin-top: -6px;
   margin-left: -1px;
 }
 
-.dropdown-submenu:hover > .dropdown-menu {
+.dropdown-submenu:hover>.dropdown-menu {
   display: block;
 }
 
-.dropdown-submenu > a:after {
+.dropdown-submenu>a:after {
   display: block;
   content: " ";
   float: right;
@@ -53,11 +53,15 @@
 }
 
 .card {
-  position: relative; /* Đảm bảo các phần tử con được kiểm soát trong card */
-  overflow: hidden; /* Ẩn phần phóng to ra ngoài card nếu cần */
-  transition: transform 0.3s ease; /* Hiệu ứng chuyển tiếp mượt mà */
+  position: relative;
+  /* Đảm bảo các phần tử con được kiểm soát trong card */
+  overflow: hidden;
+  /* Ẩn phần phóng to ra ngoài card nếu cần */
+  transition: transform 0.3s ease;
+  /* Hiệu ứng chuyển tiếp mượt mà */
 }
 
 .card:hover {
-  transform: scale(1.05); /* Phóng to card lên 10% khi hover */
+  transform: scale(1.05);
+  /* Phóng to card lên 10% khi hover */
 }

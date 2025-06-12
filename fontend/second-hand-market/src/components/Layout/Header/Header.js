@@ -140,7 +140,7 @@ const Header = React.forwardRef((props, ref) => {
             <nav className="nav nav-pills d-flex justify-content-evenly align-items-center">
               <Link
                 className={`${styles.sellButton} flex-sm-fill text-center nav-link px-4 py-2`}
-                to="/eco-market/seller/products/new"
+                to={account.role === "buyer" ? "/eco-market/seller/register" : "/eco-market/seller/products/create"}
               >
                 <i className="bi bi-plus-circle-fill me-2"></i>
                 <span className={styles.sellText}>Đăng Bán</span>

@@ -1,332 +1,145 @@
-import React, { useState, useEffect } from "react";
-import { Table, Button, Card } from "react-bootstrap";
-import "./Cart.css";
-import CartItem from "../../components/specific/CartItem";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import AccountContext from "../../contexts/AccountContext";
-import { useNavigate } from "react-router-dom";
-import { useProduct } from "../../contexts/ProductContext";
-import { useCart } from "../../contexts/CartContext";
+import React from 'react';
+import { Table } from 'react-bootstrap';
+import './Cart.css';
+
+// Components
+import CartItem from '../../components/specific/CartItem';
+import Breadcrumb from './components/Breadcrumb';
+import CartHeader from './components/CartHeader';
+import CartSummary from './components/CartSummary';
+import LoadingSpinner from './components/LoadingSpinner';
+import EmptyCart from './components/EmptyCart';
+
+// Custom Hooks
+import { useCartData } from './hooks/useCartData';
+import { useCartSelection } from './hooks/useCartSelection';
+import { useCartActions } from './hooks/useCartActions';
+
+/**
+ * Cart Component - Displays shopping cart with items, selection, and checkout functionality
+ * Optimized for performance with custom hooks and memoized calculations
+ */
 const Cart = () => {
-  const { getProduct } = useProduct();
-  const { deleteItem, updateQuantity } = useCart();
-  const [checkedItems, setCheckedItems] = useState({});
-  const [isCheckedAll, setIsCheckedAll] = useState(false);
-  const [cart, setCart] = useState([]);
-  const [totalAmount, setTotalAmount] = useState(0);
-  const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [sellers, setSellers] = useState([]);
+  // Data management
+  const {
+    cart,
+    products,
+    sellers,
+    loading,
+    error,
+    updateCart
+  } = useCartData();
 
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        const data = await AccountContext.Authentication();
+  // Selection state management
+  const {
+    checkedItems,
+    isAllSelected,
+    selectedCount,
+    totalAmount,
+    selectedItems,
+    selectedProductIds,
+    hasSelectedItems,
+    handleItemSelect,
+    handleSelectAll,
+    clearSelections
+  } = useCartSelection(products);
 
-        if (data.data) {
-          setCart(data.data.account.cart);
-          const initialCheckedItems = {};
-          data.data.account.cart.forEach((item) => {
-            initialCheckedItems[item.productId] = false;
-          });
-          setCheckedItems(initialCheckedItems);
-        }
-      } catch (error) {
-        console.error("Error fetching cart:", error);
-      }
-    };
-    checkAuthentication();
-  }, []);
+  // Cart actions
+  const {
+    handleDeleteItems,
+    handleUpdateQuantity,
+    handleCheckout,
+    handleContinueShopping
+  } = useCartActions(updateCart, clearSelections);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        if (cart.length > 0) {
-          const productPromises = cart.map((item) =>
-            getProduct(item.productId)
-          );
-          const productsData = await Promise.all(productPromises);
-
-          const productsWithQuantity = productsData.map((product) => {
-            const cartItem = cart.find(
-              (item) => item.productId === product._id
-            );
-            return {
-              ...product,
-              quantity: cartItem ? cartItem.quantity : 0,
-            };
-          });
-          setProducts(productsWithQuantity);
-        } else {
-          setProducts([]);
-        }
-      } catch (err) {
-        console.error("Error fetching products:", err);
-      }
-    };
-
-    fetchProducts();
-  }, [cart]);
-
-  useEffect(() => {
-    const fetchSellers = async () => {
-      try {
-        const uniqueSellerIds = Array.from(
-          new Set(products.map((product) => product.sellerId))
-        );
-
-        const sellerPromises = uniqueSellerIds.map((sellerId) =>
-          AccountContext.getAccount(sellerId)
-        );
-        const sellersData = await Promise.all(sellerPromises);
-        setSellers(sellersData);
-      } catch (err) {
-        console.error("Error fetching sellers:", err);
-      }
-    };
-
-    if (products.length > 0) {
-      fetchSellers();
-    }
-  }, [products]);
-
-  useEffect(() => {
-    const allChecked = Object.values(checkedItems).every(Boolean);
-    const anyChecked = Object.values(checkedItems).some(Boolean);
-    setIsCheckedAll(allChecked && anyChecked);
-  }, [checkedItems]);
-
-  useEffect(() => {
-    const calculateTotal = () => {
-      const total = products.reduce((sum, product) => {
-        if (checkedItems[product._id]) {
-          return sum + product.price * product.quantity;
-        }
-        return sum;
-      }, 0);
-      setTotalAmount(total);
-    };
-    calculateTotal();
-  }, [products, checkedItems]);
-
-  const handleCheckboxChange = (productId, isChecked) => {
-    setCheckedItems((prev) => ({ ...prev, [productId]: isChecked }));
-  };
-
-  const handleCheckboxAllChange = () => {
-    const newCheckedState = !isCheckedAll;
-    const newCheckedItems = {};
-    cart.forEach((item) => {
-      newCheckedItems[item.productId] = newCheckedState;
-    });
-    setCheckedItems(newCheckedItems);
-    setIsCheckedAll(newCheckedState);
-  };
-
+  // Event handlers
   const handleDeleteSelected = () => {
-    const selectedIds = Object.entries(checkedItems)
-      .filter(([, isChecked]) => isChecked)
-      .map(([productId]) => productId);
-
-    deleteItems(selectedIds);
-  };
-
-  const deleteItems = async (ids) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Vui lòng đăng nhập để tiếp tục.");
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const response = await deleteItem(ids);
-      if (response.status === "success") {
-        setCart(response.cart);
-        setCheckedItems({});
-        setIsCheckedAll(false);
-      }
-    } catch (error) {
-      console.error(error);
+    if (selectedProductIds.length > 0) {
+      handleDeleteItems(selectedProductIds);
     }
   };
 
-  const handleUpdateQuantity = async (productId, change) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Vui lòng đăng nhập để tiếp tục.");
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const response = await updateQuantity(productId, change);
-
-      if (response.status === "success") {
-        setCart(response.cart);
-      }
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-    }
+  const handleCheckoutClick = () => {
+    handleCheckout(selectedItems);
   };
 
-  const getSelectedCount = () =>
-    Object.values(checkedItems).filter(Boolean).length;
-
-  const handleCheckout = () => {
-    const selectedItems = cart.filter((item) => checkedItems[item.productId]);
-
-    if (selectedItems.length > 0) {
-      navigate("/eco-market/checkout", { state: { selectedItems } });
-    }
+  const handleDeleteSingleItem = (productId) => {
+    handleDeleteItems([productId]);
   };
 
+  // Error state
+  if (error) {
+    return (
+      <div className="container vh-100">
+        <Breadcrumb />
+        <div className="mx-3">
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="container vh-100">
+        <Breadcrumb />
+        <div className="mx-3">
+          <LoadingSpinner message="Đang tải giỏ hàng..." />
+        </div>
+      </div>
+    );
+  }
+
+  // Empty cart state
+  if (products.length === 0) {
+    return (
+      <div className="container vh-100">
+        <Breadcrumb />
+        <div className="mx-3">
+          <EmptyCart onContinueShopping={handleContinueShopping} />
+        </div>
+      </div>
+    );
+  }
+
+  // Main cart view
   return (
     <div className="container vh-100">
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb d-flex align-items-center pt-4">
-          <li className="ms-3">
-            <a
-              href="/eco-market/home"
-              className="text-decoration-none text-primary-custom"
-            >
-              Trang chủ
-            </a>
-          </li>
-          <li className="mx-2">
-            <span>&nbsp;&gt;&nbsp;</span>
-            Giỏ hàng
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumb />
+      
       <div className="mx-3">
-        <div className="card p-3 shadow" style={{ transform: "none" }}>
+        {/* Cart Items Table */}
+        <div className="card p-3 shadow" style={{ transform: 'none' }}>
           <Table borderless className="table-hover">
-            <thead>
-              <tr className=" text-center bg-light text-nowrap">
-                <th>
-                  <label className="custom-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={isCheckedAll}
-                      onChange={handleCheckboxAllChange}
-                    />
-                    <span className="checkmark" />
-                    Tất cả
-                  </label>
-                </th>
-                <th>Sản Phẩm</th>
-                <th>Đơn Giá</th>
-                <th>Số Lượng</th>
-                <th>Thành Tiền</th>
-                <th style={{ width: "5%" }}></th>
-              </tr>
-            </thead>
+            <CartHeader 
+              isAllSelected={isAllSelected}
+              onSelectAll={handleSelectAll}
+            />
             <CartItem
               sellers={sellers}
               products={products}
               handleUpdateQuantity={handleUpdateQuantity}
               checkedItems={checkedItems}
-              onCheckboxChange={handleCheckboxChange}
-              onDeleteItem={deleteItems}
+              onCheckboxChange={handleItemSelect}
+              onDeleteItem={handleDeleteSingleItem}
             />
           </Table>
         </div>
-        <Card
-          className="shadow-sm sticky-bottom mt-4"
-          style={{
-            transition: "none",
-            transform: "none !important",
-            boxShadow: "0 .125rem .25rem rgba(0,0,0,.075)",
-            borderRadius: "8px",
-          }}
-        >
-          <Card.Body>
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                {Object.values(checkedItems).some(
-                  (value) => typeof value === "boolean" && value === true
-                ) && (
-                    <Button
-                      variant="link"
-                      className="d-flex font-monospace fs-5 align-items-center text-danger text-decoration-none"
-                      onClick={handleDeleteSelected}
-                    >
-                      <DeleteOutlineIcon className="delete-icon" />
-                      <span>Xóa</span>
-                    </Button>
-                  )}
-              </div>
-              <div className="text-right">
-                <p className="mb-0 font-weight-bold me-3">
-                  Tổng tiền ({getSelectedCount()} Sản phẩm):{" "}
-                  <strong className="text-danger fs-5 ms-2">
-                    {totalAmount.toLocaleString()}₫
-                  </strong>
-                </p>
-                <Button
-         
-                  className="mt-2 float-end btn-bg buy-now-btn"
-                  onClick={handleCheckout}
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    transition: "all 0.3s ease",
-                    border: "none",
-                    fontSize: "16px",
-                    fontWeight: "bold",
-                    paddingLeft: "20px",
-                    paddingRight: "20px",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = "translateY(-3px)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <span style={{ position: "relative", zIndex: 2 }}>
-                    Mua Hàng
-                  </span>
-                  <div
-                    className="btn-shine"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: "-100%",
-                      width: "100%",
-                      height: "100%",
-                      background:
-                        "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-                      animation: "shine 2s infinite",
-                      zIndex: 1,
-                    }}
-                  ></div>
-                </Button>
-                <style jsx>{`
-                  @keyframes shine {
-                    0% {
-                      left: -100%;
-                    }
-                    20% {
-                      left: 100%;
-                    }
-                    100% {
-                      left: 100%;
-                    }
-                  }
-                  .buy-now-btn:active {
-                    transform: scale(0.95) !important;
-                    box-shadow: 0 2px 6px rgba(238, 77, 45, 0.3) !important;
-                  }
-                `}</style>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
+
+        {/* Cart Summary */}
+        <CartSummary
+          hasSelectedItems={hasSelectedItems}
+          selectedCount={selectedCount}
+          totalAmount={totalAmount}
+          onDeleteSelected={handleDeleteSelected}
+          onCheckout={handleCheckoutClick}
+        />
       </div>
     </div>
   );
 };
 
-export default Cart;
+export default Cart; 

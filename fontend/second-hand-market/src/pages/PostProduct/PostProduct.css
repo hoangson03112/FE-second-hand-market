@@ -8,6 +8,7 @@
   padding: 20px;
   font-family: "Arial", sans-serif;
   flex-direction: column;
+  width: 100%;
 }
 
 /* Form container */

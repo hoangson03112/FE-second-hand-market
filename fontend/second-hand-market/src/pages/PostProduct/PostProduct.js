@@ -6,14 +6,16 @@ import Swal from "sweetalert2";
 import { useCategory } from "../../contexts/CategoryContext";
 import AppContext from "../../contexts/AppContext";
 import { useProduct } from "../../contexts/ProductContext";
-import ButtonBack from "../../components/common/Button";
-
+import ButtonBack from './../../components/common/Button/ButtonBack';
+import { useAuth } from "../../contexts/AuthContext";
+import SellerIntroPage from "../../components/SellerIntroPage/SellerIntroPage";
 
 const PostProduct = () => {
   const { getCategories } = useCategory();
   const { postProduct } = useProduct();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
+  const { currentUser } = useAuth();
   const [provinces, setProvinces] = useState([]);
   const [files, setFiles] = useState([]);
   const [product, setProduct] = useState({
@@ -143,6 +145,9 @@ const PostProduct = () => {
     });
   };
 
+  if (currentUser?.role === "buyer") {
+    return <SellerIntroPage />;
+  }
   return (
     <div className="sell-product-page">
       <div className="form-container shadow p-4 rounded-3 bg-white">

@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import { useCategory } from "../../contexts/CategoryContext";
 import AppContext from "../../contexts/AppContext";
 import { useProduct } from "../../contexts/ProductContext";
-import ButtonBack from './../../components/common/Button/ButtonBack';
+import ButtonBack from "./../../components/common/Button/ButtonBack";
 import { useAuth } from "../../contexts/AuthContext";
 import SellerIntroPage from "../../components/SellerIntroPage/SellerIntroPage";
 
@@ -145,7 +145,7 @@ const PostProduct = () => {
     });
   };
 
-  if (currentUser?.role === "buyer") {
+  if (currentUser?.role === "buyer" || !currentUser) {
     return <SellerIntroPage />;
   }
   return (

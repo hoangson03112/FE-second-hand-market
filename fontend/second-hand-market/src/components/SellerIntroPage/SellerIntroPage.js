@@ -15,6 +15,8 @@ import {
 import { styled, keyframes } from '@mui/material/styles';
 import { Image, ArrowBack } from '@mui/icons-material';
 import RegisterSeller from '../../pages/RegisterSeller/RegisterSeller';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 // Animations
 const float = keyframes`
@@ -124,7 +126,8 @@ export default function SellerIntroPage() {
     const [isVisible, setIsVisible] = useState(false);
     const [activeFeature, setActiveFeature] = useState(0);
     const [showRegisterForm, setShowRegisterForm] = useState(false);
-
+    const { currentUser } = useAuth();
+    const navigate = useNavigate();
     useEffect(() => {
         setIsVisible(true);
         const interval = setInterval(() => {
@@ -134,8 +137,11 @@ export default function SellerIntroPage() {
     }, []);
 
     const handleRegisterAsSeller = () => {
-        setShowRegisterForm(true);
-        console.log('Showing seller registration form...');
+        if (!currentUser) {
+            navigate('/eco-market/login');
+        } else {
+            setShowRegisterForm(true);
+        }
     };
 
     const handleBackToIntro = () => {

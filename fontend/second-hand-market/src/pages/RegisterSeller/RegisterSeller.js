@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Box, Container, Paper, Typography, Button } from "@mui/material";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Button,
+  CircularProgress,
+} from "@mui/material";
 import {
   Person,
   Payment,
@@ -10,6 +17,8 @@ import {
 import { styled, keyframes } from "@mui/material/styles";
 import { useAuth } from "../../contexts/AuthContext";
 import SellerContext from "../../contexts/SellerContext";
+import { useNotification } from "../../hooks/useNotification";
+import NotificationSnackbar from "../../components/common/NotificationSnackbar";
 
 // Import components
 import StepperComponent from "./components/StepperComponent";
@@ -17,6 +26,7 @@ import PhoneVerificationStep from "./components/PhoneVerificationStep";
 import PersonalInfoStep from "./components/PersonalInfoStep";
 import PaymentInfoStep from "./components/PaymentInfoStep";
 import ConfirmationStep from "./components/ConfirmationStep";
+import { useNavigate } from "react-router-dom";
 
 // Animations
 const shimmer = keyframes`
@@ -93,7 +103,8 @@ const steps = [
 ];
 
 export default function RegisterSeller() {
-  const [activeStep, setActiveStep] = useState(1);
+  const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(0);
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     avatar: null,
@@ -111,6 +122,9 @@ export default function RegisterSeller() {
     agreePolicy: false,
   });
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { notification, showSuccess, showError, showInfo, hideNotification } =
+    useNotification();
 
   // Configuration data
   const cities = [
@@ -204,15 +218,50 @@ export default function RegisterSeller() {
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
-    try {
-      console.log("FormData để gửi lên BE:", formData);
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
+    showInfo("Đang xử lý đăng ký...", 0);
+
+    try {
       const response = await SellerContext.registerSeller(formData);
-      console.log("Response:", response);
-      alert("Đăng ký thành công! Chúng tôi sẽ xem xét và phản hồi trong 24h.");
+
+      if (response.success) {
+        showSuccess(response.message, 3000);
+
+        setTimeout(() => {
+          navigate("/eco-market/home");
+          setActiveStep(0);
+          setFormData({
+            avatar: null,
+            phone: "",
+            address: "",
+            province: "",
+            district: "",
+            ward: "",
+            idCardFront: null,
+            idCardBack: null,
+            bankName: "",
+            accountNumber: "",
+            accountHolder: "",
+            agreeTerms: false,
+            agreePolicy: false,
+          });
+          setIsPhoneVerified(false);
+        }, 2000);
+      } else {
+        showError(response.message, 7000);
+      }
     } catch (error) {
       console.error("Error registering seller:", error);
-      alert("Đăng ký thất bại! Vui lòng kiểm tra lại thông tin.");
+      hideNotification();
+
+      showError(
+        "❌ Đăng ký thất bại! Vui lòng kiểm tra kết nối mạng và thử lại.",
+        7000
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -225,7 +274,7 @@ export default function RegisterSeller() {
             isPhoneVerified={isPhoneVerified}
             onVerified={() => {
               setIsPhoneVerified(true);
-              handleNext();
+              setActiveStep(1);
             }}
           />
         );
@@ -353,12 +402,29 @@ export default function RegisterSeller() {
             {activeStep === steps.length - 1 ? (
               <PulseButton
                 onClick={handleSubmit}
-                disabled={!validateStep(3)}
+                disabled={!validateStep(3) || isSubmitting}
                 variant="contained"
                 size="large"
-                sx={{ px: 4 }}
+                sx={{
+                  px: 4,
+                  position: "relative",
+                  opacity: !validateStep(3) || isSubmitting ? 0.6 : 1,
+                }}
               >
-                🎉 Hoàn tất đăng ký
+                {isSubmitting ? (
+                  <>
+                    <CircularProgress
+                      size={20}
+                      sx={{
+                        color: "white",
+                        mr: 1,
+                      }}
+                    />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  "🎉 Hoàn tất đăng ký"
+                )}
               </PulseButton>
             ) : (
               <PulseButton
@@ -377,6 +443,15 @@ export default function RegisterSeller() {
           </Box>
         </StyledPaper>
       </Container>
+
+      {/* Notification Snackbar */}
+      <NotificationSnackbar
+        open={notification.open}
+        message={notification.message}
+        severity={notification.severity}
+        autoHideDuration={notification.autoHideDuration}
+        onClose={hideNotification}
+      />
     </Box>
   );
 }

@@ -352,8 +352,8 @@ export const Product = () => {
                         Đăng ngày{" "}
                         {product?.createdAt
                           ? new Date(product?.createdAt).toLocaleDateString(
-                            "vi-VN"
-                          )
+                              "vi-VN"
+                            )
                           : ""}
                       </Typography>
                     </Box>
@@ -463,10 +463,10 @@ export const Product = () => {
 
                             MozAppearance: "textfield",
                             "&::-webkit-outer-spin-button, &::-webkit-inner-spin-button":
-                            {
-                              WebkitAppearance: "none",
-                              margin: 0,
-                            },
+                              {
+                                WebkitAppearance: "none",
+                                margin: 0,
+                              },
                           }}
                         />
                         <Button
@@ -493,6 +493,7 @@ export const Product = () => {
                         </Button>
                       </Box>
                     </Box>
+
                     {/* Action Buttons */}
                     <Box
                       sx={{
@@ -1119,10 +1120,11 @@ export const Product = () => {
         </Card>
       </Container>
 
-
-      <Notification showToast={showToast} setShowToast={setShowToast} message="Thêm sản phẩm vào giỏ hàng thành công!" />
-
-
+      <Notification
+        showToast={showToast}
+        setShowToast={setShowToast}
+        message="Thêm sản phẩm vào giỏ hàng thành công!"
+      />
     </Box>
   );
 };

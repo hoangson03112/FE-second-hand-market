@@ -43,6 +43,7 @@ import BlogForm from './pages/Admin/BlogManagement/BlogForm';
 import VoucherList from "./pages/Voucher/VoucherList";
 import VoucherManagement from "./pages/Admin/VoucherManagement/VoucherManagement";
 import RegisterSeller from "./pages/RegisterSeller/RegisterSeller";
+import SellerManagement from "./pages/Admin/SellerManagement/SellerManagement";
 
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
@@ -119,6 +120,15 @@ function App() {
                         element={
                           <LayoutAdmin>
                             <VoucherManagement />
+                          </LayoutAdmin>
+                        }
+                      />
+
+                      <Route
+                        path="/eco-market/admin/sellers"
+                        element={
+                          <LayoutAdmin>
+                            <SellerManagement />
                           </LayoutAdmin>
                         }
                       />

@@ -200,6 +200,8 @@ const PersonalInfoStep = ({
                 title="Mặt trước CMND/CCCD"
                 icon={Badge}
                 gradient="linear-gradient(to right, #2a3b4c, #344960)"
+                variant="idcard"
+                description="Ảnh rõ nét, JPG/PNG, tối đa 5MB"
               />
             </Grid>
 
@@ -210,6 +212,8 @@ const PersonalInfoStep = ({
                 title="Mặt sau CMND/CCCD"
                 icon={Badge}
                 gradient="linear-gradient(to right, #344960, #3e5871)"
+                variant="idcard"
+                description="Ảnh rõ nét, JPG/PNG, tối đa 5MB"
               />
             </Grid>
           </Grid>

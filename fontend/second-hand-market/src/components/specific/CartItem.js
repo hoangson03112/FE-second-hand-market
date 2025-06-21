@@ -21,11 +21,10 @@ const CartItem = ({
   onDeleteItem,
 }) => {
   const groupedProducts = products.reduce((acc, product) => {
-    console.log(sellers);
     const seller = sellers.find((seller) => seller._id === product.sellerId);
     const sellerName = seller?.fullName || "Unknown Seller";
     const sellerAvatar = seller?.avatar;
-    
+
     if (!acc[sellerName]) {
       acc[sellerName] = {
         products: [],

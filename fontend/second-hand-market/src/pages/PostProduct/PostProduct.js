@@ -1,37 +1,228 @@
 import React, { useEffect, useState } from "react";
-import "./PostProduct.css";
-import Select from "react-select";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  CardMedia,
+  IconButton,
+  Chip,
+  Divider,
+  Alert,
+  Stack,
+  Autocomplete,
+  InputAdornment,
+  Fab,
+  Backdrop,
+  CircularProgress,
+  LinearProgress,
+} from "@mui/material";
+import {
+  CloudUpload,
+  Delete,
+  Add,
+  Send,
+  ArrowBack,
+  Image,
+  VideoLibrary,
+  AttachMoney,
+  Inventory,
+  Category,
+  Description,
+  Label,
+} from "@mui/icons-material";
+import { styled, createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useCategory } from "../../contexts/CategoryContext";
-import AppContext from "../../contexts/AppContext";
 import { useProduct } from "../../contexts/ProductContext";
-import ButtonBack from "../../components/common/Button";
+import ButtonBack from "./../../components/common/Button/ButtonBack";
+import { useAuth } from "../../contexts/AuthContext";
+import SellerIntroPage from "../../components/SellerIntroPage/SellerIntroPage";
 
+// Minimal Soft Theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#6b7280",
+      light: "#9ca3af",
+      dark: "#4b5563",
+    },
+    secondary: {
+      main: "#e5e7eb",
+      light: "#f3f4f6",
+      dark: "#d1d5db",
+    },
+    background: {
+      default: "#fafafa",
+      paper: "#ffffff",
+    },
+    success: {
+      main: "#10b981",
+    },
+    text: {
+      primary: "#374151",
+      secondary: "#6b7280",
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", sans-serif',
+    h3: {
+      fontWeight: 600,
+      color: "#374151",
+    },
+    h4: {
+      fontWeight: 600,
+      color: "#374151",
+    },
+    h6: {
+      fontWeight: 500,
+      color: "#6b7280",
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          "& .MuiOutlinedInput-root": {
+            borderRadius: 8,
+            backgroundColor: "#ffffff",
+            "& fieldset": {
+              borderColor: "#e5e7eb",
+              borderWidth: 1,
+            },
+            "&:hover fieldset": {
+              borderColor: "#d1d5db",
+            },
+            "&.Mui-focused fieldset": {
+              borderColor: "#6b7280",
+              boxShadow: "0 0 0 3px rgba(107, 114, 128, 0.1)",
+            },
+          },
+          "& input[type=number]": {
+            "-moz-appearance": "textfield",
+          },
+          "& input[type=number]::-webkit-outer-spin-button": {
+            "-webkit-appearance": "none",
+            margin: 0,
+          },
+          "& input[type=number]::-webkit-inner-spin-button": {
+            "-webkit-appearance": "none",
+            margin: 0,
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          backgroundColor: "#ffffff",
+          border: "1px solid #f3f4f6",
+          boxShadow:
+            "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px 0 rgb(0 0 0 / 0.06)",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          fontWeight: 500,
+          textTransform: "none",
+          borderRadius: 8,
+          padding: "10px 20px",
+          fontSize: "0.95rem",
+        },
+        contained: {
+          backgroundColor: "#6b7280",
+          color: "#ffffff",
+          boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+          "&:hover": {
+            backgroundColor: "#4b5563",
+            transform: "translateY(-1px)",
+            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+          },
+        },
+      },
+    },
+  },
+});
+
+const UploadBox = styled(Box)(({ theme }) => ({
+  border: `2px dashed #d1d5db`,
+  borderRadius: 12,
+  padding: theme.spacing(4),
+  textAlign: "center",
+  cursor: "pointer",
+  transition: "all 0.3s ease",
+  backgroundColor: "#fafafa",
+  "&:hover": {
+    borderColor: "#9ca3af",
+    backgroundColor: "#f3f4f6",
+    transform: "translateY(-2px)",
+    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+  },
+}));
+
+const PreviewCard = styled(Card)(({ theme }) => ({
+  position: "relative",
+  height: 200,
+  borderRadius: 12,
+  overflow: "hidden",
+  backgroundColor: "#ffffff",
+  border: "1px solid #f3f4f6",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+  },
+}));
+
+const AttributeChip = styled(Chip)(({ theme }) => ({
+  margin: theme.spacing(0.5),
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "scale(1.05)",
+  },
+}));
 
 const PostProduct = () => {
   const { getCategories } = useCategory();
   const { postProduct } = useProduct();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
-  const [provinces, setProvinces] = useState([]);
+  const { currentUser } = useAuth();
   const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const [product, setProduct] = useState({
     name: "",
     price: "",
-    brand: "",
     stock: 0,
     description: "",
     categoryId: "",
-    images: [],
     subcategoryId: "",
-    location: "",
-    avatar: "",
+    attributes: [],
+  });
+
+  const [newAttribute, setNewAttribute] = useState({
+    key: "",
+    value: "",
   });
 
   const categoryOptions = categories.map((cate) => ({
-    value: cate._id,
+    id: cate._id,
     label: cate.name,
+    ...cate,
   }));
 
   const subCategoryOptions =
@@ -39,37 +230,111 @@ const PostProduct = () => {
       .find(
         (cate) => product.categoryId !== "" && cate._id === product.categoryId
       )
-      ?.subcategories.map((sub) => ({ value: sub._id, label: sub.name })) || [];
+      ?.subcategories.map((sub) => ({
+        id: sub._id,
+        label: sub.name,
+        ...sub,
+      })) || [];
 
-  const handleChangeCategoryOptions = (selectedOption) => {
-    setProduct({ ...product, categoryId: selectedOption?.value || "" });
+  const handleCategoryChange = (event, newValue) => {
+    setProduct({
+      ...product,
+      categoryId: newValue?.id || "",
+      subcategoryId: "",
+    });
   };
-  const handleChangeSubCategoryOptions = (selectedOption) => {
-    setProduct({ ...product, subcategoryId: selectedOption?.value || "" });
+
+  const handleSubCategoryChange = (event, newValue) => {
+    setProduct({ ...product, subcategoryId: newValue?.id || "" });
   };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProduct((prev) => ({ ...prev, [name]: value }));
   };
 
-  const convertFilesToBase64 = (files) => {
-    return Promise.all(
-      files.map((file) => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
+  const handleAttributeInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewAttribute((prev) => ({ ...prev, [name]: value }));
+  };
 
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (error) => reject(error);
-        });
-      })
-    );
+  const addAttribute = () => {
+    if (newAttribute.key.trim() && newAttribute.value.trim()) {
+      setProduct((prev) => ({
+        ...prev,
+        attributes: [
+          ...prev.attributes,
+          {
+            ...newAttribute,
+            id: Date.now(), // ID tạm cho React key và delete function, sẽ bị loại bỏ khi gửi server
+          },
+        ],
+      }));
+      setNewAttribute({ key: "", value: "" });
+    }
+  };
+
+  const removeAttribute = (id) => {
+    setProduct((prev) => ({
+      ...prev,
+      attributes: prev.attributes.filter((attr) => attr.id !== id),
+    }));
+  };
+
+  const createFormData = (productData, files) => {
+    const formData = new FormData();
+
+    // Thêm các trường text
+    formData.append("name", productData.name);
+    formData.append("price", productData.price);
+    formData.append("stock", productData.stock);
+    formData.append("description", productData.description);
+    formData.append("categoryId", productData.categoryId);
+    formData.append("subcategoryId", productData.subcategoryId);
+    formData.append("attributes", JSON.stringify(productData.attributes));
+
+    // Thêm files với kiểm tra type
+    files.forEach((file, index) => {
+      // Validate file type
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        formData.append("images", file);
+      } else {
+        console.warn(
+          `File ${file.name} không được hỗ trợ (type: ${file.type})`
+        );
+      }
+    });
+
+    return formData;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setUploadProgress(0);
+
     try {
-      const response = await postProduct(product);
+      // Validation
+      if (!product.name.trim()) {
+        throw new Error("Tên sản phẩm không được để trống");
+      }
+      if (!product.price || product.price <= 0) {
+        throw new Error("Giá sản phẩm phải lớn hơn 0");
+      }
+      if (!product.categoryId) {
+        throw new Error("Vui lòng chọn danh mục");
+      }
+      if (files.length === 0) {
+        throw new Error("Vui lòng thêm ít nhất 1 hình ảnh");
+      }
+
+      // Tạo FormData
+      const formData = createFormData(product, files);
+
+      // Gửi request với FormData và progress tracking
+      const response = await postProduct(formData, true, (progress) => {
+        setUploadProgress(progress);
+      });
 
       if (response.message) {
         Swal.fire({
@@ -81,6 +346,14 @@ const PostProduct = () => {
       }
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm lên:", error);
+      Swal.fire({
+        title: "Lỗi!",
+        text: error.message || "Có lỗi xảy ra khi đăng sản phẩm",
+        icon: "error",
+      });
+    } finally {
+      setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -93,40 +366,8 @@ const PostProduct = () => {
         console.error("Error fetching categories:", error);
       }
     };
-    const getProvinces = async () => {
-      try {
-        const response = await AppContext.fetchProvinces();
-
-        setProvinces(
-          response.map((data) => ({ value: data.name, label: data.name }))
-        );
-      } catch (err) {
-        console.error("Error fetching Provinces:", err.message);
-      }
-    };
-
-    getProvinces();
     fetchCategories();
   }, []);
-
-  useEffect(() => {
-    const processFiles = async () => {
-      if (!files || files.length === 0) return;
-
-      const encodedFiles = await convertFilesToBase64(files);
-      const firstImage = encodedFiles.find((file) =>
-        file.startsWith("data:image")
-      );
-
-      setProduct((prev) => ({
-        ...prev,
-        images: encodedFiles,
-        avatar: firstImage || null,
-      }));
-    };
-
-    processFiles();
-  }, [files]);
 
   const handleFileChange = (event) => {
     const selectedFiles = Array.from(event.target.files);
@@ -143,314 +384,577 @@ const PostProduct = () => {
     });
   };
 
-  return (
-    <div className="sell-product-page">
-      <div className="form-container shadow p-4 rounded-3 bg-white">
-        <ButtonBack url="/eco-market/home" />
-        <h2 className="form-title text-center mb-3">Đăng sản phẩm mới</h2>
-        <p className="text-gray-600 mb-4 text-center">
-          Mô tả các mặt hàng một cách trung thực và nhận được khoản thanh toán
-          đảm bảo 100%.
-        </p>
+  if (currentUser?.role === "buyer" || !currentUser) {
+    return <SellerIntroPage />;
+  }
 
-        <form noValidate onSubmit={handleSubmit} className="form-content mt-4">
-          <div className="mb-5">
-            <label className="form-label fw-bold fs-5 mb-3">
-              Ảnh và video <span className="text-danger">*</span>
-            </label>
-            <div
-              className="border border-2 border-dashed rounded-3 p-4 text-center bg-light"
-              style={{ cursor: "pointer" }}
+  return (
+    <ThemeProvider theme={theme}>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "#fafafa",
+          py: 4,
+        }}
+      >
+        <Container maxWidth="lg">
+          {/* Simple Header */}
+          <Box sx={{ mb: 4 }}>
+            <ButtonBack url="/eco-market/home" />
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              sx={{
+                mt: 2,
+                fontWeight: 600,
+                color: "text.primary",
+              }}
             >
-              {files.length > 0 && (
-                <div className="mt-3 d-flex flex-wrap gap-3 justify-content-center">
-                  {files.map((file, index) => (
-                    <div
+              Đăng sản phẩm mới
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ maxWidth: 600 }}
+            >
+              Điền thông tin chi tiết để khách hàng hiểu rõ về sản phẩm của bạn
+            </Typography>
+          </Box>
+
+          <form onSubmit={handleSubmit}>
+            {/* Elegant Card Layout */}
+            <Box sx={{ maxWidth: 900, mx: "auto" }}>
+              {/* Progress Bar */}
+              {loading && uploadProgress > 0 && (
+                <Paper sx={{ p: 2, mb: 3 }}>
+                  <Typography variant="body2" gutterBottom>
+                    Đang tải lên... {uploadProgress}%
+                  </Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                    sx={{ borderRadius: 2, height: 8 }}
+                  />
+                </Paper>
+              )}
+
+              {/* Step Progress */}
+              <Box sx={{ mb: 6 }}>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    position: "relative",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      top: "50%",
+                      left: "10%",
+                      right: "10%",
+                      height: 1,
+                      backgroundColor: "divider",
+                      display: { xs: "none", sm: "block" },
+                      zIndex: 0,
+                    },
+                  }}
+                >
+                  {[
+                    {
+                      number: "01",
+                      title: "Hình ảnh",
+                      icon: <Image />,
+                      active: true,
+                    },
+                    {
+                      number: "02",
+                      title: "Thông tin",
+                      icon: <Inventory />,
+                      active: false,
+                    },
+                    {
+                      number: "03",
+                      title: "Thuộc tính",
+                      icon: <Label />,
+                      active: false,
+                    },
+                  ].map((step, index) => (
+                    <Box
                       key={index}
-                      className="position-relative"
-                      style={{
-                        width: "150px",
-                        height: "150px",
-                        overflow: "hidden",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.15)",
-                        transition: "transform 0.2s",
-                        margin: "5px",
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        backgroundColor: "background.paper",
+                        px: 3,
+                        py: 1.5,
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: step.active ? "primary.main" : "divider",
+                        position: "relative",
+                        zIndex: 1,
+                        minWidth: 140,
+                        justifyContent: "center",
                       }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.05)")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
                     >
-                      {file.type.startsWith("image/") ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt="Preview"
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : file.type.startsWith("video/") ? (
-                        <video
-                          controls
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        >
-                          <source
-                            src={URL.createObjectURL(file)}
-                            type={file.type}
-                          />
-                        </video>
-                      ) : null}
-                      <button
-                        onClick={() => handleRemoveFile(index)}
-                        className="btn btn-danger btn-sm"
-                        style={{
-                          position: "absolute",
-                          top: "5px",
-                          right: "5px",
-                          borderRadius: "50%",
-                          padding: "2px 6px",
-                          fontSize: "12px",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                      <Box
+                        sx={{
+                          mr: 1.5,
+                          color: step.active
+                            ? "primary.main"
+                            : "text.secondary",
                         }}
                       >
-                        ×
-                      </button>
-                    </div>
+                        {step.icon}
+                      </Box>
+                      <Box sx={{ textAlign: "center" }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: step.active
+                              ? "primary.main"
+                              : "text.secondary",
+                            fontWeight: 600,
+                            display: "block",
+                            lineHeight: 1,
+                          }}
+                        >
+                          {step.number}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: step.active
+                              ? "primary.main"
+                              : "text.secondary",
+                            fontWeight: step.active ? 600 : 400,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {step.title}
+                        </Typography>
+                      </Box>
+                    </Box>
                   ))}
-                </div>
-              )}
-              <div
-                onClick={() => document.getElementById("fileInput").click()}
-                className="py-4"
-              >
-                <i className="bi bi-camera mb-2 fs-1"></i>
-                <p className="fw-bold mb-0">Tải lên hình ảnh và video</p>
-                <p className="text-muted small">
-                  Hình ảnh đẹp sẽ giúp sản phẩm của bạn nổi bật hơn
-                </p>
-              </div>
-            </div>
-            <input
-              id="fileInput"
-              type="file"
-              className="d-none"
-              accept="image/*,video/*"
-              multiple
-              onChange={handleFileChange}
-            />
-          </div>
+                </Stack>
+              </Box>
 
-          <div className="row">
-            <h5 className="mb-4 mt-2 pb-2 border-bottom fw-bold">
-              Thông tin sản phẩm
-            </h5>
-            <div className="col-md-6 pe-md-4">
-              <div className="form-group mb-4">
-                <label htmlFor="name" className="fw-bold mb-2">
-                  Tên sản phẩm <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="input-custom form-control form-control-lg rounded-3"
-                  placeholder="Nhập tên sản phẩm"
-                  value={product.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group mb-4">
-                <label htmlFor="price" className="fw-bold mb-2">
-                  Giá sản phẩm (VNĐ) <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  className="input-custom form-control form-control-lg rounded-3"
-                  placeholder="Nhập giá sản phẩm"
-                  value={product.price}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group mb-4">
-                <label htmlFor="stock" className="fw-bold mb-2">
-                  Số lượng <span className="text-danger">*</span>
-                </label>
-                <input
-                  type="number"
-                  id="stock"
-                  name="stock"
-                  className="input-custom form-control form-control-lg rounded-3"
-                  placeholder="Nhập số lượng sản phẩm"
-                  value={product.stock}
-                  onChange={handleInputChange}
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div className="form-group mb-4">
-                <label htmlFor="brand" className="fw-bold mb-2">
-                  Thương hiệu
-                </label>
-                <input
-                  type="text"
-                  id="brand"
-                  name="brand"
-                  className="input-custom form-control form-control-lg rounded-3"
-                  placeholder="Nhập thương hiệu"
-                  value={product.brand}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="col-md-6 ps-md-4">
-              <div className="form-group mb-4">
-                <label htmlFor="category" className="fw-bold mb-2">
-                  Danh mục <span className="text-danger">*</span>
-                </label>
-                <Select
-                  id="category"
-                  name="category"
-                  options={categoryOptions}
-                  value={categoryOptions.find(
-                    (option) => option.value === product.categoryId
-                  )}
-                  onChange={handleChangeCategoryOptions}
-                  placeholder="Chọn danh mục"
-                  isClearable
-                  className="basic-select"
-                  classNamePrefix="select"
-                  styles={{
-                    control: (provided) => ({
-                      ...provided,
-                      height: "48px",
-                      borderRadius: "0.3rem",
-                    }),
-                  }}
-                />
-              </div>
-
-              {product.categoryId !== "" && (
-                <div className="form-group mb-4">
-                  <label htmlFor="subcategory" className="fw-bold mb-2">
-                    Danh mục con
-                  </label>
-                  <Select
-                    id="subcategory"
-                    options={subCategoryOptions}
-                    value={subCategoryOptions.find(
-                      (option) => option.value === product.subcategoryId
-                    )}
-                    onChange={handleChangeSubCategoryOptions}
-                    placeholder="Chọn danh mục con"
-                    isClearable
-                    className="basic-select"
-                    classNamePrefix="select"
-                    styles={{
-                      control: (provided) => ({
-                        ...provided,
-                        height: "48px",
-                        borderRadius: "0.3rem",
-                      }),
+              {/* Upload Section */}
+              <Paper sx={{ p: 4, mb: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: "primary.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
                     }}
+                  >
+                    <Image sx={{ color: "white", fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight="600"
+                      color="text.primary"
+                    >
+                      Hình ảnh sản phẩm{" "}
+                      <span style={{ color: "#ef4444" }}>*</span>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Thêm ít nhất 1 hình ảnh để khách hàng dễ dàng nhận diện
+                      sản phẩm
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {files.length > 0 && (
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    {files.map((file, index) => (
+                      <Grid item xs={6} sm={4} md={3} key={index}>
+                        <PreviewCard>
+                          {file.type.startsWith("image/") ? (
+                            <CardMedia
+                              component="img"
+                              height="200"
+                              image={URL.createObjectURL(file)}
+                              alt="Preview"
+                              sx={{ objectFit: "cover" }}
+                            />
+                          ) : file.type.startsWith("video/") ? (
+                            <CardMedia
+                              component="video"
+                              height="200"
+                              controls
+                              sx={{ objectFit: "cover" }}
+                            >
+                              <source
+                                src={URL.createObjectURL(file)}
+                                type={file.type}
+                              />
+                            </CardMedia>
+                          ) : null}
+                          <IconButton
+                            onClick={() => handleRemoveFile(index)}
+                            sx={{
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              bgcolor: "error.main",
+                              color: "white",
+                              "&:hover": { bgcolor: "error.dark" },
+                            }}
+                            size="small"
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </PreviewCard>
+                      </Grid>
+                    ))}
+                  </Grid>
+                )}
+
+                <UploadBox
+                  onClick={() => document.getElementById("fileInput").click()}
+                >
+                  <CloudUpload
+                    sx={{ fontSize: 40, color: "primary.main", mb: 2 }}
                   />
-                </div>
+                  <Typography variant="h6" color="primary" gutterBottom>
+                    Tải lên hình ảnh
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Kéo thả hoặc nhấn để chọn ảnh/video
+                  </Typography>
+                  <input
+                    id="fileInput"
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                  />
+                </UploadBox>
+              </Paper>
+
+              {/* Product Information */}
+              <Paper sx={{ p: 4, mb: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: "success.main",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
+                    }}
+                  >
+                    <Inventory sx={{ color: "white", fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight="600"
+                      color="text.primary"
+                    >
+                      Thông tin sản phẩm
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Cung cấp thông tin chi tiết về sản phẩm
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Tên sản phẩm *"
+                      name="name"
+                      value={product.name}
+                      onChange={handleInputChange}
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Giá *"
+                      name="price"
+                      type="number"
+                      value={product.price}
+                      onChange={handleInputChange}
+                      variant="outlined"
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">VNĐ</InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        "& input[type=number]": {
+                          "-moz-appearance": "textfield",
+                        },
+                        "& input[type=number]::-webkit-outer-spin-button": {
+                          "-webkit-appearance": "none",
+                          margin: 0,
+                        },
+                        "& input[type=number]::-webkit-inner-spin-button": {
+                          "-webkit-appearance": "none",
+                          margin: 0,
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      label="Số lượng"
+                      name="stock"
+                      type="number"
+                      value={product.stock}
+                      onChange={handleInputChange}
+                      variant="outlined"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Autocomplete
+                      options={categoryOptions}
+                      getOptionLabel={(option) => option.label}
+                      value={
+                        categoryOptions.find(
+                          (option) => option.id === product.categoryId
+                        ) || null
+                      }
+                      onChange={handleCategoryChange}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Danh mục *"
+                          variant="outlined"
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    {subCategoryOptions.length > 0 && (
+                      <Autocomplete
+                        options={subCategoryOptions}
+                        getOptionLabel={(option) => option.label}
+                        value={
+                          subCategoryOptions.find(
+                            (option) => option.id === product.subcategoryId
+                          ) || null
+                        }
+                        onChange={handleSubCategoryChange}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Danh mục phụ"
+                            variant="outlined"
+                          />
+                        )}
+                      />
+                    )}
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={4}
+                      label="Mô tả sản phẩm"
+                      name="description"
+                      value={product.description}
+                      onChange={handleInputChange}
+                      variant="outlined"
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Attributes Section */}
+              <Paper sx={{ p: 4, mb: 4 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      backgroundColor: "#fbbf24",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      mr: 2,
+                    }}
+                  >
+                    <Label sx={{ color: "white", fontSize: 20 }} />
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      fontWeight="600"
+                      color="text.primary"
+                    >
+                      Thuộc tính sản phẩm
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Thêm các thông số kỹ thuật của sản phẩm
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    p: 3,
+                    mb: 3,
+                    backgroundColor: "#f9fafb",
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Tên thuộc tính"
+                        name="key"
+                        value={newAttribute.key}
+                        onChange={handleAttributeInputChange}
+                        variant="outlined"
+                        placeholder="VD: Màu sắc, Kích thước..."
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        label="Giá trị"
+                        name="value"
+                        value={newAttribute.value}
+                        onChange={handleAttributeInputChange}
+                        variant="outlined"
+                        placeholder="VD: Đỏ, Size L..."
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={addAttribute}
+                        disabled={
+                          !newAttribute.key.trim() || !newAttribute.value.trim()
+                        }
+                        startIcon={<Add />}
+                        sx={{ height: 40 }}
+                      >
+                        Thêm thuộc tính
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                {product.attributes.length > 0 && (
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ mb: 2, fontWeight: 600 }}
+                    >
+                      Danh sách thuộc tính:
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {product.attributes.map((attr) => (
+                        <Grid item xs={12} sm={6} key={attr.id}>
+                          <Paper
+                            sx={{
+                              p: 2,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              transition: "all 0.3s ease",
+                              "&:hover": {
+                                boxShadow: 2,
+                                transform: "translateX(4px)",
+                              },
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="subtitle2"
+                                color="primary"
+                                sx={{ fontWeight: 600 }}
+                              >
+                                {attr.key}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {attr.value}
+                              </Typography>
+                            </Box>
+                            <IconButton
+                              onClick={() => removeAttribute(attr.id)}
+                              color="error"
+                              size="small"
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Submit Section */}
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  startIcon={
+                    loading ? <CircularProgress size={20} /> : <Send />
+                  }
+                  sx={{ px: 6, py: 2 }}
+                >
+                  {loading ? "Đang đăng..." : "Đăng sản phẩm"}
+                </Button>
+              </Box>
+            </Box>
+          </form>
+
+          {/* Loading Backdrop */}
+          <Backdrop
+            sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            open={loading}
+          >
+            <Box sx={{ textAlign: "center" }}>
+              <CircularProgress color="inherit" />
+              <Typography variant="h6" sx={{ mt: 2 }}>
+                Đang xử lý...
+              </Typography>
+              {uploadProgress > 0 && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {uploadProgress}% đã hoàn thành
+                </Typography>
               )}
-
-              <div className="form-group mb-4">
-                <label htmlFor="location" className="fw-bold mb-2">
-                  Nơi bán <span className="text-danger">*</span>
-                </label>
-                <Select
-                  id="location"
-                  name="location"
-                  options={provinces}
-                  value={provinces.find(
-                    (option) => option.value === product.location
-                  )}
-                  onChange={(e) => {
-                    setProduct((prev) => ({
-                      ...prev,
-                      location: e.value,
-                    }));
-                  }}
-                  isSearchable
-                  placeholder="Tìm kiếm..."
-                  className="basic-select"
-                  classNamePrefix="select"
-                  styles={{
-                    control: (provided) => ({
-                      ...provided,
-                      height: "48px",
-                      borderRadius: "0.3rem",
-                    }),
-                  }}
-                />
-              </div>
-
-              <div className="form-group mb-4">
-                <label htmlFor="description" className="fw-bold mb-2">
-                  Mô tả sản phẩm <span className="text-danger">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  className="input-custom form-control rounded-3"
-                  rows="5"
-                  placeholder="Nhập mô tả sản phẩm"
-                  value={product.description}
-                  onChange={handleInputChange}
-                  required
-                ></textarea>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center mt-5">
-            <button
-              type="submit"
-              className="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold"
-              style={{
-                background: "linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%)",
-                border: "none",
-                boxShadow: "0 4px 15px rgba(13, 110, 253, 0.3)",
-                transition: "all 0.3s ease",
-                fontSize: "1.1rem",
-                letterSpacing: "0.5px",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(13, 110, 253, 0.4)";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 15px rgba(13, 110, 253, 0.3)";
-              }}
-            >
-              Đăng sản phẩm
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </Box>
+          </Backdrop>
+        </Container>
+      </Box>
+    </ThemeProvider>
   );
 };
 

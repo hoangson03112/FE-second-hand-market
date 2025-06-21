@@ -9,8 +9,7 @@ import { useProduct } from "../../contexts/ProductContext";
 import AddressContext from "../../contexts/AddressContext";
 import { useAuth } from "../../contexts/AuthContext";
 import AccountContext from "../../contexts/AccountContext";
-import VoucherSelector from "../../pages/Voucher/VoucherSelector"; 
-import { useCoin } from "../../contexts/CoinProvider";
+import VoucherSelector from "../../pages/Voucher/VoucherSelector";
 const Checkout = () => {
   const { getProduct } = useProduct();
   const { deleteItem } = useCart();
@@ -34,7 +33,7 @@ const Checkout = () => {
     isDefault: false,
   });
 
-    const [selectedVoucher, setSelectedVoucher] = useState(null);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
 
@@ -66,8 +65,9 @@ const { balance, useCoins: coinService } = useCoin();
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+
         const productsData = await Promise.all(
-          selectedItems.map((item) => getProduct(item.productId))
+          selectedItems.map((item) => getProduct(item._id))
         );
         setProducts(productsData);
       } catch (error) {
@@ -188,7 +188,7 @@ const { balance, useCoins: coinService } = useCoin();
 
   const getTotalAmount = () => {
     return selectedItems.reduce((total, item) => {
-      const product = products.find((p) => p._id === item.productId);
+      const product = products.find((p) => p._id === item._id);
       return product ? total + product.price * item.quantity : total;
     }, 0);
   };
@@ -198,22 +198,22 @@ const { balance, useCoins: coinService } = useCoin();
     const coinDiscount = getCoinDiscount();
     return Math.max(0, total - voucherDiscount - coinDiscount);
   };
-    const handleVoucherSelect = (voucher, discount) => {
+
+  const handleVoucherSelect = (voucher, discount) => {
     setSelectedVoucher(voucher);
     setVoucherDiscount(discount);
     setShowVoucherModal(false);
   };
 
   const handleDeleteItems = async () => {
-    const ids = selectedItems.map((item) => item.productId);
+    const ids = selectedItems.map((item) => item._id);
     await deleteItem(ids);
   };
 
-      const handlePlaceOrder = async () => {
-         const coinDiscount = getCoinDiscount();
+  const handlePlaceOrder = async () => {
     const orderData = {
       products: selectedItems.map((item) => ({
-        productId: item.productId,
+        productId: item._id,
         quantity: item.quantity,
       })),
       totalAmount: getFinalAmount(),
@@ -482,11 +482,10 @@ const { balance, useCoins: coinService } = useCoin();
                 addresses.map((address) => (
                   <div
                     key={address._id}
-                    className={`address-item mb-3 p-3 rounded ${
-                      selectedAddress?._id === address._id
-                        ? "border-primary bg-light"
-                        : "border"
-                    }`}
+                    className={`address-item mb-3 p-3 rounded ${selectedAddress?._id === address._id
+                      ? "border-primary bg-light"
+                      : "border"
+                      }`}
                     onClick={() => handleAddressSelect(address)}
                     style={{ cursor: "pointer" }}
                   >
@@ -1008,6 +1007,7 @@ const { balance, useCoins: coinService } = useCoin();
               </thead>
               <tbody>
                 {sellers.map((seller) => {
+
                   const sellerProducts = products.filter(
                     (product) => product.sellerId === seller._id
                   );
@@ -1035,7 +1035,7 @@ const { balance, useCoins: coinService } = useCoin();
                       </tr>
                       {sellerProducts.map((product) => {
                         const item = selectedItems.find(
-                          (item) => item.productId === product._id
+                          (item) => item._id === product._id
                         );
                         return item ? (
                           <tr key={product._id}>
@@ -1087,7 +1087,7 @@ const { balance, useCoins: coinService } = useCoin();
         </div>
       </div>
 
-       {/* Voucher Section */}
+      {/* Voucher Section */}
       <div className="card mb-4 voucher-section">
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-center">
@@ -1120,7 +1120,7 @@ const { balance, useCoins: coinService } = useCoin();
         </div>
       </div>
 
-          <VoucherSelector
+      <VoucherSelector
         open={showVoucherModal}
         onClose={() => setShowVoucherModal(false)}
         orderAmount={getTotalAmount()}
@@ -1141,9 +1141,8 @@ const { balance, useCoins: coinService } = useCoin();
           <div className="row g-3">
             <div className="col-md-6">
               <div
-                className={`card h-100 shipping-option ${
-                  shippingMethod === "direct" ? "border-primary shadow" : ""
-                }`}
+                className={`card h-100 shipping-option ${shippingMethod === "direct" ? "border-primary shadow" : ""
+                  }`}
                 onClick={() => setShippingMethod("direct")}
                 style={{ cursor: "pointer" }}
               >
@@ -1173,11 +1172,10 @@ const { balance, useCoins: coinService } = useCoin();
 
             <div className="col-md-6">
               <div
-                className={`card h-100 shipping-option ${
-                  shippingMethod === "sellerShipping"
-                    ? "border-primary shadow"
-                    : ""
-                }`}
+                className={`card h-100 shipping-option ${shippingMethod === "sellerShipping"
+                  ? "border-primary shadow"
+                  : ""
+                  }`}
                 onClick={() => setShippingMethod("sellerShipping")}
                 style={{ cursor: "pointer" }}
               >
@@ -1281,7 +1279,7 @@ const { balance, useCoins: coinService } = useCoin();
             <span>{getTotalAmount().toLocaleString()}₫</span>
           </div>
 
-             <div className="d-flex justify-content-between mb-2">
+          <div className="d-flex justify-content-between mb-2">
             <span>Voucher Giảm Giá</span>
             <span className="text-danger">- {voucherDiscount.toLocaleString()}₫</span>
           </div>

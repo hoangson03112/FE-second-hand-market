@@ -49,13 +49,14 @@ const OrderItem = ({ order, setOrders }) => {
       );
       return total + product?.price * (orderProduct?.quantity || 0);
     }, 0);
-
-    // order.totalAmount là số tiền cuối cùng sau khi đã trừ voucher
+    console.log(order);
+    
     const finalTotal = order?.totalAmount || originalTotal;
     
     // Tính tiền giảm giá = tiền gốc - tiền cuối cùng
     const discountTotal = Math.max(0, originalTotal - finalTotal);
 
+    
     setTotalAmount(originalTotal);
     setTotalDiscount(discountTotal);
     setFinalAmount(finalTotal);

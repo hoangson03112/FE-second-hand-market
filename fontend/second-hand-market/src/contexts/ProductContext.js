@@ -62,25 +62,60 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  const postProduct = async (product) => {
+  const postProduct = async (productData, isFormData = false, onProgress = null) => {
     try {
       const token = localStorage.getItem("token");
+      
+      let requestData, headers, config;
+      
+      if (isFormData) {
+        // Sử dụng FormData (khuyến nghị cho file upload)
+        requestData = productData; // FormData object
+        headers = {
+          Authorization: `Bearer ${token}`,
+          // Không set Content-Type - để browser tự động set với boundary
+        };
+        
+        // Config cho FormData với progress tracking
+        config = {
+          headers,
+          timeout: 60000, // 60 seconds timeout cho file upload
+          onUploadProgress: (progressEvent) => {
+            if (onProgress && progressEvent.total) {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              onProgress(progress);
+            }
+          },
+        };
+      } else {
+        // Sử dụng JSON (legacy support)
+        requestData = { product: productData };
+        config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        };
+      }
+
       const response = await axios.post(
         "http://localhost:2000/eco-market/products/create",
-        {
-          product,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Gửi token trong header
-          },
-        }
+        requestData,
+        config
       );
 
       return response.data;
     } catch (error) {
-      console.error("Error fetching product list:", error);
-      throw error;
+      console.error("Error posting product:", error);
+      
+      // Enhanced error handling
+      if (error.response) {
+        throw new Error(`Server Error: ${error.response.data?.message || error.message}`);
+      } else if (error.request) {
+        throw new Error('Không thể kết nối với server. Vui lòng kiểm tra internet.');
+      } else {
+        throw new Error(`Upload Error: ${error.message}`);
+      }
     }
   };
 

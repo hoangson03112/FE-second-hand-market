@@ -23,6 +23,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import { ChatBox } from "../ChatBox/ChatBox";
 import { useChat } from "../../contexts/ChatContext";
+import Notification from "../common/Toast/Notification";
 
 export const Product = () => {
   const location = useLocation();
@@ -492,6 +493,7 @@ export const Product = () => {
                         </Button>
                       </Box>
                     </Box>
+
                     {/* Action Buttons */}
                     <Box
                       sx={{
@@ -1118,32 +1120,11 @@ export const Product = () => {
         </Card>
       </Container>
 
-      {/* Success Toast */}
-      <Snackbar
-        open={showToast}
-        autoHideDuration={3000}
-        onClose={() => setShowToast(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        sx={{
-          position: "fixed",
-          bottom: "40px",
-          right: "20px",
-          minWidth: "350px",
-        }}
-      >
-        <Alert
-          onClose={() => setShowToast(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          <Box className="d-flex align-items-center">
-            <i className="bi bi-cart-check text-success fs-4 me-2"></i>
-            <Typography>Thêm sản phẩm vào giỏ hàng thành công!</Typography>
-          </Box>
-        </Alert>
-      </Snackbar>
-
-      <ChatBox />
+      <Notification
+        showToast={showToast}
+        setShowToast={setShowToast}
+        message="Thêm sản phẩm vào giỏ hàng thành công!"
+      />
     </Box>
   );
 };

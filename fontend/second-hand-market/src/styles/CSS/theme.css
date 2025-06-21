@@ -1,19 +1,15 @@
 /* Định nghĩa biến CSS cho màu chủ đạo - Màu Navy Sand - Sang trọng và thanh lịch */
 :root {
-  --primary-gradient: linear-gradient(
-    to right,
-    #2a3b4c,
-    #344960,
-    #3e5871,
-    #496883
-  );
-  --primary-gradient-webkit: -webkit-linear-gradient(
-    to right,
-    #2a3b4c,
-    #344960,
-    #3e5871,
-    #496883
-  );
+  --primary-gradient: linear-gradient(to right,
+      #2a3b4c,
+      #344960,
+      #3e5871,
+      #496883);
+  --primary-gradient-webkit: -webkit-linear-gradient(to right,
+      #2a3b4c,
+      #344960,
+      #3e5871,
+      #496883);
   --primary-color: #344960;
   --primary-hover: #496883;
   --primary-light: #d9e0e6;
@@ -39,7 +35,9 @@
   color: var(--text-on-primary) !important;
 }
 
-.btn-bg:hover, .btn-bg:focus, .btn-bg:active {
+.btn-bg:hover,
+.btn-bg:focus,
+.btn-bg:active {
   background-image: var(--primary-color) !important;
   filter: brightness(1.1) !important;
   border-color: transparent !important;
@@ -51,8 +49,10 @@
   background-color: transparent !important;
 }
 
-.btn-outline-bg:hover, .btn-outline-bg:focus, .btn-outline-bg:active {
-    background-image: var(--primary-color) !important;
+.btn-outline-bg:hover,
+.btn-outline-bg:focus,
+.btn-outline-bg:active {
+  background-image: var(--primary-color) !important;
   color: var(--text-on-primary) !important;
   border-color: transparent !important;
 }
@@ -158,7 +158,7 @@ a:hover {
 }
 
 /* Điều chỉnh màu cho checkbox */
-.custom-checkbox input[type="checkbox"]:checked + .checkmark {
+.custom-checkbox input[type="checkbox"]:checked+.checkmark {
   background: var(--primary-gradient) !important;
 }
 
@@ -220,4 +220,4 @@ a:hover {
 .MuiChip-outlinedPrimary {
   color: var(--primary-color) !important;
   border-color: var(--primary-color) !important;
-} 
+}

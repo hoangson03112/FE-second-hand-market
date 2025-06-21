@@ -3,10 +3,15 @@ import { useState, useEffect } from "react";
 
 import "./Home.css";
 import axios from "axios";
+import CheckInModal from "../../components/Checkin/CheckInModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const Home = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+
+    const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     setLoading(true);
@@ -23,6 +28,32 @@ export const Home = () => {
 
   return (
     <div>
+       {isAuthenticated && (
+         <button
+    onClick={() => setShowCheckInModal(true)}
+    style={{
+      position: "fixed",
+      top: "75%",
+      right: "70px", 
+      transform: "translateY(-50%)", 
+      zIndex: 1000,
+      borderRadius: "50%",
+      width: "60px",
+      height: "60px",
+      background: "linear-gradient(135deg, #FFD700, #FFA500)",
+      color: "white",
+      border: "none",
+      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+    }}
+    title="Điểm danh nhận xu"
+  >
+    <i className="bi bi-coin" style={{ fontSize: "1.5rem" }}></i>
+  </button>
+      )}
       <div className="container-fluid p-0 text-white text-center">
         <div
           id="carouselExampleRide"
@@ -223,6 +254,10 @@ export const Home = () => {
           </div>
         </div>
       </div>
+           <CheckInModal
+        show={showCheckInModal}
+        onHide={() => setShowCheckInModal(false)}
+      />
     </div>
   );
 };

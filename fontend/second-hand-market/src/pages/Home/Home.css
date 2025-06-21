@@ -61,3 +61,7 @@
 .card:hover {
   transform: scale(1.05); /* Phóng to card lên 10% khi hover */
 }
+
+html {
+  overflow-y: scroll;
+}

@@ -27,6 +27,7 @@ import SellerAnalytics from "./pages/Seller/SellerAnalytics";
 
 
 import { AuthProvider } from "./contexts/AuthContext";
+import { CoinProvider } from "./contexts/CoinProvider";
 import { CartProvider } from "./contexts/CartContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { ProductProvider } from "./contexts/ProductContext";
@@ -61,6 +62,7 @@ if (token) {
 function App() {
   return (
     <AuthProvider>
+        <CoinProvider>
       <CartProvider>
         <ProductProvider>
           <CategoryProvider>
@@ -320,6 +322,7 @@ function App() {
           </CategoryProvider>
         </ProductProvider>
       </CartProvider>
+      </CoinProvider>
     </AuthProvider>
   );
 }

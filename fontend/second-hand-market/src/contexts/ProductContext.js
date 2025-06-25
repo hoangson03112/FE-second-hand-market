@@ -9,12 +9,14 @@ export const ProductProvider = ({ children }) => {
   // Các phương thức API
   const getProduct = async (productID) => {
     try {
+      console.log(productID);
       const response = await axios.get(
         "http://localhost:2000/eco-market/products/details",
         {
           params: { productID },
         }
       );
+
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -62,12 +64,16 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  const postProduct = async (productData, isFormData = false, onProgress = null) => {
+  const postProduct = async (
+    productData,
+    isFormData = false,
+    onProgress = null
+  ) => {
     try {
       const token = localStorage.getItem("token");
-      
+
       let requestData, headers, config;
-      
+
       if (isFormData) {
         // Sử dụng FormData (khuyến nghị cho file upload)
         requestData = productData; // FormData object
@@ -75,14 +81,16 @@ export const ProductProvider = ({ children }) => {
           Authorization: `Bearer ${token}`,
           // Không set Content-Type - để browser tự động set với boundary
         };
-        
+
         // Config cho FormData với progress tracking
         config = {
           headers,
           timeout: 60000, // 60 seconds timeout cho file upload
           onUploadProgress: (progressEvent) => {
             if (onProgress && progressEvent.total) {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              const progress = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
               onProgress(progress);
             }
           },
@@ -93,7 +101,7 @@ export const ProductProvider = ({ children }) => {
         config = {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         };
       }
@@ -107,12 +115,16 @@ export const ProductProvider = ({ children }) => {
       return response.data;
     } catch (error) {
       console.error("Error posting product:", error);
-      
+
       // Enhanced error handling
       if (error.response) {
-        throw new Error(`Server Error: ${error.response.data?.message || error.message}`);
+        throw new Error(
+          `Server Error: ${error.response.data?.message || error.message}`
+        );
       } else if (error.request) {
-        throw new Error('Không thể kết nối với server. Vui lòng kiểm tra internet.');
+        throw new Error(
+          "Không thể kết nối với server. Vui lòng kiểm tra internet."
+        );
       } else {
         throw new Error(`Upload Error: ${error.message}`);
       }

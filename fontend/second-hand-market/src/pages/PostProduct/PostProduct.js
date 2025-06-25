@@ -44,8 +44,8 @@ import { useProduct } from "../../contexts/ProductContext";
 import ButtonBack from "./../../components/common/Button/ButtonBack";
 import { useAuth } from "../../contexts/AuthContext";
 import SellerIntroPage from "../../components/SellerIntroPage/SellerIntroPage";
+import { useNotification } from "../../hooks/useNotification";
 
-// Minimal Soft Theme
 const theme = createTheme({
   palette: {
     primary: {
@@ -186,14 +186,6 @@ const PreviewCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-const AttributeChip = styled(Chip)(({ theme }) => ({
-  margin: theme.spacing(0.5),
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "scale(1.05)",
-  },
-}));
-
 const PostProduct = () => {
   const { getCategories } = useCategory();
   const { postProduct } = useProduct();
@@ -203,6 +195,8 @@ const PostProduct = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const { notification, showSuccess, showError, showInfo, hideNotification } =
+    useNotification();
 
   const [product, setProduct] = useState({
     name: "",
@@ -337,20 +331,12 @@ const PostProduct = () => {
       });
 
       if (response.message) {
-        Swal.fire({
-          title: "Thêm thành công!",
-          text: "Vui lòng chờ duyệt!",
-          icon: "success",
-        });
+        showSuccess(response.message);
         navigate("/");
       }
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm lên:", error);
-      Swal.fire({
-        title: "Lỗi!",
-        text: error.message || "Có lỗi xảy ra khi đăng sản phẩm",
-        icon: "error",
-      });
+      showError(error.message || "Có lỗi xảy ra khi đăng sản phẩm");
     } finally {
       setLoading(false);
       setUploadProgress(0);

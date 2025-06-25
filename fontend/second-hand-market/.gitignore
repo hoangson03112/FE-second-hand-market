@@ -1,5 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# 🔒 SECURITY - Sensitive files
+src/config/https/
+src/constants/
+*.pem
+*.key
+*.cert
+*.crt
+.env
+.env.*
+!.env.example
+
 # dependencies
 /node_modules
 /.pnp

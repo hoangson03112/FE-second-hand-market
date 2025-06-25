@@ -14,14 +14,190 @@ html {
 
 body {
   overflow-x: hidden;
-
 }
 
 .ui-text {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
 }
 
-
 .content-text {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
+}
+
+.dropdown-menu,
+ul.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  min-width: 220px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  margin: 0;
+  list-style: none;
+}
+
+/* Show main dropdown on hover */
+.dropdown:hover > .dropdown-menu,
+.dropdown:hover > ul.dropdown-menu {
+  display: block !important;
+}
+
+/* Submenu container - MUST have position relative */
+.dropdown-submenu,
+li.dropdown-submenu {
+  position: relative !important;
+}
+
+/* CRITICAL: Submenu positioning to the RIGHT */
+.dropdown-submenu > .dropdown-menu,
+.dropdown-submenu > ul.dropdown-menu,
+li.dropdown-submenu > .dropdown-menu,
+li.dropdown-submenu > ul.dropdown-menu {
+  display: none;
+  position: absolute !important;
+  top: 0 !important;
+  left: 100% !important;
+  margin-left: 0 !important;
+  margin-top: -8px !important;
+  z-index: 1001 !important;
+  min-width: 200px !important;
+}
+
+/* Show submenu on hover - FORCE DISPLAY */
+.dropdown-submenu:hover > .dropdown-menu,
+.dropdown-submenu:hover > ul.dropdown-menu,
+li.dropdown-submenu:hover > .dropdown-menu,
+li.dropdown-submenu:hover > ul.dropdown-menu {
+  display: block !important;
+}
+
+/* Simple dropdown items */
+.dropdown-item {
+  display: block !important;
+  padding: 8px 12px !important;
+  color: #333 !important;
+  text-decoration: none !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5 !important;
+  color: #000 !important;
+  text-decoration: none !important;
+}
+
+/* Simple arrow for submenu items */
+.dropdown-submenu > .dropdown-item::after {
+  content: " ►" !important;
+  float: right !important;
+  font-size: 10px !important;
+  color: #999 !important;
+}
+
+/* Simple nav links */
+.nav-link {
+  padding: 10px 15px !important;
+  color: #333 !important;
+  text-decoration: none !important;
+  display: block !important;
+}
+
+.nav-link:hover {
+  background: #f5f5f5 !important;
+  color: #000 !important;
+}
+
+/* Force dropdown container positioning */
+.dropdown,
+div.dropdown,
+.nav .dropdown {
+  position: relative !important;
+}
+
+/* Override Bootstrap defaults - ONLY for category navigation */
+.nav .dropdown > .dropdown-menu,
+.nav .dropdown > ul.dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  display: none !important;
+}
+
+/* Force submenu to right - ONLY for category navigation */
+.nav .dropdown-submenu > .dropdown-menu,
+.nav li.dropdown-submenu > ul.dropdown-menu {
+  position: absolute !important;
+  top: 0 !important;
+  left: 100% !important;
+  margin-left: 0 !important;
+  margin-top: -8px !important;
+  z-index: 1001 !important;
+  display: none !important;
+}
+
+/* Force show on hover - ONLY for category navigation */
+.nav .dropdown:hover > .dropdown-menu,
+.nav .dropdown:hover > ul.dropdown-menu {
+  display: block !important;
+}
+
+.nav .dropdown-submenu:hover > .dropdown-menu,
+.nav .dropdown-submenu:hover > ul.dropdown-menu,
+.nav li.dropdown-submenu:hover > .dropdown-menu,
+.nav li.dropdown-submenu:hover > ul.dropdown-menu {
+  display: block !important;
+}
+
+/* ====================================================
+   RESPONSIVE CATEGORY NAVIGATION
+   ==================================================== */
+
+/* Hide category navigation on mobile - show only on larger screens */
+@media (max-width: 767.98px) {
+  /* Hide the category bar on mobile */
+  .d-flex.justify-content-center.mb-1 {
+    display: none !important;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 991.98px) {
+  .nav .dropdown-menu,
+  .nav ul.dropdown-menu {
+    min-width: 180px !important;
+  }
+
+  .dropdown-item {
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* Large tablet adjustments */
+@media (max-width: 1199.98px) {
+  .nav .dropdown-menu,
+  .nav ul.dropdown-menu {
+    min-width: 200px !important;
+  }
+}
+
+/* Clean dropdown styling - ONLY for category navigation */
+.nav .dropdown-menu,
+.nav ul.dropdown-menu {
+  border: 1px solid #ddd !important;
+}
+
+.nav .dropdown-submenu > .dropdown-menu,
+.nav .dropdown-submenu > ul.dropdown-menu,
+.nav li.dropdown-submenu > .dropdown-menu,
+.nav li.dropdown-submenu > ul.dropdown-menu {
+  border: 1px solid #ddd !important;
 }

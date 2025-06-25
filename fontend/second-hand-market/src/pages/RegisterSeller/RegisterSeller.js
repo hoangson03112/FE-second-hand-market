@@ -18,8 +18,6 @@ import { styled, keyframes } from "@mui/material/styles";
 import { useAuth } from "../../contexts/AuthContext";
 import SellerContext from "../../contexts/SellerContext";
 import { useNotification } from "../../hooks/useNotification";
-import NotificationSnackbar from "../../components/common/NotificationSnackbar";
-
 // Import components
 import StepperComponent from "./components/StepperComponent";
 import PhoneVerificationStep from "./components/PhoneVerificationStep";
@@ -27,6 +25,7 @@ import PersonalInfoStep from "./components/PersonalInfoStep";
 import PaymentInfoStep from "./components/PaymentInfoStep";
 import ConfirmationStep from "./components/ConfirmationStep";
 import { useNavigate } from "react-router-dom";
+import NotificationSnackbar from "../../components/NotificationSnackbar/NotificationSnackbar";
 
 // Animations
 const shimmer = keyframes`

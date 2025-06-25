@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import emitter from "../../utils/mitt";
 import CategoryContext from "../../contexts/CategoryContext";
@@ -12,8 +12,6 @@ import {
   Table,
   Box,
   Grid,
-  Snackbar,
-  Alert,
   Typography,
   CardContent,
   CircularProgress,
@@ -21,9 +19,8 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { ChatBox } from "../ChatBox/ChatBox";
 import { useChat } from "../../contexts/ChatContext";
-import Notification from "../common/Toast/Notification";
+import NotificationSnackbar from "./../../components/common/NotificationSnackbar";
 
 export const Product = () => {
   const location = useLocation();
@@ -79,6 +76,31 @@ export const Product = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [imageLoading, setImageLoading] = useState(true);
 
+  const attributesOfProduct = useMemo(() => {
+    const baseAttributes = [
+      {
+        label: "Danh mục",
+        value: product?.category?.name || "Chưa xác định",
+      },
+      {
+        label: "Danh mục con",
+        value: product?.subcategory?.name || "Chưa xác định",
+      },
+    ];
+
+    // Thêm các thuộc tính tùy chỉnh nếu có
+    const customAttributes =
+      product?.attributes?.map((att) => ({
+        label: att.key,
+        value: att.value,
+      })) || [];
+
+    return [...baseAttributes, ...customAttributes];
+  }, [
+    product?.category?.name,
+    product?.subcategory?.name,
+    product?.attributes,
+  ]);
   useEffect(() => {
     const fetchAccount = async (accountId) => {
       try {
@@ -92,32 +114,18 @@ export const Product = () => {
 
     const fetchProduct = async () => {
       try {
-        const product = await getProduct(productID);
-        fetchAccount(product.sellerId);
-        setProduct(product);
-        setMainImage(product.images?.[0]);
+        const productData = await getProduct(productID);
+        fetchAccount(productData.sellerId);
+        setProduct(productData);
+        setMainImage(productData.avatar);
+        // Loại bỏ logic push vào attributesOfProduct vì đã được xử lý trong useMemo
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching product:", err);
+        setError("Không thể tải thông tin sản phẩm");
       }
     };
     fetchProduct();
-  }, [productID]);
-
-  useEffect(() => {
-    const fetchCategory = async () => {
-      if (product.categoryId) {
-        try {
-          const category = await CategoryContext.getCategory(
-            product.categoryId
-          );
-          setCategory(category);
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    };
-    fetchCategory();
-  }, [product.categoryId]);
+  }, [productID, getProduct]); // Thêm getProduct vào dependency array
 
   const handleThumbnailClick = (image) => {
     setImageLoading(true);
@@ -130,7 +138,7 @@ export const Product = () => {
     }
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = useCallback(async () => {
     try {
       const data = await AccountContext.Authentication();
       if (data.data.account) {
@@ -142,14 +150,17 @@ export const Product = () => {
         if (messageAddToCart.status === "success") {
           emitter.emit("CART_UPDATED");
           setShowToast(true);
+        } else {
+          setError("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
         }
       } else {
         navigate("/eco-market/login");
       }
     } catch (error) {
-      console.error("Error fetching", error);
+      console.error("Error adding to cart:", error);
+      setError("Có lỗi xảy ra khi thêm vào giỏ hàng.");
     }
-  };
+  }, [product._id, quantity, account._id, addToCart, navigate]);
 
   const handlePurchaseNow = async () => {
     try {
@@ -172,7 +183,7 @@ export const Product = () => {
     setImageLoading(false);
   };
 
-  const handleOpenChat = async () => {
+  const handleOpenChat = useCallback(async () => {
     try {
       const authData = await AccountContext.Authentication();
       if (!authData || !authData.data || !authData.data.account) {
@@ -184,14 +195,44 @@ export const Product = () => {
       console.log(response);
       if (!response || !response.success) {
         console.error("Failed to create chat conversation:", response);
-
         alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");
       }
     } catch (error) {
       console.error("Error creating chat conversation:", error);
       alert("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
     }
-  };
+  }, [productID, account._id, findOrCreateWithProduct, navigate]);
+
+  // Component con để render từng hàng attribute - tránh re-render không cần thiết
+  const AttributeRow = React.memo(({ attribute, isLast }) => (
+    <tr
+      style={{
+        borderBottom: !isLast ? "1px solid #e0e0e0" : "none",
+        transition: "background 0.2s",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f7fa")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+    >
+      <td
+        style={{
+          width: "30%",
+          padding: "12px 16px",
+          fontWeight: 700,
+          color: "#555",
+        }}
+      >
+        {attribute.label}
+      </td>
+      <td
+        style={{
+          padding: "12px 16px",
+          color: "#333",
+        }}
+      >
+        {attribute.value || "Không có thông tin"}
+      </td>
+    </tr>
+  ));
 
   return (
     <Box className="product-page py-4">
@@ -236,7 +277,10 @@ export const Product = () => {
         {/* Product Main Section */}
         <Grid container spacing={4} mb={4}>
           <Grid item lg={8} xs={12}>
-            <Card elevation={3} sx={{ borderRadius: 4, overflow: "hidden" }}>
+            <Card
+              elevation={0}
+              sx={{ borderRadius: 4, overflow: "hidden", boxShadow: "none" }}
+            >
               <CardContent sx={{ p: 0 }}>
                 <Grid container>
                   {/* Gallery */}
@@ -274,7 +318,7 @@ export const Product = () => {
                       )}
                       <Box
                         component="img"
-                        src={mainImage}
+                        src={mainImage?.url}
                         alt={product?.name}
                         sx={{
                           objectFit: "contain",
@@ -306,7 +350,7 @@ export const Product = () => {
                         >
                           <Box
                             component="img"
-                            src={image || "/api/placeholder/50/70"}
+                            src={image.url || "/api/placeholder/50/70"}
                             alt={`Thumbnail ${idx + 1}`}
                             sx={{
                               width: 56,
@@ -366,7 +410,7 @@ export const Product = () => {
                         <Box sx={{ color: "error.main", mr: 1 }}>
                           <i className="bi bi-geo-alt" />
                         </Box>
-                        <Typography>{product.location}</Typography>
+                        <Typography>{product?.seller?.province}</Typography>
                       </Box>
                       <Box
                         sx={{ display: "flex", alignItems: "center", mb: 1 }}
@@ -499,43 +543,33 @@ export const Product = () => {
                       sx={{
                         display: "flex",
                         flexDirection: { xs: "column", sm: "row" },
-                        gap: 2,
-                        mt: 2,
+                        gap: 1.5,
+                        mt: 2.5,
                       }}
                     >
                       <Button
                         variant="outlined"
-                        color="primary"
                         onClick={handleAddToCart}
                         sx={{
                           flex: 1,
-                          fontWeight: 600,
-                          fontSize: 16,
-                          borderRadius: 1,
+                          fontWeight: 500,
+                          fontSize: 14,
+                          borderRadius: 1.5,
                           py: 1.5,
-                          px: 0,
                           textTransform: "none",
-                          letterSpacing: 0.5,
-                          minHeight: 44,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          "& .MuiButton-startIcon": { mr: 1 },
+                          minHeight: 48,
                           bgcolor: "white",
-                          borderColor: "primary.main",
-                          color: "primary.main",
-                          boxShadow: "none",
+                          borderColor: "#e0e0e0",
+                          color: "#424242",
                           "&:hover": {
-                            bgcolor: "grey.100",
-                            borderColor: "primary.dark",
-                            color: "primary.dark",
-                            boxShadow: "none",
+                            bgcolor: "#f5f5f5",
+                            borderColor: "#bdbdbd",
                           },
                         }}
                         startIcon={
                           <i
                             className="bi bi-cart-plus"
-                            style={{ fontSize: 18 }}
+                            style={{ fontSize: 16 }}
                           />
                         }
                       >
@@ -543,32 +577,24 @@ export const Product = () => {
                       </Button>
                       <Button
                         variant="contained"
-                        color="primary"
                         onClick={handlePurchaseNow}
                         sx={{
                           flex: 1,
-                          fontWeight: 600,
-                          fontSize: 16,
-                          borderRadius: 1,
+                          fontWeight: 500,
+                          fontSize: 14,
+                          borderRadius: 1.5,
                           py: 1.5,
-                          px: 0,
                           textTransform: "none",
-                          letterSpacing: 0.5,
-                          minHeight: 44,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          "& .MuiButton-startIcon": { mr: 1 },
-                          boxShadow: "none",
+                          minHeight: 48,
+                          bgcolor: "#1976d2",
                           "&:hover": {
-                            bgcolor: "primary.dark",
-                            boxShadow: "none",
+                            bgcolor: "#1565c0",
                           },
                         }}
                         startIcon={
                           <i
                             className="bi bi-lightning-charge"
-                            style={{ fontSize: 18 }}
+                            style={{ fontSize: 16 }}
                           />
                         }
                       >
@@ -583,7 +609,10 @@ export const Product = () => {
 
           {/* Seller Info Card */}
           <Grid item lg={4} xs={12}>
-            <Card elevation={3} sx={{ borderRadius: 4, mb: 4 }}>
+            <Card
+              elevation={0}
+              sx={{ borderRadius: 4, mb: 4, boxShadow: "none" }}
+            >
               <CardContent>
                 <Typography
                   variant="h5"
@@ -601,10 +630,10 @@ export const Product = () => {
                   Thông tin người bán
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-                  {account?.avatar ? (
+                  {product?.seller ? (
                     <Box
                       component="img"
-                      src={account?.avatar}
+                      src={product?.seller?.avatar.url}
                       alt="Shop Logo"
                       sx={{
                         width: 64,
@@ -630,16 +659,16 @@ export const Product = () => {
                         fontWeight: 700,
                       }}
                     >
-                      {account?.username?.charAt(0)}
+                      {product?.seller?.fullName?.charAt(0)}
                     </Box>
                   )}
                   <Box sx={{ ml: 3 }}>
                     <Typography variant="h6" mb={0.5}>
-                      {account?.fullName}
+                      {product?.seller?.fullName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" mb={0.5}>
                       <i className="bi bi-geo-alt" style={{ marginRight: 4 }} />
-                      {product.location}
+                      {product?.seller?.province}
                     </Typography>
                     <Box
                       sx={{
@@ -744,7 +773,7 @@ export const Product = () => {
         </Grid>
 
         {/* Product Details Tabs */}
-        <Card elevation={3} sx={{ borderRadius: 4, mb: 4 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, mb: 4, boxShadow: "none" }}>
           <CardContent sx={{ padding: 4 }}>
             <Box mb={3} sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
               <Button
@@ -802,62 +831,17 @@ export const Product = () => {
               )}
               {activeTab === "specs" && (
                 <Box>
-                  <Table sx={{ width: "100%" }} aria-label="a dense table">
+                  <Table
+                    sx={{ width: "100%" }}
+                    aria-label="product specifications"
+                  >
                     <tbody>
-                      {[
-                        {
-                          label: "Danh mục",
-                          value: category?.name,
-                        },
-                        {
-                          label: "Tình trạng",
-                          value: "Mới",
-                        },
-                        {
-                          label: "Thương hiệu",
-                          value: product.brand || "Không có thông tin",
-                        },
-                        {
-                          label: "Màu sắc",
-                          value: product.color || "Không có thông tin",
-                        },
-                        {
-                          label: "Kích thước",
-                          value: product.size || "Không có thông tin",
-                        },
-                        {
-                          label: "Xuất xứ",
-                          value: product.origin || "Không có thông tin",
-                        },
-                      ].map((row, idx, arr) => (
-                        <tr
-                          key={row.label}
-                          style={{
-                            borderBottom:
-                              idx !== arr.length - 1
-                                ? "1px solid #e0e0e0"
-                                : "none",
-                            transition: "background 0.2s",
-                            cursor: "pointer",
-                          }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "#f5f7fa")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "")
-                          }
-                        >
-                          <td
-                            style={{
-                              width: "30%",
-                              padding: "8px 12px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {row.label}
-                          </td>
-                          <td style={{ padding: "8px 12px" }}>{row.value}</td>
-                        </tr>
+                      {attributesOfProduct.map((attribute, idx) => (
+                        <AttributeRow
+                          key={`${attribute.label}-${idx}`}
+                          attribute={attribute}
+                          isLast={idx === attributesOfProduct.length - 1}
+                        />
                       ))}
                     </tbody>
                   </Table>
@@ -902,7 +886,7 @@ export const Product = () => {
         </Card>
 
         {/* Related Products */}
-        <Card elevation={3} sx={{ borderRadius: 4, mb: 4 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, mb: 4, boxShadow: "none" }}>
           <CardContent>
             <Box
               sx={{
@@ -928,15 +912,25 @@ export const Product = () => {
               {relatedProducts.map((product) => (
                 <Grid key={product.id} item md={3} sm={6} xs={12}>
                   <Card
-                    elevation={1}
+                    elevation={0}
+                    style={{
+                      boxShadow: "none",
+                      transform: "none",
+                      transition: "none",
+                    }}
                     sx={{
                       height: "100%",
                       borderRadius: 2,
-                      boxShadow: 2,
-                      transition: "0.2s",
-                      "&:hover": {
-                        boxShadow: 6,
-                        transform: "translateY(-4px)",
+                      boxShadow: "none !important",
+                      border: "1px solid #e0e0e0",
+                      transition: "none !important",
+                      transform: "none !important",
+                      // ✅ Force override tất cả hover states
+                      "&:hover, &:focus, &:active": {
+                        boxShadow: "none !important",
+                        transform: "none !important",
+                        borderColor: "#e0e0e0 !important",
+                        transition: "none !important",
                       },
                     }}
                   >
@@ -1011,7 +1005,7 @@ export const Product = () => {
         </Card>
 
         {/* Recently Viewed */}
-        <Card elevation={3} sx={{ borderRadius: 4 }}>
+        <Card elevation={0} sx={{ borderRadius: 4, boxShadow: "none" }}>
           <CardContent>
             <Box
               sx={{
@@ -1037,15 +1031,25 @@ export const Product = () => {
               {relatedProducts.slice(0, 4).map((product) => (
                 <Grid key={product.id} item md={3} sm={6} xs={12}>
                   <Card
-                    elevation={1}
+                    elevation={0}
+                    style={{
+                      boxShadow: "none",
+                      transform: "none",
+                      transition: "none",
+                    }}
                     sx={{
                       height: "100%",
                       borderRadius: 2,
-                      boxShadow: 2,
-                      transition: "0.2s",
-                      "&:hover": {
-                        boxShadow: 6,
-                        transform: "translateY(-4px)",
+                      boxShadow: "none !important",
+                      border: "1px solid #e0e0e0",
+                      transition: "none !important",
+                      transform: "none !important",
+                      // ✅ Force override tất cả hover states
+                      "&:hover, &:focus, &:active": {
+                        boxShadow: "none !important",
+                        transform: "none !important",
+                        borderColor: "#e0e0e0 !important",
+                        transition: "none !important",
                       },
                     }}
                   >
@@ -1120,7 +1124,7 @@ export const Product = () => {
         </Card>
       </Container>
 
-      <Notification
+      <NotificationSnackbar
         showToast={showToast}
         setShowToast={setShowToast}
         message="Thêm sản phẩm vào giỏ hàng thành công!"

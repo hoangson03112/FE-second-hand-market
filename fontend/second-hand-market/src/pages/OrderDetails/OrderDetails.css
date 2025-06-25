@@ -4,7 +4,7 @@
 }
 
 .status-tracker {
-  border-left: 4px solid #ee4d2d;
+  border-left: 4px solid #3e5871;
   border-radius: 4px;
   background: linear-gradient(to right, rgba(255, 237, 232, 0.5), transparent);
 }
@@ -39,9 +39,11 @@
   0% {
     box-shadow: 0 0 0 0 rgba(238, 77, 45, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(238, 77, 45, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(238, 77, 45, 0);
   }
@@ -65,14 +67,14 @@
 
 .delivery-progress-bar .progress-bar {
   background-color: #ee4d2d;
-  background-image: linear-gradient(45deg, 
-    rgba(255,255,255,.15) 25%, 
-    transparent 25%, 
-    transparent 50%, 
-    rgba(255,255,255,.15) 50%, 
-    rgba(255,255,255,.15) 75%, 
-    transparent 75%, 
-    transparent);
+  background-image: linear-gradient(45deg,
+      rgba(255, 255, 255, 0.15) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.15) 75%,
+      transparent 75%,
+      transparent);
   background-size: 1rem 1rem;
 }
 
@@ -88,12 +90,29 @@
 }
 
 @keyframes shake {
-  0% { transform: translateX(0); }
-  20% { transform: translateX(-10px); }
-  40% { transform: translateX(10px); }
-  60% { transform: translateX(-5px); }
-  80% { transform: translateX(5px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-10px);
+  }
+
+  40% {
+    transform: translateX(10px);
+  }
+
+  60% {
+    transform: translateX(-5px);
+  }
+
+  80% {
+    transform: translateX(5px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .order-info,
@@ -161,12 +180,12 @@
     font-size: 14px;
     -webkit-line-clamp: 3;
   }
-  
+
   .delivery-progress-bar .d-flex {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .delivery-progress-bar .d-flex small {
     margin-bottom: 5px;
   }
@@ -188,7 +207,7 @@
 
 .order-summary button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Shopee-style buttons */

@@ -1,19 +1,19 @@
-import React from 'react';
-import { Table } from 'react-bootstrap';
-import './Cart.css';
+import React from "react";
+import { Table } from "react-bootstrap";
+import "./Cart.css";
 
 // Components
-import CartItem from '../../components/specific/CartItem';
-import Breadcrumb from './components/Breadcrumb';
-import CartHeader from './components/CartHeader';
-import CartSummary from './components/CartSummary';
-import LoadingSpinner from './components/LoadingSpinner';
-import EmptyCart from './components/EmptyCart';
+import CartItem from "./components/CartItem";
+import Breadcrumb from "./components/Breadcrumb";
+import CartHeader from "./components/CartHeader";
+import CartSummary from "./components/CartSummary";
+import LoadingSpinner from "./components/LoadingSpinner";
+import EmptyCart from "./components/EmptyCart";
 
 // Custom Hooks
-import { useCartData } from './hooks/useCartData';
-import { useCartSelection } from './hooks/useCartSelection';
-import { useCartActions } from './hooks/useCartActions';
+import { useCartData } from "./hooks/useCartData";
+import { useCartSelection } from "./hooks/useCartSelection";
+import { useCartActions } from "./hooks/useCartActions";
 
 /**
  * Cart Component - Displays shopping cart with items, selection, and checkout functionality
@@ -21,14 +21,7 @@ import { useCartActions } from './hooks/useCartActions';
  */
 const Cart = () => {
   // Data management
-  const {
-    cart,
-    products,
-    sellers,
-    loading,
-    error,
-    updateCart
-  } = useCartData();
+  const { cart, products, sellers, loading, error, updateCart } = useCartData();
 
   // Selection state management
   const {
@@ -41,7 +34,7 @@ const Cart = () => {
     hasSelectedItems,
     handleItemSelect,
     handleSelectAll,
-    clearSelections
+    clearSelections,
   } = useCartSelection(products);
 
   // Cart actions
@@ -49,7 +42,7 @@ const Cart = () => {
     handleDeleteItems,
     handleUpdateQuantity,
     handleCheckout,
-    handleContinueShopping
+    handleContinueShopping,
   } = useCartActions(updateCart, clearSelections);
 
   // Event handlers
@@ -109,12 +102,12 @@ const Cart = () => {
   return (
     <div className="container vh-100">
       <Breadcrumb />
-      
+
       <div className="mx-3">
         {/* Cart Items Table */}
-        <div className="card p-3 shadow" style={{ transform: 'none' }}>
+        <div className="card p-3 shadow" style={{ transform: "none" }}>
           <Table borderless className="table-hover">
-            <CartHeader 
+            <CartHeader
               isAllSelected={isAllSelected}
               onSelectAll={handleSelectAll}
             />
@@ -142,4 +135,4 @@ const Cart = () => {
   );
 };
 
-export default Cart; 
+export default Cart;

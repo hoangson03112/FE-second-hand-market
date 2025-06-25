@@ -21,7 +21,8 @@ const CartItem = ({
   onDeleteItem,
 }) => {
   const groupedProducts = products.reduce((acc, product) => {
-    const seller = sellers.find((seller) => seller._id === product.sellerId);
+    const seller = sellers.find((seller) => seller._id === product.seller._id);
+    console.log(seller);
     const sellerName = seller?.fullName || "Unknown Seller";
     const sellerAvatar = seller?.avatar;
 
@@ -29,7 +30,7 @@ const CartItem = ({
       acc[sellerName] = {
         products: [],
         avatar: sellerAvatar,
-        hasAvatar: !!sellerAvatar
+        hasAvatar: !!sellerAvatar,
       };
     }
     acc[sellerName].products.push(product);
@@ -39,9 +40,9 @@ const CartItem = ({
   // Function to get initials from name
   const getInitials = (name) => {
     return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -49,8 +50,16 @@ const CartItem = ({
   // Function to generate background color from name
   const getAvatarColor = (name) => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#96CEB4",
+      "#FFEAA7",
+      "#DDA0DD",
+      "#98D8C8",
+      "#F7DC6F",
+      "#BB8FCE",
+      "#85C1E9",
     ];
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
@@ -84,15 +93,17 @@ const CartItem = ({
                     marginRight: "12px",
                     borderRadius: "50%",
                     border: "2px solid #e0e0e0",
-                    backgroundColor: sellerData.hasAvatar ? 'transparent' : getAvatarColor(sellerName),
-                    color: sellerData.hasAvatar ? 'inherit' : 'white',
-                    fontSize: '14px',
-                    fontWeight: 'bold'
+                    backgroundColor: sellerData.hasAvatar
+                      ? "transparent"
+                      : getAvatarColor(sellerName),
+                    color: sellerData.hasAvatar ? "inherit" : "white",
+                    fontSize: "14px",
+                    fontWeight: "bold",
                   }}
                 >
                   {sellerData.hasAvatar ? (
                     <Image
-                      src={sellerData.avatar}
+                      src={sellerData.avatar.url}
                       style={{
                         objectFit: "cover",
                         width: "100%",
@@ -100,10 +111,12 @@ const CartItem = ({
                       }}
                       onError={(e) => {
                         // If image fails to load, hide it and show initials
-                        e.target.style.display = 'none';
-                        e.target.parentElement.innerHTML = getInitials(sellerName);
-                        e.target.parentElement.style.backgroundColor = getAvatarColor(sellerName);
-                        e.target.parentElement.style.color = 'white';
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML =
+                          getInitials(sellerName);
+                        e.target.parentElement.style.backgroundColor =
+                          getAvatarColor(sellerName);
+                        e.target.parentElement.style.color = "white";
                       }}
                     />
                   ) : (
@@ -143,7 +156,7 @@ const CartItem = ({
                     }}
                   >
                     <Image
-                      src={product.avatar || "/images/default-product.png"}
+                      src={product.avatar.url || "/images/default-product.png"}
                       style={{
                         objectFit: "contain",
                         width: "100%",
@@ -162,7 +175,7 @@ const CartItem = ({
                   </div>
                 </div>
               </td>
-              <td className="text-center fw-semibold text-primary align-middle">
+              <td className="text-center fw-semibold  align-middle">
                 {formatPrice(product.price)}
               </td>
               <td className="align-middle">

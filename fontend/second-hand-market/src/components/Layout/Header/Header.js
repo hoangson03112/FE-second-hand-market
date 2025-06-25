@@ -13,6 +13,7 @@ const Header = React.forwardRef((props, ref) => {
   const [categories, setCategories] = useState([]);
   const [account, setAccount] = useState({});
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -77,6 +78,7 @@ const Header = React.forwardRef((props, ref) => {
 
   // User dropdown
   const handleDropdownToggle = () => setShowDropdown((v) => !v);
+  const handleMobileMenuToggle = () => setShowMobileMenu((v) => !v);
 
   // Logout
   const handleLogout = () => {
@@ -129,6 +131,7 @@ const Header = React.forwardRef((props, ref) => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+        setShowMobileMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -147,26 +150,37 @@ const Header = React.forwardRef((props, ref) => {
     if (diff < 172800) return `Hôm qua`;
     return `${Math.floor(diff / 86400)} ngày trước`;
   }
-  console.log(account);
   return (
     <div className={styles.fixedHeaderWrapper} ref={ref}>
       <nav className="navbar navbar-expand-lg navbar-light bg-while p-0">
-        <div className="container d-flex  h-25">
+        <div className="container d-flex h-25">
+          {/* Mobile Menu Button */}
+          <button
+            className={`${styles.mobileMenuBtn} d-lg-none`}
+            onClick={handleMobileMenuToggle}
+          >
+            <i className="bi bi-list"></i>
+          </button>
+
           <Link className="navbar-brand" to="/">
             <Image
               src="/images/logi.png"
               alt="Logo"
-              className="ms-5"
+              className={styles.logo}
               height={"120px"}
               width={"170px"}
             />
           </Link>
 
-          <div className={`${styles.modernSearchContainer} w-25`}>
+          <div className={`${styles.modernSearchContainer}`}>
             <SearchBar onSearch={handleSearch} />
           </div>
 
-          <div id="navbarNav">
+          {/* Desktop Navigation */}
+          <div
+            className={`${styles.desktopNav} d-none d-lg-flex`}
+            id="navbarNav"
+          >
             <nav className="nav nav-pills d-flex justify-content-evenly align-items-center">
               <Link
                 className={`${styles.sellButton} flex-sm-fill text-center nav-link px-4 py-2`}
@@ -413,7 +427,7 @@ const Header = React.forwardRef((props, ref) => {
                     >
                       <img
                         src={
-                          account?.avatar ||
+                          account?.avatar?.url ||
                           "https://w7.pngwing.com/pngs/178/595/png-transparent-user-profile-computer-icons-login-user-avatars-thumbnail.png"
                         }
                         alt="User"
@@ -463,6 +477,120 @@ const Header = React.forwardRef((props, ref) => {
                 >
                   <i className="bi bi-person-circle me-2"></i>
                   <span>Đăng nhập / Đăng ký</span>
+                </Link>
+              )}
+            </nav>
+          </div>
+
+          {/* Mobile Navigation */}
+          <div
+            className={`${styles.mobileNav} d-lg-none ${
+              showMobileMenu ? styles.show : ""
+            }`}
+          >
+            {/* Search in Mobile Menu */}
+            <div className={styles.mobileSearchContainer}>
+              <SearchBar onSearch={handleSearch} />
+            </div>
+
+            <nav className="nav flex-column">
+              {/* Categories Section */}
+              <div className={styles.mobileCategorySection}>
+                <div className={styles.mobileSectionTitle}>
+                  <i className="bi bi-grid-3x3-gap-fill me-2"></i>
+                  Danh mục
+                </div>
+                {categories?.slice(0, 4).map((category) => (
+                  <Link
+                    key={category._id}
+                    className={`${styles.mobileNavLink} ${styles.mobileCategoryLink} nav-link`}
+                    to={`/eco-market?categoryID=${category._id}`}
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <i className="bi bi-tag me-2"></i>
+                    {category.name}
+                  </Link>
+                ))}
+                <Link
+                  className={`${styles.mobileNavLink} ${styles.viewAllCategories} nav-link`}
+                  to="/eco-market"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <i className="bi bi-grid me-2"></i>
+                  Xem tất cả danh mục
+                </Link>
+              </div>
+
+              {/* Main Actions */}
+              <Link
+                className={`${styles.mobileNavLink} nav-link`}
+                to={
+                  !account || Object.keys(account).length === 0
+                    ? "/eco-market/login"
+                    : account?.role === "buyer"
+                    ? "/eco-market/seller/register"
+                    : "/eco-market/seller/products/create"
+                }
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <i className="bi bi-plus-circle-fill me-2"></i>
+                Đăng Bán
+              </Link>
+
+              {account && Object.keys(account).length > 0 && (
+                <Link
+                  to="/eco-market/my-cart"
+                  className={`${styles.mobileNavLink} nav-link`}
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <i className="bi bi-bag-heart-fill me-2"></i>
+                  Giỏ hàng ({account.cart?.length || 0})
+                </Link>
+              )}
+
+              {account && Object.keys(account).length > 0 ? (
+                <>
+                  <Link
+                    className={`${styles.mobileNavLink} nav-link`}
+                    to="/eco-market/user/profile"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <i className="bi bi-person me-2"></i>Hồ sơ
+                  </Link>
+                  <Link
+                    className={`${styles.mobileNavLink} nav-link`}
+                    to="/eco-market/customer/orders"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <i className="bi bi-box-seam me-2"></i>Đơn Hàng
+                  </Link>
+                  {account?.role === "admin" && (
+                    <Link
+                      className={`${styles.mobileNavLink} nav-link`}
+                      to="/eco-market/admin"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <i className="bi bi-gear me-2"></i>Admin
+                    </Link>
+                  )}
+                  <button
+                    className={`${styles.mobileNavLink} nav-link`}
+                    onClick={() => {
+                      handleLogout();
+                      setShowMobileMenu(false);
+                    }}
+                  >
+                    <i className="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                  </button>
+                </>
+              ) : (
+                <Link
+                  className={`${styles.mobileNavLink} nav-link`}
+                  to="/eco-market/login"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <i className="bi bi-person-circle me-2"></i>
+                  Đăng nhập / Đăng ký
                 </Link>
               )}
             </nav>

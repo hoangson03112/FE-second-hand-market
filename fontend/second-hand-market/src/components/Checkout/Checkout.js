@@ -62,7 +62,6 @@ const Checkout = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-
         const productsData = await Promise.all(
           selectedItems.map((item) => getProduct(item._id))
         );
@@ -91,7 +90,7 @@ const Checkout = () => {
     const fetchSellers = async () => {
       try {
         const uniqueSellerIds = Array.from(
-          new Set(products.map((product) => product.sellerId))
+          new Set(products.map((product) => product.seller._id))
         );
 
         const sellerPromises = uniqueSellerIds.map((sellerId) =>
@@ -222,13 +221,15 @@ const Checkout = () => {
       );
 
       const uniqueSellerIds = Array.from(
-        new Set(productsData.map((product) => product.sellerId).filter(Boolean))
+        new Set(
+          productsData.map((product) => product.seller._id).filter(Boolean)
+        )
       );
 
       const ordersBySeller = uniqueSellerIds
         .map((sellerId) => {
           const sellerProducts = productsData
-            .filter((product) => product.sellerId === sellerId)
+            .filter((product) => product.seller._id === sellerId)
             .map((product) => {
               const orderProduct = orderData.products.find(
                 (item) => item.productId === product._id
@@ -462,10 +463,11 @@ const Checkout = () => {
                 addresses.map((address) => (
                   <div
                     key={address._id}
-                    className={`address-item mb-3 p-3 rounded ${selectedAddress?._id === address._id
-                      ? "border-primary bg-light"
-                      : "border"
-                      }`}
+                    className={`address-item mb-3 p-3 rounded ${
+                      selectedAddress?._id === address._id
+                        ? "border-primary bg-light"
+                        : "border"
+                    }`}
                     onClick={() => handleAddressSelect(address)}
                     style={{ cursor: "pointer" }}
                   >
@@ -894,7 +896,7 @@ const Checkout = () => {
           cursor: default;
           font-weight: 400;
         }
-           .voucher-section {
+        .voucher-section {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           border-radius: 12px;
           color: white;
@@ -902,13 +904,17 @@ const Checkout = () => {
           overflow: hidden;
         }
         .voucher-section::before {
-          content: '';
+          content: "";
           position: absolute;
           top: -50%;
           right: -50%;
           width: 100%;
           height: 100%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+          );
           transform: rotate(45deg);
         }
         .voucher-btn {
@@ -962,9 +968,8 @@ const Checkout = () => {
               </thead>
               <tbody>
                 {sellers.map((seller) => {
-
                   const sellerProducts = products.filter(
-                    (product) => product.sellerId === seller._id
+                    (product) => product.seller._id === seller._id
                   );
 
                   if (sellerProducts.length === 0) {
@@ -976,7 +981,7 @@ const Checkout = () => {
                         <td colSpan="6">
                           <div className="d-flex align-items-center w-100 mb-2">
                             <img
-                              src={seller?.avatar}
+                              src={seller?.avatar.url}
                               alt="Avatar"
                               className="rounded-circle"
                               width="50"
@@ -996,7 +1001,7 @@ const Checkout = () => {
                           <tr key={product._id}>
                             <td className="text-start">
                               <img
-                                src={product.avatar}
+                                src={product.avatar.url}
                                 alt={product.name}
                                 className="img-fluid"
                                 style={{
@@ -1015,9 +1020,9 @@ const Checkout = () => {
                                 }}
                               >
                                 <p className="mb-1 fw-bold">{product.name}</p>
-                                <p className="text-muted mb-0">
-                                  Loại: {product.brand} - {product.color}
-                                </p>
+                                {/* <p className="text-muted mb-0">
+                               
+                                </p> */}
                               </div>
                             </td>
                             <td className="text-center">
@@ -1057,7 +1062,8 @@ const Checkout = () => {
                     <strong>{selectedVoucher.name}</strong>
                   </p>
                   <p className="mb-0 small opacity-75">
-                    Mã: {selectedVoucher.code} | Giảm: {voucherDiscount.toLocaleString("vi-VN")}₫
+                    Mã: {selectedVoucher.code} | Giảm:{" "}
+                    {voucherDiscount.toLocaleString("vi-VN")}₫
                   </p>
                 </div>
               ) : (
@@ -1065,11 +1071,13 @@ const Checkout = () => {
               )}
             </div>
             <button
-              className={`btn ${selectedVoucher ? 'voucher-selected' : 'voucher-btn'}`}
+              className={`btn ${
+                selectedVoucher ? "voucher-selected" : "voucher-btn"
+              }`}
               onClick={() => setShowVoucherModal(true)}
             >
               <i className="bi bi-plus-circle me-2"></i>
-              {selectedVoucher ? 'Đổi voucher' : 'Chọn voucher'}
+              {selectedVoucher ? "Đổi voucher" : "Chọn voucher"}
             </button>
           </div>
         </div>
@@ -1096,8 +1104,9 @@ const Checkout = () => {
           <div className="row g-3">
             <div className="col-md-6">
               <div
-                className={`card h-100 shipping-option ${shippingMethod === "direct" ? "border-primary shadow" : ""
-                  }`}
+                className={`card h-100 shipping-option ${
+                  shippingMethod === "direct" ? "border-primary shadow" : ""
+                }`}
                 onClick={() => setShippingMethod("direct")}
                 style={{ cursor: "pointer" }}
               >
@@ -1127,10 +1136,11 @@ const Checkout = () => {
 
             <div className="col-md-6">
               <div
-                className={`card h-100 shipping-option ${shippingMethod === "sellerShipping"
-                  ? "border-primary shadow"
-                  : ""
-                  }`}
+                className={`card h-100 shipping-option ${
+                  shippingMethod === "sellerShipping"
+                    ? "border-primary shadow"
+                    : ""
+                }`}
                 onClick={() => setShippingMethod("sellerShipping")}
                 style={{ cursor: "pointer" }}
               >
@@ -1236,9 +1246,10 @@ const Checkout = () => {
 
           <div className="d-flex justify-content-between mb-2">
             <span>Voucher Giảm Giá</span>
-            <span className="text-danger">- {voucherDiscount.toLocaleString()}₫</span>
+            <span className="text-danger">
+              - {voucherDiscount.toLocaleString()}₫
+            </span>
           </div>
-
 
           <div className="d-flex justify-content-between mb-2 fw-bold">
             <span>Tổng thanh toán</span>

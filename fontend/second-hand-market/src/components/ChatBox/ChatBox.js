@@ -946,12 +946,11 @@ export const ChatBox = () => {
     }
 
     if (!socket.connected) {
-      console.log("[SOCKET] Connecting socket...");
+ 
       socket.connect();
     }
 
     const handleConnect = () => {
-      console.log("[SOCKET] Connected with socket ID:", socket.id);
       setConnectionStatus("connected");
       // Emit join-room ngay sau khi connected nếu có account
       if (account?.accountID) {
@@ -989,16 +988,10 @@ export const ChatBox = () => {
       if (error.error === "Invalid message ID format" && error.messageId) {
         // Check for different message ID formats
         if (error.messageId.startsWith("temp-")) {
-          console.log(
-            "[SOCKET] Ignoring temporary message ID error for:",
-            error.messageId
-          );
+
           return;
         } else if (error.messageId.startsWith("ai-")) {
-          console.log(
-            "[SOCKET] Ignoring AI message ID error for:",
-            error.messageId
-          );
+
           return;
         } else if (error.messageId.startsWith("user-")) {
           console.log(

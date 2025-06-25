@@ -36,7 +36,7 @@ import {
 import axios from "axios";
 import AccountContext from "../../contexts/AccountContext";
 import { useChat } from "../../contexts/ChatContext";
-import CancelOrderModal from "../../components/specific/CancelOrderModal";
+import CancelOrderModal from "../Order/components/CancelOrderModal";
 import { useOrder } from "../../contexts/OrderContext";
 
 // Custom styled stepper connector
@@ -266,7 +266,7 @@ export default function OrderDetails() {
   }
 
   return (
-    <div className="container my-4 order-details-container">
+    <div className="container py-4 order-details-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold">Chi tiết đơn hàng</h3>
         <Button
@@ -291,7 +291,7 @@ export default function OrderDetails() {
             sx={{
               background:
                 order.status === "shipping"
-                  ? "linear-gradient(136deg, #ff6f43 0%, #ee4d2d 50%, #ff4d4d 100%)"
+                  ? "linear-(136deg, #ff6f43 0%, #ee4d2d 50%, #ff4d4d 100%)"
                   : "",
               boxShadow:
                 order.status === "shipping"
@@ -502,7 +502,7 @@ export default function OrderDetails() {
                   <div className="row align-items-center">
                     <div className="col-md-2 col-3">
                       <img
-                        src={item.productId.avatar}
+                        src={item.productId.avatar.url}
                         alt={item.productId.name}
                         className="img-fluid rounded product-image"
                       />
@@ -511,9 +511,9 @@ export default function OrderDetails() {
                       <Typography variant="body1" className="product-name">
                         {item.productId.name}
                       </Typography>
-                      <Typography variant="body2" className="text-muted">
+                      {/* <Typography variant="body2" className="text-muted">
                         Phân loại: {item?.variation}
-                      </Typography>
+                      </Typography> */}
                       <Typography
                         variant="body2"
                         className="d-md-none text-danger fw-bold mt-1"

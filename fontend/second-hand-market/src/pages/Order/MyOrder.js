@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import OrderItem from "../../components/specific/OrderItem";
+import OrderItem from "./components/OrderItem";
 import { useOrder } from "../../contexts/OrderContext";
 import {
   Box,

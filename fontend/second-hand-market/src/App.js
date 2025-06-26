@@ -275,6 +275,16 @@ function App() {
                           </Layout>
                         }
                       />
+
+                              {/* Seller Routes */}
+                    <Route
+                      path="/eco-market/seller"
+                      element={
+                        <LayoutSeller>
+                          <SellerDashboard />
+                        </LayoutSeller>
+                      }
+                    />
                       <Route
                         path="/eco-market/seller/register"
                         element={
@@ -291,6 +301,41 @@ function App() {
                           </Layout>
                         }
                       />
+
+          
+                    <Route
+                      path="/eco-market/seller/products"
+                      element={
+                        <LayoutSeller>
+                          <SellerProducts />
+                        </LayoutSeller>
+                      }
+                    />
+                    <Route
+                      path="/eco-market/seller/orders"
+                      element={
+                        <LayoutSeller>
+                          <SellerOrders />
+                        </LayoutSeller>
+                      }
+                    />
+                    <Route
+                      path="/eco-market/seller/vouchers"
+                      element={
+                        <LayoutSeller>
+                          <SellerVouchers />
+                        </LayoutSeller>
+                      }
+                    />
+                    {/* <Route
+                      path="/eco-market/seller/analytics"
+                      element={
+                        <LayoutSeller>
+                          <SellerAnalytics />
+                        </LayoutSeller>
+                      }
+                    /> */}
+
                     </Routes>
                   </BrowserRouter>
                 </ChatProvider>

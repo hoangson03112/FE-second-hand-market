@@ -440,6 +440,12 @@ const Header = React.forwardRef((props, ref) => {
                         >
                           <i className="bi bi-box-seam me-2"></i>Đơn Hàng
                         </Link>
+                             {account?.role === "seller" && (
+                          <Link className="dropdown-item" to="/eco-market/seller">
+                           <i className="bi bi-shop me-2"></i>Gian Hàng
+                        </Link>
+                              )}
+
                         {account?.role === "admin" && (
                           <Link
                             className="dropdown-item"

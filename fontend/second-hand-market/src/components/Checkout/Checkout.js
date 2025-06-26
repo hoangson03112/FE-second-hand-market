@@ -10,6 +10,7 @@ import AddressContext from "../../contexts/AddressContext";
 import { useAuth } from "../../contexts/AuthContext";
 import AccountContext from "../../contexts/AccountContext";
 import VoucherSelector from "../../pages/Voucher/VoucherSelector";
+import { useCoin } from "../../contexts/CoinProvider";
 const Checkout = () => {
   const { getProduct } = useProduct();
   const { deleteItem } = useCart();
@@ -211,6 +212,7 @@ const { balance, useCoins: coinService } = useCoin();
   };
 
   const handlePlaceOrder = async () => {
+     const coinDiscount = getCoinDiscount();
     const orderData = {
       products: selectedItems.map((item) => ({
         productId: item._id,

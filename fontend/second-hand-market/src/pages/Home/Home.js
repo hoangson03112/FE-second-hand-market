@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 
 import "./Home.css";
 import axios from "axios";
+import CheckInModal from "../../components/Checkin/CheckInModal";
+import { useAuth } from "../../contexts/AuthContext";
 import productService from "../../services/productService";
 import ProductCard from "../../components/common/ProductCard/ProductCard";
 import CategoryCard from "../../components/common/CategoryCard/CategoryCard";
@@ -14,6 +16,9 @@ export const Home = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+      const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     fetchCategories();
@@ -74,6 +79,32 @@ export const Home = () => {
 
   return (
     <div className="home-page">
+           {isAuthenticated && (
+         <button
+    onClick={() => setShowCheckInModal(true)}
+    style={{
+      position: "fixed",
+      top: "75%",
+      right: "70px", 
+      transform: "translateY(-50%)", 
+      zIndex: 1000,
+      borderRadius: "50%",
+      width: "60px",
+      height: "60px",
+      background: "linear-gradient(135deg, #FFD700, #FFA500)",
+      color: "white",
+      border: "none",
+      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+    }}
+    title="Điểm danh nhận xu"
+  >
+    <i className="bi bi-coin" style={{ fontSize: "1.5rem" }}></i>
+  </button>
+      )}
       {/* Floating Background Elements */}
       <div className="floating-elements">
         <div className="floating-element"></div>
@@ -312,6 +343,10 @@ export const Home = () => {
             </div>
           </div>
         </div>
+                <CheckInModal
+        show={showCheckInModal}
+        onHide={() => setShowCheckInModal(false)}
+      />
       </section>
     </div>
   );

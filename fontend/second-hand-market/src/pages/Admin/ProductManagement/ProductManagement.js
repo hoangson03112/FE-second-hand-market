@@ -77,7 +77,7 @@ const ProductManagement = () => {
       .includes(searchQuery.toLowerCase());
     const matchesTab =
       currentTab === 0 ||
-      (currentTab === 1 && product.status === "pending") ||
+      (currentTab === 1 && (product.status === "pending" || product.status === "active")) ||
       (currentTab === 2 && product.status === "approved") ||
       (currentTab === 3 && product.status === "rejected");
     const matchesCategory =
@@ -192,7 +192,7 @@ const ProductManagement = () => {
     },
     {
       label: "Chờ duyệt",
-      value: products.filter((p) => p.status === "pending").length,
+      value: products.filter((p) =>  ["pending", "active"].includes(p.status)).length,
       icon: HourglassEmpty,
       color: "warning",
     },
@@ -326,7 +326,7 @@ const ProductManagement = () => {
                     top: 10,
                     right: 10,
                     bgcolor:
-                      product.status === "pending"
+                      ["pending", "active"].includes(product.status)
                         ? "warning.main"
                         : product.status === "approved"
                         ? "success.main"
@@ -339,7 +339,7 @@ const ProductManagement = () => {
                     fontWeight: "bold",
                   }}
                 >
-                  {product.status === "pending"
+                 {["pending", "active"].includes(product.status)
                     ? "Chờ duyệt"
                     : product.status === "approved"
                     ? "Đã duyệt"
@@ -403,7 +403,7 @@ const ProductManagement = () => {
               <Divider />
 
               <Box sx={{ p: 2 }}>
-                {product.status === "pending" ? (
+              {["pending", "active"].includes(product.status) ? (
                   <Stack
                     direction="row"
                     spacing={1}
@@ -662,7 +662,7 @@ const ProductManagement = () => {
                     left: 16,
                     zIndex: 10,
                     bgcolor:
-                      selectedProduct.status === "pending"
+                       ["pending", "active"].includes(selectedProduct.status)
                         ? "warning.main"
                         : selectedProduct.status === "approved"
                         ? "success.main"
@@ -676,7 +676,7 @@ const ProductManagement = () => {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {selectedProduct.status === "pending"
+               {["pending", "active"].includes(selectedProduct.status)
                     ? "Chờ duyệt"
                     : selectedProduct.status === "approved"
                     ? "Đã duyệt"
@@ -894,7 +894,7 @@ const ProductManagement = () => {
                       gap: 2,
                     }}
                   >
-                    {selectedProduct.status === "pending" ? (
+                  {["pending", "active"].includes(selectedProduct.status) ? (
                       <>
                         <Button
                           variant="contained"

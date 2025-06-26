@@ -15,7 +15,7 @@ export const VoucherProvider = ({ children }) => {
   const createVoucher = async (voucherData) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(`${API_URL}/admin/create`, voucherData, {
+      const response = await axios.post(`${API_URL}/create`, voucherData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
@@ -27,7 +27,7 @@ export const VoucherProvider = ({ children }) => {
   const getAllVouchers = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/admin/all`, {
+      const response = await axios.get(`${API_URL}/all`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
@@ -39,7 +39,7 @@ export const VoucherProvider = ({ children }) => {
   const updateVoucher = async (id, voucherData) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.put(`${API_URL}/admin/${id}`, voucherData, {
+      const response = await axios.put(`${API_URL}/${id}`, voucherData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;
@@ -51,7 +51,7 @@ export const VoucherProvider = ({ children }) => {
   const deleteVoucher = async (id) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.delete(`${API_URL}/admin/${id}`, {
+      const response = await axios.delete(`${API_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.data;

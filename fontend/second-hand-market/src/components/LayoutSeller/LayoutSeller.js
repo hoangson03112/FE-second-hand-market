@@ -87,7 +87,7 @@ const LayoutSeller = ({ children }) => {
     { text: "Quản lý sản phẩm", icon: <LocalCafeIcon />, path: "/eco-market/seller/products" },
     { text: "Đơn hàng của tôi", icon: <ShoppingBasketIcon />, path: "/eco-market/seller/orders" },
     { text: "Quản lý voucher", icon: <CardGiftcardIcon />, path: "/eco-market/seller/vouchers" },
-    { text: "Thống kê doanh thu", icon: <BarChartIcon />, path: "/eco-market/seller/analytics" },
+    // { text: "Thống kê doanh thu", icon: <BarChartIcon />, path: "/eco-market/seller/analytics" },
   ];
 
   const bottomMenuItems = [

@@ -17,6 +17,12 @@ const Checkout = () => {
   const { selectedItems } = location.state || { selectedItems: [] };
   const [products, setProducts] = useState([]);
   const [shippingMethod, setShippingMethod] = useState("direct");
+  const [paymentMethod, setPaymentMethod] = useState("direct");
+  const [shippingFee, setShippingFee] = useState(0);
+  const [platformFee, setPlatformFee] = useState(0);
+  const [depositAmount, setDepositAmount] = useState(0);
+  const [codAmount, setCodAmount] = useState(0);
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [addresses, setAddresses] = useState([]);
@@ -47,9 +53,8 @@ const Checkout = () => {
   const [showProvinceDropdown, setShowProvinceDropdown] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
   const [showWardDropdown, setShowWardDropdown] = useState(false);
-  const GHN_TOKEN = "53135f42-2c23-11f0-9b81-222185cb68c8";
-  const API_URL =
-    "https://dev-online-gateway.ghn.vn/shiip/public-api/master-data";
+  const GHN_TOKEN = process.env.GHN_TOKEN;
+  const API_URL = process.env.GHN_URL;
   const [sellers, setSellers] = useState([]);
   const formatAddress = (address) => {
     if (!address) return "";
@@ -115,6 +120,7 @@ const Checkout = () => {
         const response = await axios.get(`${API_URL}/province`, {
           headers: { Token: GHN_TOKEN },
         });
+        console.log(response.data.data);
         setProvinces(response.data.data);
       } catch (error) {
         console.error("Error fetching provinces:", error);
@@ -174,6 +180,13 @@ const Checkout = () => {
     fetchWards();
   }, [newAddress.district, districts]);
 
+  // Calculate shipping fee and payment amounts when dependencies change
+  useEffect(() => {
+    const fee = calculateShippingFee(shippingMethod, selectedAddress);
+    setShippingFee(fee);
+    calculatePaymentAmounts(paymentMethod, getFinalAmount(), fee);
+  }, [shippingMethod, selectedAddress, paymentMethod, voucherDiscount]);
+
   const getTotalAmount = () => {
     return selectedItems.reduce((total, item) => {
       const product = products.find((p) => p._id === item._id);
@@ -183,6 +196,63 @@ const Checkout = () => {
 
   const getFinalAmount = () => {
     return Math.max(0, getTotalAmount() - voucherDiscount);
+  };
+
+  const calculateShippingFee = (method, address) => {
+    if (method === "direct") return 0;
+
+    // Simple calculation - in real app, use GHN API
+    const baseRate = {
+      express: 45000,
+    };
+
+    return baseRate[method] || 45000;
+  };
+
+  const calculatePaymentAmounts = (paymentType, totalAmount, shippingFee) => {
+    const platformFeeRate = paymentType === "direct" ? 0 : 0.02; // 2% cho protected transactions
+    const calculatedPlatformFee = totalAmount * platformFeeRate;
+
+    setPlatformFee(calculatedPlatformFee);
+
+    switch (paymentType) {
+      case "direct":
+        setDepositAmount(0);
+        setCodAmount(0);
+        break;
+      case "partial_escrow":
+        setDepositAmount(shippingFee);
+        setCodAmount(totalAmount);
+        break;
+      case "full_escrow":
+        setDepositAmount(totalAmount + shippingFee + calculatedPlatformFee);
+        setCodAmount(0);
+        break;
+      default:
+        setDepositAmount(0);
+        setCodAmount(totalAmount);
+    }
+  };
+
+  const handleShippingMethodChange = (method) => {
+    setShippingMethod(method);
+    const fee = calculateShippingFee(method, selectedAddress);
+    setShippingFee(fee);
+
+    // Reset payment method if switching to/from direct
+    if (method === "direct") {
+      setPaymentMethod("direct");
+    } else if (paymentMethod === "direct") {
+      setPaymentMethod("partial_escrow");
+    }
+
+    calculatePaymentAmounts(paymentMethod, getFinalAmount(), fee);
+  };
+
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    calculatePaymentAmounts(method, getFinalAmount(), shippingFee);
+    setShowPaymentGateway(method !== "direct" && depositAmount > 0);
   };
 
   const handleVoucherSelect = (voucher, discount) => {
@@ -259,22 +329,17 @@ const Checkout = () => {
           products: order.products,
         };
 
-        await axios.post(
-          "http://localhost:2000/eco-market/orders",
-          orderPayload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await axios.post("  /orders", orderPayload, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
       }
 
-      // Cập nhật lượt sử dụng voucher nếu có voucher được áp dụng
       if (selectedVoucher && selectedVoucher.id) {
         try {
           await axios.post(
-            "http://localhost:2000/eco-market/vouchers/use",
+            "  /vouchers/use",
             { voucherId: selectedVoucher.id },
             {
               headers: {
@@ -284,7 +349,6 @@ const Checkout = () => {
           );
         } catch (voucherError) {
           console.error("Error updating voucher usage:", voucherError);
-          // Không hiển thị lỗi voucher cho user vì đơn hàng đã thành công
         }
       }
 
@@ -934,6 +998,165 @@ const Checkout = () => {
           background: rgba(34, 197, 94, 0.2);
           border: 1px solid rgba(34, 197, 94, 0.5);
         }
+
+        /* Payment Options Styling */
+        .payment-option {
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          padding: 20px;
+          transition: all 0.3s ease;
+          background: #ffffff;
+          height: 100%;
+          cursor: pointer;
+        }
+
+        .payment-option:hover {
+          border-color: #007bff;
+          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+          transform: translateY(-2px);
+        }
+
+        .payment-option.selected {
+          border-color: #007bff;
+          background: linear-gradient(135deg, #f8f9ff 0%, #e3f0ff 100%);
+          box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
+        }
+
+        .payment-header {
+          margin-bottom: 15px;
+        }
+
+        .payment-breakdown {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 12px;
+          margin: 15px 0;
+        }
+
+        .breakdown-item {
+          display: flex;
+          justify-content: between;
+          align-items: flex-start;
+          margin-bottom: 8px;
+          flex-direction: column;
+        }
+
+        .breakdown-item:last-child {
+          margin-bottom: 0;
+        }
+
+        .benefits-list {
+          margin-top: 15px;
+        }
+
+        .benefit-item {
+          display: flex;
+          align-items: center;
+          margin-bottom: 6px;
+          font-size: 0.9rem;
+        }
+
+        .benefit-item:last-child {
+          margin-bottom: 0;
+        }
+
+        /* Payment Gateway Styling */
+        .payment-gateway {
+          background: linear-gradient(135deg, #f1f3f4 0%, #e8eaf0 100%);
+          border-radius: 12px;
+          padding: 20px;
+          border: 1px solid #dee2e6;
+        }
+
+        .payment-gateway-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 15px 10px;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          background: white;
+          border: 2px solid #e9ecef;
+          text-decoration: none;
+          color: #495057;
+        }
+
+        .payment-gateway-btn:hover {
+          border-color: #007bff;
+          background: #f8f9ff;
+          color: #007bff;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+        }
+
+        .gateway-logo {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
+          margin-bottom: 5px;
+        }
+
+        .payment-gateway-btn i {
+          font-size: 24px;
+          margin-bottom: 5px;
+        }
+
+        .payment-gateway-btn span {
+          font-size: 0.85rem;
+          font-weight: 500;
+        }
+
+        /* Order Summary Styling */
+        .order-summary {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 16px;
+          margin-top: 20px;
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          font-size: 0.95rem;
+        }
+
+        .summary-row:last-child {
+          margin-bottom: 0;
+        }
+
+        .summary-row.highlight {
+          background: linear-gradient(135deg, #e3f0ff 0%, #f0f7ff 100%);
+          padding: 8px 12px;
+          border-radius: 6px;
+          border-left: 4px solid #007bff;
+          margin: 4px 0;
+        }
+
+        .summary-row.total-row {
+          background: linear-gradient(135deg, #d4edda 0%, #e8f5e8 100%);
+          padding: 8px 12px;
+          border-radius: 6px;
+          border-left: 4px solid #28a745;
+          margin: 4px 0;
+        }
+
+        /* Shipping Options Enhanced */
+        .shipping-option {
+          transition: all 0.3s ease;
+          border: 2px solid #e9ecef;
+        }
+
+        .shipping-option:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .shipping-option.border-primary {
+          border-color: #007bff !important;
+          background: linear-gradient(135deg, #f8f9ff 0%, #e3f0ff 100%);
+        }
       `}</style>
 
       <div className="card mb-4">
@@ -1105,22 +1328,26 @@ const Checkout = () => {
             <div className="col-md-6">
               <div
                 className={`card h-100 shipping-option ${
-                  shippingMethod === "direct" ? "border-primary shadow" : ""
+                  shippingMethod === "direct" ? "border-primary shadow-lg" : ""
                 }`}
-                onClick={() => setShippingMethod("direct")}
+                onClick={() => handleShippingMethodChange("direct")}
                 style={{ cursor: "pointer" }}
               >
                 <div className="card-body text-center">
                   <div className="mb-3">
                     <i className="bi bi-people-fill fs-1 text-success"></i>
                   </div>
-                  <h5 className="card-title">Gặp mặt trực tiếp</h5>
+                  <h6 className="card-title">Gặp mặt trực tiếp</h6>
                   <p className="card-text text-muted small">
                     Tự thỏa thuận địa điểm giao dịch với người bán
                   </p>
+                  <p className="text-success small fw-semibold">
+                    <i className="bi bi-check-circle me-1"></i>Kiểm tra hàng
+                    trước khi nhận
+                  </p>
                   <div className="mt-2">
-                    <span className="badge bg-light text-dark">
-                      Không phí vận chuyển
+                    <span className="badge bg-success text-white">
+                      Miễn phí
                     </span>
                   </div>
                 </div>
@@ -1137,29 +1364,29 @@ const Checkout = () => {
             <div className="col-md-6">
               <div
                 className={`card h-100 shipping-option ${
-                  shippingMethod === "sellerShipping"
-                    ? "border-primary shadow"
-                    : ""
+                  shippingMethod === "express" ? "border-primary shadow-lg" : ""
                 }`}
-                onClick={() => setShippingMethod("sellerShipping")}
+                onClick={() => handleShippingMethodChange("express")}
                 style={{ cursor: "pointer" }}
               >
                 <div className="card-body text-center">
                   <div className="mb-3">
-                    <i className="bi bi-person-badge fs-1 text-info"></i>
+                    <i className="bi bi-lightning-fill fs-1 text-warning"></i>
                   </div>
-                  <h5 className="card-title">Người bán giao hàng</h5>
+                  <h6 className="card-title">Giao hàng tận nơi</h6>
                   <p className="card-text text-muted small">
-                    Người bán tự tổ chức vận chuyển theo thỏa thuận
+                    Shipper giao hàng, thanh toán khi nhận
+                  </p>
+                  <p className="text-success small fw-semibold">
+                    <i className="bi bi-check-circle me-1"></i>Kiểm tra hàng
+                    trước khi nhận
                   </p>
                   <div className="mt-2">
-                    <span className="badge bg-light text-dark">
-                      Phí thỏa thuận
-                    </span>
+                    <span className="badge bg-warning text-dark">45,000₫</span>
                   </div>
                 </div>
                 <div className="card-footer bg-transparent">
-                  {shippingMethod === "sellerShipping" && (
+                  {shippingMethod === "express" && (
                     <button className="btn btn-sm btn-success w-100">
                       <i className="bi bi-check-circle me-1"></i> Đã chọn
                     </button>
@@ -1192,19 +1419,23 @@ const Checkout = () => {
                     </li>
                   </>
                 )}
-                {shippingMethod === "sellerShipping" && (
+                {shippingMethod === "express" && (
                   <>
                     <li>
-                      <i className="bi bi-check2 me-2 text-success"></i> Người
-                      bán sẽ liên hệ để thống nhất phương thức
+                      <i className="bi bi-check2 me-2 text-success"></i> Shipper
+                      giao hàng tận nơi
                     </li>
                     <li>
-                      <i className="bi bi-check2 me-2 text-success"></i> Phí vận
-                      chuyển sẽ được thông báo sau
+                      <i className="bi bi-check2 me-2 text-success"></i> Kiểm
+                      tra hàng trước khi thanh toán
                     </li>
                     <li>
-                      <i className="bi bi-check2 me-2 text-success"></i> Thời
-                      gian giao hàng tùy thuộc vào người bán
+                      <i className="bi bi-check2 me-2 text-success"></i> Theo
+                      dõi đơn hàng trực tuyến
+                    </li>
+                    <li>
+                      <i className="bi bi-check2 me-2 text-success"></i> Bảo
+                      hiểm hàng hóa trong quá trình vận chuyển
                     </li>
                   </>
                 )}
@@ -1213,49 +1444,276 @@ const Checkout = () => {
           )}
         </div>
       </div>
+      {/* Payment Method Section */}
       <div className="card mb-4">
-        <div className="card-header d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Phương thức thanh toán</h5>
-          <div>
-            <span className="text-primary">Thanh toán khi nhận hàng (COD)</span>
-          </div>
+        <div className="card-header">
+          <h5 className="mb-0">
+            <i className="bi bi-credit-card me-2 text-primary"></i>
+            Phương thức thanh toán
+          </h5>
         </div>
         <div className="card-body">
-          <div className="d-flex align-items-center mb-3">
-            <div className="me-3">
-              <i className="bi bi-cash-coin fs-1 text-success"></i>
+          <div className="row g-3">
+            {shippingMethod === "direct" ? (
+              <div className="col-12">
+                <div className="payment-option selected">
+                  <div className="d-flex align-items-center">
+                    <div className="me-3">
+                      <i className="bi bi-people-fill fs-2 text-success"></i>
+                    </div>
+                    <div>
+                      <h6 className="mb-1">Giao dịch trực tiếp</h6>
+                      <p className="text-muted mb-0 small">
+                        Thanh toán trực tiếp khi gặp mặt người bán
+                      </p>
+                    </div>
+                    <div className="ms-auto">
+                      <span className="badge bg-success">Miễn phí</span>
+                    </div>
+                  </div>
+                  <div className="alert alert-info mt-3 mb-0">
+                    <i className="bi bi-info-circle me-2"></i>
+                    Bạn tự thỏa thuận với người bán về địa điểm và thanh toán.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="col-md-6">
+                  <div
+                    className={`payment-option ${
+                      paymentMethod === "partial_escrow" ? "selected" : ""
+                    }`}
+                    onClick={() => handlePaymentMethodChange("partial_escrow")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="payment-header">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h6 className="mb-1">COD với cọc ship</h6>
+                        <span className="badge bg-success">An toàn nhất</span>
+                      </div>
+                      <p className="text-muted small mb-2">
+                        Cọc phí ship, thanh toán khi nhận hàng
+                      </p>
+                    </div>
+
+                    <div className="payment-breakdown">
+                      <div className="breakdown-item">
+                        <span>Cần thanh toán ngay:</span>
+                        <strong className="text-primary">
+                          {shippingFee.toLocaleString()}₫
+                        </strong>
+                        <small className="text-muted d-block">
+                          Phí vận chuyển
+                        </small>
+                      </div>
+                      <div className="breakdown-item">
+                        <span>COD khi nhận hàng:</span>
+                        <strong className="text-danger">
+                          {getFinalAmount().toLocaleString()}₫
+                        </strong>
+                        <small className="text-muted d-block">
+                          Giá trị sản phẩm
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="benefits-list">
+                      <div className="benefit-item">
+                        <i className="bi bi-shield-check text-success me-2"></i>
+                        <span>Kiểm tra hàng trước thanh toán</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-check-circle text-success me-2"></i>
+                        <span>Chỉ cọc phí ship</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-truck text-primary me-2"></i>
+                        <span>Có bảo hiểm vận chuyển</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-exclamation-triangle text-warning me-2"></i>
+                        <span>Mất cọc nếu không nhận hàng</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div
+                    className={`payment-option ${
+                      paymentMethod === "full_escrow" ? "selected" : ""
+                    }`}
+                    onClick={() => handlePaymentMethodChange("full_escrow")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="payment-header">
+                      <div className="d-flex align-items-center justify-content-between">
+                        <h6 className="mb-1">Thanh toán trước 100%</h6>
+                        <span className="badge bg-info">Nhanh chóng</span>
+                      </div>
+                      <p className="text-muted small mb-2">
+                        Thanh toán trước, shipper giao không thu tiền
+                      </p>
+                    </div>
+
+                    <div className="payment-breakdown">
+                      <div className="breakdown-item">
+                        <span>Cần thanh toán ngay:</span>
+                        <strong className="text-primary">
+                          {(
+                            getFinalAmount() +
+                            shippingFee +
+                            platformFee
+                          ).toLocaleString()}
+                          ₫
+                        </strong>
+                        <small className="text-muted d-block">
+                          Tổng đơn hàng + phí
+                        </small>
+                      </div>
+                      <div className="breakdown-item">
+                        <span>COD khi nhận hàng:</span>
+                        <strong className="text-success">0₫</strong>
+                        <small className="text-muted d-block">
+                          Đã thanh toán trước
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="benefits-list">
+                      <div className="benefit-item">
+                        <i className="bi bi-lightning text-warning me-2"></i>
+                        <span>Giao hàng nhanh không chờ COD</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-clock text-info me-2"></i>
+                        <span>Có thời gian kiểm tra hàng</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-headset text-primary me-2"></i>
+                        <span>Hỗ trợ hoàn tiền nếu có lỗi</span>
+                      </div>
+                      <div className="benefit-item">
+                        <i className="bi bi-exclamation-triangle text-warning me-2"></i>
+                        <span>Phải thanh toán trước toàn bộ</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Payment Gateway */}
+          {showPaymentGateway && paymentMethod !== "direct" && (
+            <div className="payment-gateway mt-4">
+              <h6 className="mb-3">
+                <i className="bi bi-wallet2 me-2"></i>
+                Chọn phương thức thanh toán {depositAmount.toLocaleString()}₫
+              </h6>
+              <div className="row g-2">
+                <div className="col-md-3 col-6">
+                  <button className="btn btn-outline-primary w-100 payment-gateway-btn">
+                    <img
+                      src="/images/momo-logo.png"
+                      alt="MoMo"
+                      className="gateway-logo"
+                    />
+                    <span>MoMo</span>
+                  </button>
+                </div>
+                <div className="col-md-3 col-6">
+                  <button className="btn btn-outline-primary w-100 payment-gateway-btn">
+                    <img
+                      src="/images/zalopay-logo.png"
+                      alt="ZaloPay"
+                      className="gateway-logo"
+                    />
+                    <span>ZaloPay</span>
+                  </button>
+                </div>
+                <div className="col-md-3 col-6">
+                  <button className="btn btn-outline-primary w-100 payment-gateway-btn">
+                    <i className="bi bi-bank text-primary"></i>
+                    <span>Banking</span>
+                  </button>
+                </div>
+                <div className="col-md-3 col-6">
+                  <button className="btn btn-outline-primary w-100 payment-gateway-btn">
+                    <i className="bi bi-credit-card text-info"></i>
+                    <span>VNPay</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div>
-              <h6 className="mb-1">Thanh toán khi nhận hàng</h6>
-              <p className="text-muted mb-0 small">
-                Bạn sẽ thanh toán bằng tiền mặt khi nhận được hàng
-              </p>
+          )}
+
+          <div className="order-summary">
+            <div className="summary-row">
+              <span>Tổng tiền hàng</span>
+              <span>{getTotalAmount().toLocaleString()}₫</span>
             </div>
-          </div>
-          <div className="alert alert-info">
-            <i className="bi bi-info-circle me-2"></i>
-            Vì lý do an toàn, chúng tôi chỉ hỗ trợ phương thức thanh toán khi
-            nhận hàng (COD) để đảm bảo bạn có thể kiểm tra hàng hóa trước khi
-            thanh toán.
-          </div>
 
-          <div className="d-flex justify-content-between mb-2">
-            <span>Tổng tiền hàng</span>
-            <span>{getTotalAmount().toLocaleString()}₫</span>
-          </div>
+            <div className="summary-row">
+              <span>Voucher Giảm Giá</span>
+              <span className="text-danger">
+                - {voucherDiscount.toLocaleString()}₫
+              </span>
+            </div>
 
-          <div className="d-flex justify-content-between mb-2">
-            <span>Voucher Giảm Giá</span>
-            <span className="text-danger">
-              - {voucherDiscount.toLocaleString()}₫
-            </span>
-          </div>
+            {shippingMethod !== "direct" && (
+              <div className="summary-row">
+                <span>Phí vận chuyển</span>
+                <span>{shippingFee.toLocaleString()}₫</span>
+              </div>
+            )}
 
-          <div className="d-flex justify-content-between mb-2 fw-bold">
-            <span>Tổng thanh toán</span>
-            <span className="text-danger">
-              {getFinalAmount().toLocaleString()}₫
-            </span>
+            {platformFee > 0 && (
+              <div className="summary-row">
+                <span>Phí dịch vụ (2%)</span>
+                <span>{platformFee.toLocaleString()}₫</span>
+              </div>
+            )}
+
+            <hr className="my-3" />
+
+            {paymentMethod === "direct" ? (
+              <div className="summary-row total-row">
+                <span>Thanh toán khi gặp mặt</span>
+                <span className="text-success fw-bold">
+                  {getFinalAmount().toLocaleString()}₫
+                </span>
+              </div>
+            ) : paymentMethod === "partial_escrow" ? (
+              <>
+                <div className="summary-row highlight">
+                  <span>Cần thanh toán ngay</span>
+                  <span className="text-primary fw-bold">
+                    {depositAmount.toLocaleString()}₫
+                  </span>
+                </div>
+                <div className="summary-row">
+                  <span>COD khi nhận hàng</span>
+                  <span className="text-danger fw-bold">
+                    {getFinalAmount().toLocaleString()}₫
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="summary-row highlight">
+                  <span>Cần thanh toán ngay</span>
+                  <span className="text-primary fw-bold">
+                    {depositAmount.toLocaleString()}₫
+                  </span>
+                </div>
+                <div className="summary-row">
+                  <span>COD khi nhận hàng</span>
+                  <span className="text-success fw-bold">0₫</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
         <div className="card-footer">

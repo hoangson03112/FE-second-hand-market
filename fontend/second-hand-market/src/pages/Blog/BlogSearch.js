@@ -14,7 +14,7 @@ const BlogSearch = ({ onSearch }) => {
     setKeyword(value);
     if (value.length > 2) {
       try {
-        const response = await fetch(`http://localhost:2000/eco-market/blogs/search/${value}?limit=5`);
+        const response = await fetch(` /blogs/search/${value}?limit=5`);
         const data = await response.json();
         setSuggestions(data.blogs);
       } catch (error) {

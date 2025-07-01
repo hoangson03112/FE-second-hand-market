@@ -19,7 +19,7 @@ export default function PhoneVerify({ phone, onVerified }) {
       }
 
       const response = await axios.post(
-        "http://localhost:2000/eco-market/otp/send-otp",
+        "  /otp/send-otp",
         {},
         {
           headers: {
@@ -63,7 +63,7 @@ export default function PhoneVerify({ phone, onVerified }) {
     setIsVerifying(true);
     try {
       const response = await axios.post(
-        "http://localhost:2000/eco-market/otp/verify-otp",
+        "  /otp/verify-otp",
         {
           otp: code.trim(),
         },

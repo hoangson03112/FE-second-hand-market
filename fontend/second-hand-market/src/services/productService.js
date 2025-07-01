@@ -22,9 +22,7 @@ const productService = {
     return await ApiService.get(`/users/${userId}/products`);
   },
 
-  createProduct: async (productData) => {
-    return await ApiService.post('/products', productData);
-  },
+
 
   updateProduct: async (id, productData) => {
     return await ApiService.put(`/products/${id}`, productData);

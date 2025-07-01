@@ -332,7 +332,7 @@ const PostProduct = () => {
 
       if (response.message) {
         showSuccess(response.message);
-        navigate("/");
+        // navigate("/");
       }
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm lên:", error);

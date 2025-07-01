@@ -1,15 +1,12 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:2000';
-const BASE_URL = `${API_URL}/eco-market`;
+import axios from "axios";
 
 const ApiService = {
-  // Thiết lập interceptor cho axios
+  // Thiết lập interceptor cho api instance
   setupInterceptors: (token) => {
     axios.interceptors.request.use(
       (config) => {
         if (token) {
-          config.headers['Authorization'] = `Bearer ${token}`;
+          config.headers["Authorization"] = `Bearer ${token}`;
         }
         return config;
       },
@@ -22,7 +19,9 @@ const ApiService = {
   // Các phương thức chung
   get: async (endpoint) => {
     try {
-      const response = await axios.get(`${BASE_URL}${endpoint}`);
+      const response = await axios.get(
+        `${endpoint}`
+      );
       return response.data;
     } catch (error) {
       console.error(`Error fetching data from ${endpoint}:`, error);
@@ -32,7 +31,7 @@ const ApiService = {
 
   post: async (endpoint, data) => {
     try {
-      const response = await axios.post(`${BASE_URL}${endpoint}`, data);
+      const response = await axios.post(`${endpoint}`, data);
       return response.data;
     } catch (error) {
       console.error(`Error posting data to ${endpoint}:`, error);
@@ -42,7 +41,7 @@ const ApiService = {
 
   put: async (endpoint, data) => {
     try {
-      const response = await axios.put(`${BASE_URL}${endpoint}`, data);
+      const response = await axios.put(`${endpoint}`, data);
       return response.data;
     } catch (error) {
       console.error(`Error updating data at ${endpoint}:`, error);
@@ -52,13 +51,13 @@ const ApiService = {
 
   delete: async (endpoint) => {
     try {
-      const response = await axios.delete(`${BASE_URL}${endpoint}`);
+      const response = await axios.delete(`${endpoint}`);
       return response.data;
     } catch (error) {
       console.error(`Error deleting data at ${endpoint}:`, error);
       throw error;
     }
-  }
+  },
 };
 
 export default ApiService;

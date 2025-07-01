@@ -192,8 +192,10 @@ const Header = React.forwardRef((props, ref) => {
                     : "/eco-market/seller/products/create"
                 }
               >
-                <i className="bi bi-plus-circle-fill me-2"></i>
-                <span className={styles.sellText}>Đăng Bán</span>
+                <i className="bi bi-plus-circle-fill me-2 text-white"></i>
+                <span className={styles.sellText} style={{ color: "white" }}>
+                  Đăng Bán
+                </span>
               </Link>
 
               {/* Notification Icon & Menu */}

@@ -67,7 +67,7 @@ const OrderMessage = ({ order }) => {
 
   const handleViewOrder = () => {
     if (orderId) {
-      navigate(`/eco-market/order-details/${orderId}`);
+      navigate(` /order-details/${orderId}`);
     } else {
       console.error("Order ID not found in order object:", order);
     }

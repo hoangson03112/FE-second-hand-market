@@ -29,7 +29,7 @@ export const CartProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:2000/eco-market/cart/add",
+        "  /cart/add",
         {
           productId,
           quantity: quantity + "",
@@ -37,7 +37,7 @@ export const CartProvider = ({ children }) => {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Gửi token trong header
+            Authorization: `Bearer ${token}`, 
           },
         }
       );
@@ -52,15 +52,12 @@ export const CartProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.delete(
-        "http://localhost:2000/eco-market/cart/delete-item",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Gửi token trong header
-          },
-          data: { productIds },
-        }
-      );
+      const response = await axios.delete("  /cart/delete-item", {
+        headers: {
+          Authorization: `Bearer ${token}`, // Gửi token trong header
+        },
+        data: { productIds },
+      });
 
       return response.data;
     } catch (error) {
@@ -72,7 +69,7 @@ export const CartProvider = ({ children }) => {
       const token = localStorage.getItem("token");
 
       const response = await axios.put(
-        "http://localhost:2000/eco-market/cart/update-quantity",
+        "  /cart/update-quantity",
         { productId, quantity },
         {
           headers: {

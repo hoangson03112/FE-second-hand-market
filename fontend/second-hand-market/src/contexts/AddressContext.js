@@ -5,7 +5,7 @@ class AddressContext {
   async createAddress(address) {
     const token = authService.getToken();
     const response = await axios.post(
-      "http://localhost:2000/eco-market/address/create",
+      "  /address/create",
       address,
       {
         headers: {
@@ -18,7 +18,7 @@ class AddressContext {
   async getAddresses() {
     const token = authService.getToken();
     const response = await axios.get(
-      "http://localhost:2000/eco-market/address",
+      "  /address",
       {
         headers: {
           Authorization: `Bearer ${token}`,

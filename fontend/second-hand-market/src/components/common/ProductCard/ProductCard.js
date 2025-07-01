@@ -94,7 +94,7 @@ const ProductCard = ({ product, isLoading = false }) => {
 
   const handleClick = () => {
     if (!isLoading && product?._id) {
-      navigate(`/eco-market/product?productID=${product._id}`);
+      navigate(` /product?productID=${product._id}`);
     }
   };
 

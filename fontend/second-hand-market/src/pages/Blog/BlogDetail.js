@@ -38,7 +38,7 @@ const BlogDetail = () => {
 
   const fetchBlog = async () => {
     try {
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/${id}`);
+      const response = await fetch(` /blogs/${id}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -60,7 +60,7 @@ const BlogDetail = () => {
   // Thêm function riêng để tăng view với error handling tốt hơn
   const incrementView = async () => {
     try {
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/${id}/view`, {
+      const response = await fetch(` /blogs/${id}/view`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +81,7 @@ const BlogDetail = () => {
 
   const fetchRelatedBlogs = async () => {
     try {
-      const response = await fetch('http://localhost:2000/eco-market/blogs?limit=3');
+      const response = await fetch(' /blogs?limit=3');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -100,7 +100,7 @@ const BlogDetail = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/${id}/like`, {
+      const response = await fetch(` /blogs/${id}/like`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

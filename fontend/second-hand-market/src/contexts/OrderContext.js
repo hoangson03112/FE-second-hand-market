@@ -15,7 +15,7 @@ export const OrderProvider = ({ children }) => {
       }
 
       const response = await axios.get(
-        "http://localhost:2000/eco-market/orders/my-orders",
+        "  /orders/my-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -43,7 +43,7 @@ export const OrderProvider = ({ children }) => {
       }
 
       const response = await axios.patch(
-        "http://localhost:2000/eco-market/orders/update",
+        "  /orders/update",
         {
           orderId,
           reason,
@@ -76,7 +76,7 @@ export const OrderProvider = ({ children }) => {
       }
 
       const response = await axios.get(
-        "http://localhost:2000/eco-market/orders",
+        "  /orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,

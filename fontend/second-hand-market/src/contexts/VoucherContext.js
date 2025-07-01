@@ -9,7 +9,7 @@ export const VoucherProvider = ({ children }) => {
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherDiscount, setVoucherDiscount] = useState(0);
 
-  const API_URL = "http://localhost:2000/eco-market/vouchers";
+  const API_URL = "  /vouchers";
 
   // Admin functions
   const createVoucher = async (voucherData) => {

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import theme from './theme/theme';
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import theme from "./theme/theme";
 import { Home } from "./pages/Home/Home";
 import ProductList from "./pages/ProductList/ProductList";
 import Product from "./pages/ProductDetails/Product";
@@ -35,18 +35,16 @@ import ApiService from "./services/ApiService";
 import authService from "./services/authService";
 import OrderDetails from "./pages/OrderDetails/OrderDetails";
 
-import BlogList from './pages/Blog/BlogList';
-import BlogDetail from './pages/Blog/BlogDetail';
+import BlogList from "./pages/Blog/BlogList";
+import BlogDetail from "./pages/Blog/BlogDetail";
 
-import AdminBlogList from './pages/Admin/BlogManagement/AdminBlogList';
-import BlogForm from './pages/Admin/BlogManagement/BlogForm';
-
+import AdminBlogList from "./pages/Admin/BlogManagement/AdminBlogList";
+import BlogForm from "./pages/Admin/BlogManagement/BlogForm";
 
 import VoucherList from "./pages/Voucher/VoucherList";
 import VoucherManagement from "./pages/Admin/VoucherManagement/VoucherManagement";
 import RegisterSeller from "./pages/RegisterSeller/RegisterSeller";
 import SellerManagement from "./pages/Admin/SellerManagement/SellerManagement";
-
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
@@ -248,10 +246,12 @@ function App() {
                         />
                         <Route
                           path="/eco-market/order-details"
-                          element={<Navigate to="/eco-market/customer/orders" />}
+                          element={
+                            <Navigate to="/eco-market/customer/orders" />
+                          }
                         />
 
-                        {/* Blog Routes - Public */}
+           
                         <Route
                           path="/eco-market/blogs"
                           element={

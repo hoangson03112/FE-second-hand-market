@@ -79,7 +79,7 @@ const CategoryCard = ({ category, isLoading = false }) => {
       return imageUrl;
     }
     
-    return `http://localhost:2000${imageUrl}`;
+    return ` ${imageUrl}`;
   };
 
   if (isLoading) {
@@ -94,7 +94,7 @@ const CategoryCard = ({ category, isLoading = false }) => {
   return (
     <StyledCard
       component={Link}
-      to={`/eco-market?categoryID=${category._id}`}
+      to={` ?categoryID=${category._id}`}
     >
       <Box position="relative">
         <CategoryAvatar

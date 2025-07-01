@@ -475,7 +475,7 @@ export const Home = () => {
   ];
 
   useEffect(() => {
-    fetchCategories();
+
     fetchLatestProducts();
 
     const handleScroll = () => {
@@ -495,24 +495,9 @@ export const Home = () => {
     return () => clearInterval(interval);
   }, [sliderImages.length]);
 
-  const handleSliderDotClick = (index) => {
-    setCurrentSlide(index);
-  };
 
-  const fetchCategories = async () => {
-    try {
-      setCategoriesLoading(true);
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/categories"
-      );
-      setCategories(response.data.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setError("Không thể tải danh mục. Vui lòng thử lại sau.");
-    } finally {
-      setCategoriesLoading(false);
-    }
-  };
+
+
 
   const fetchLatestProducts = async () => {
     try {
@@ -533,7 +518,7 @@ export const Home = () => {
 
   const handleRetry = () => {
     setError(null);
-    fetchCategories();
+
     fetchLatestProducts();
   };
 

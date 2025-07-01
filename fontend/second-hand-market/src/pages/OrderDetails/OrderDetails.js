@@ -120,9 +120,7 @@ export default function OrderDetails() {
   const [showToast, setShowToast] = useState(false);
   const fetchOrder = async () => {
     try {
-      const respone = await axios.get(
-        `http://localhost:2000/eco-market/orders/order-details/${orderId}`
-      );
+      const respone = await axios.get(` /orders/order-details/${orderId}`);
 
       setOrder(respone.data.order);
       setLoading(false);
@@ -257,7 +255,7 @@ export default function OrderDetails() {
         </div>
         <button
           className="btn btn-primary mt-3"
-          onClick={() => navigate("/eco-market/orders")}
+          onClick={() => navigate("/eco-market/customer/orders")}
         >
           Quay lại danh sách đơn hàng
         </button>
@@ -272,7 +270,7 @@ export default function OrderDetails() {
         <Button
           variant="outlined"
           startIcon={<ReceiptLong />}
-          onClick={() => navigate("/eco-market/orders")}
+          onClick={() => navigate("/eco-market/customer/orders")}
         >
           Danh sách đơn hàng
         </Button>

@@ -74,6 +74,7 @@ export const Product = () => {
   useEffect(() => {
     const fetchAccount = async (accountId) => {
       try {
+
         const response = await AccountContext.getAccount(accountId);
         console.log(response);
 

@@ -9,9 +9,7 @@ export const CategoryProvider = ({ children }) => {
   // Các phương thức API
   const getCategories = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/categories"
-      );
+      const response = await axios.get("/categories");
       const categories = response.data.data;
       return categories;
     } catch (error) {
@@ -22,13 +20,9 @@ export const CategoryProvider = ({ children }) => {
 
   const getCategory = async (categoryID) => {
     try {
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/categories/details",
-        {
-          params: { categoryID },
-        }
-      );
-      console.log(response.data);
+      const response = await axios.get(" /categories/details", {
+        params: { categoryID },
+      });
 
       const category = response.data.data;
       return category;
@@ -41,7 +35,7 @@ export const CategoryProvider = ({ children }) => {
   const updateCategory = async (categoryID, data) => {
     try {
       const response = await axios.put(
-        `http://localhost:2000/eco-market/categories/update?categoryID=${categoryID}`,
+        ` /eco-market/categories/update?categoryID=${categoryID}`,
         {
           data,
         }

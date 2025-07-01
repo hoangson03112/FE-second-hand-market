@@ -26,7 +26,7 @@ const ProductMessage = ({ product }) => {
         try {
           const productId = product._id || product.id;
           const response = await axios.get(
-            `http://localhost:2000/eco-market/products/${productId}`,
+            `  /products/${productId}`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -56,7 +56,7 @@ const ProductMessage = ({ product }) => {
     const productId = displayProduct._id || displayProduct.id;
 
     if (productId) {
-      navigate(`/eco-market/product?productID=${productId}`);
+      navigate(` /product?productID=${productId}`);
     } else {
       console.error("Product ID not found in product object:", displayProduct);
     }

@@ -15,12 +15,14 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "antd": "^5.24.1",
     "axios": "^1.7.4",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
+    "crypto-js": "^4.2.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.4.7",
     "framer-motion": "^12.18.1",
+    "http-proxy-middleware": "^3.0.5",
     "lucide-react": "^0.436.0",
     "mitt": "^3.0.1",
     "moment": "^2.30.1",
@@ -44,6 +46,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "start:http": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -69,8 +72,7 @@
   "devDependencies": {
     "ajv": "^7.2.4",
     "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^4.1.6"
+    "postcss": "^8.5.3"
   },
-  "proxy": "http://localhost:2000/eco-market"
+  "proxy": "https://localhost:2000/eco-market"
 }

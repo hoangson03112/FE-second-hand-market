@@ -30,7 +30,7 @@ class SellerContext {
                 formData.append('idCardBack', sellerInfo.idCardBack);
             }
             
-            const response = await axios.post('http://localhost:2000/eco-market/sellers/register', formData, {
+            const response = await axios.post('  /sellers/register', formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

@@ -101,21 +101,21 @@ export const Product = () => {
     product?.subcategory?.name,
     product?.attributes,
   ]);
-  useEffect(() => {
-    const fetchAccount = async (accountId) => {
-      try {
-        const response = await AccountContext.getAccount(accountId);
-        setAccount(response);
-      } catch (error) {
-        console.error("Error fetching account:", error);
-        setError("Error fetching account");
-      }
-    };
+  const fetchAccount = useCallback(async (accountId) => {
+    try {
+      const response = await AccountContext.getAccount(accountId);
 
+      setAccount(response);
+    } catch (error) {
+      console.error("Error fetching account:", error);
+      setError("Error fetching account");
+    }
+  }, []);
+  useEffect(() => {
     const fetchProduct = async () => {
       try {
         const productData = await getProduct(productID);
-        fetchAccount(productData.sellerId);
+        fetchAccount(productData.seller._id);
         setProduct(productData);
         setMainImage(productData.avatar);
         // Loại bỏ logic push vào attributesOfProduct vì đã được xử lý trong useMemo
@@ -192,7 +192,7 @@ export const Product = () => {
       }
 
       const response = await findOrCreateWithProduct(productID, account._id);
-      console.log(response);
+
       if (!response || !response.success) {
         console.error("Failed to create chat conversation:", response);
         alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");

@@ -44,7 +44,7 @@ import VideoMessage from "./MessageTypes/VideoMessage";
 import FileMessage from "./MessageTypes/FileMessage";
 import OrderMessage from "./MessageTypes/OrderMessage";
 import DeleteConfirm from "./DeleteConfirm/DeleteConfirm";
-import ProductMessage from './MessageTypes/ProductMessage';
+import ProductMessage from "./MessageTypes/ProductMessage";
 
 // Socket connection với cấu hình tối ưu
 let socket = null;
@@ -54,7 +54,7 @@ const initializeSocket = () => {
     return socket;
   }
 
-  socket = io("http://localhost:2000", {
+  socket = io("https://localhost:2000", {
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
     timeout: 20000,
@@ -496,21 +496,21 @@ const MessageBubble = styled(Box)(({ theme, sender, isAI }) => ({
   background: isAI
     ? "rgba(50, 65, 85, 0.03)"
     : sender === "me"
-      ? "#324155"
-      : "rgba(255, 255, 255, 0.8)",
+    ? "#324155"
+    : "rgba(255, 255, 255, 0.8)",
   color: isAI ? "#324155" : sender === "me" ? "#ffffff" : "#324155",
   alignSelf: sender === "me" ? "flex-end" : "flex-start",
   wordBreak: "break-word",
   boxShadow: isAI
     ? "0 1px 3px rgba(0, 0, 0, 0.04)"
     : sender === "me"
-      ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-      : "0 1px 3px rgba(0, 0, 0, 0.03)",
+    ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+    : "0 1px 3px rgba(0, 0, 0, 0.03)",
   border: isAI
     ? "1px solid rgba(230, 230, 230, 0.7)"
     : sender === "me"
-      ? "none"
-      : "1px solid rgba(230, 230, 230, 0.6)",
+    ? "none"
+    : "1px solid rgba(230, 230, 230, 0.6)",
   backdropFilter: isAI || sender !== "me" ? "blur(8px)" : "none",
   animation:
     sender === "me"
@@ -527,8 +527,8 @@ const MessageBubble = styled(Box)(({ theme, sender, isAI }) => ({
     boxShadow: isAI
       ? "0 2px 8px rgba(0, 0, 0, 0.06)"
       : sender === "me"
-        ? "0 3px 10px rgba(0, 0, 0, 0.12)"
-        : "0 2px 8px rgba(0, 0, 0, 0.04)",
+      ? "0 3px 10px rgba(0, 0, 0, 0.12)"
+      : "0 2px 8px rgba(0, 0, 0, 0.04)",
     transform: "translateY(-1px)",
   },
 }));
@@ -666,14 +666,11 @@ export const ChatBox = () => {
   useEffect(() => {
     const fetchChatPartners = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:2000/eco-market/chat/conversations",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        const response = await axios.get("/chat/conversations", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
         if (response.data.success) {
           setChatPartners(response.data.data);
@@ -778,7 +775,7 @@ export const ChatBox = () => {
       try {
         const token = localStorage.getItem("token");
         const data = await axios.post(
-          "http://localhost:2000/eco-market/chat/send-message-with-AI",
+          "/chat/send-message-with-AI",
           {
             message: userMessage,
           },
@@ -876,16 +873,12 @@ export const ChatBox = () => {
         formData.append("tempMsgId", tempMsgId);
         formData.append("text", message.trim());
 
-        await axios.post(
-          "http://localhost:2000/eco-market/chat/upload-and-send",
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        await axios.post("  /chat/upload-and-send", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
         setTimeout(scrollToBottom, 100);
       } else {
@@ -901,7 +894,7 @@ export const ChatBox = () => {
           console.log("🚀 Sending via Socket with conversationId:", newMsg);
           await socket.emit("send-message", newMsg);
           await axios.post(
-            "http://localhost:2000/eco-market/chat/optimized/send",
+            "  /chat/optimized/send",
             {
               conversationId: currentConversationId,
               text: message.trim(),
@@ -946,7 +939,6 @@ export const ChatBox = () => {
     }
 
     if (!socket.connected) {
- 
       socket.connect();
     }
 
@@ -988,10 +980,8 @@ export const ChatBox = () => {
       if (error.error === "Invalid message ID format" && error.messageId) {
         // Check for different message ID formats
         if (error.messageId.startsWith("temp-")) {
-
           return;
         } else if (error.messageId.startsWith("ai-")) {
-
           return;
         } else if (error.messageId.startsWith("user-")) {
           console.log(
@@ -1112,14 +1102,11 @@ export const ChatBox = () => {
 
   const fetchChatHistoryAI = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:2000/eco-market/chat/ai/messages`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.get(`  /chat/ai/messages`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       const processedMessages = response.data.data.map((message) => {
         const media = message.media || [];
@@ -1159,7 +1146,7 @@ export const ChatBox = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(
-        `http://localhost:2000/eco-market/chat/optimized/messages/${receiver}?page=${page}&limit=50`,
+        `  /chat/optimized/messages/${receiver}?page=${page}&limit=50`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1501,7 +1488,7 @@ export const ChatBox = () => {
           lastMessageType: lastMessageType,
           unread:
             account?.accountID === msg.receiverId &&
-              msg.senderId !== account?.accountID
+            msg.senderId !== account?.accountID
               ? (newPartners[partnerIndex].unread || 0) + 1
               : newPartners[partnerIndex].unread || 0,
         };
@@ -1552,7 +1539,7 @@ export const ChatBox = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:2000/eco-market/chat/messages/${messageToDelete}`,
+        `  /chat/messages/${messageToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1614,7 +1601,10 @@ export const ChatBox = () => {
       // Nếu là tin nhắn từ AI, có thể dùng AIMessage hoặc render đặc biệt
       // (Nếu bạn có AIMessage thì dùng, nếu không thì render text bình thường)
       return (
-        <Typography variant="body2" sx={{ wordBreak: "break-word", color: "#324155", fontWeight: 400 }}>
+        <Typography
+          variant="body2"
+          sx={{ wordBreak: "break-word", color: "#324155", fontWeight: 400 }}
+        >
           {message.text}
         </Typography>
       );
@@ -1632,7 +1622,9 @@ export const ChatBox = () => {
         name: message.text || "Sản phẩm được chia sẻ",
         price: "",
         image:
-          message.media && message.media.length > 0 ? message.media[0].url : null,
+          message.media && message.media.length > 0
+            ? message.media[0].url
+            : null,
       };
 
       return <ProductMessage product={productData} />;
@@ -1734,8 +1726,8 @@ export const ChatBox = () => {
                           connectionStatus === "connected"
                             ? "#4a9f82"
                             : connectionStatus === "reconnecting"
-                              ? "#f0b775"
-                              : "#e57373",
+                            ? "#f0b775"
+                            : "#e57373",
                         animation:
                           connectionStatus === "reconnecting"
                             ? `${pulse} 1.5s infinite`
@@ -1744,8 +1736,8 @@ export const ChatBox = () => {
                           connectionStatus === "connected"
                             ? "0 0 6px rgba(74, 159, 130, 0.4)"
                             : connectionStatus === "reconnecting"
-                              ? "0 0 6px rgba(240, 183, 117, 0.4)"
-                              : "0 0 6px rgba(229, 115, 115, 0.4)",
+                            ? "0 0 6px rgba(240, 183, 117, 0.4)"
+                            : "0 0 6px rgba(229, 115, 115, 0.4)",
                       }}
                     />
                   </Box>
@@ -1819,7 +1811,7 @@ export const ChatBox = () => {
 
                       {/* AI Assistant chat button */}
                       <ChatCardItem
-                        avatar="https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+                        avatar="http://cdn-icons-png.flaticon.com/512/4712/4712027.png"
                         name="Chăm sóc khách hàng"
                         subtitle="Hỗ trợ, giải đáp và tìm kiếm sản phẩm"
                         chipLabel="Hỗ trợ"
@@ -1835,7 +1827,7 @@ export const ChatBox = () => {
                             _id: "ai-assistant",
                             name: "Chăm sóc khách hàng",
                             avatar:
-                              "https://cdn-icons-png.flaticon.com/512/4712/4712027.png",
+                              "http://cdn-icons-png.flaticon.com/512/4712/4712027.png",
                             isAI: true,
                           });
                           setMessages([
@@ -2000,9 +1992,9 @@ export const ChatBox = () => {
                             if (
                               index === 0 ||
                               messageDate !==
-                              new Date(
-                                array[index - 1].createdAt
-                              ).toLocaleDateString()
+                                new Date(
+                                  array[index - 1].createdAt
+                                ).toLocaleDateString()
                             ) {
                               result.push(
                                 <DateDivider key={`date-${message._id}`}>
@@ -2035,12 +2027,12 @@ export const ChatBox = () => {
                                         isAI
                                           ? "https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
                                           : message.senderAvatar ||
-                                          "https://i.pravatar.cc/150?img=3"
+                                            "https://i.pravatar.cc/150?img=3"
                                       }
                                       sx={{ mr: 1 }}
                                       isonline={
                                         isAI ||
-                                          onlineUsers.includes(message.senderId)
+                                        onlineUsers.includes(message.senderId)
                                           ? "true"
                                           : "false"
                                       }

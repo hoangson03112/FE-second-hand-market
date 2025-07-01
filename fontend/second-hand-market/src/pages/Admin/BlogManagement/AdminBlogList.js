@@ -34,7 +34,7 @@ const AdminBlogList = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/admin/all?page=${page}&status=${statusFilter}`, {
+      const response = await fetch(` /blogs/admin/all?page=${page}&status=${statusFilter}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -50,7 +50,7 @@ const AdminBlogList = () => {
   const handleDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:2000/eco-market/blogs/${deleteDialog.blog._id}`, {
+      await fetch(` /blogs/${deleteDialog.blog._id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -65,7 +65,7 @@ const AdminBlogList = () => {
   const handleStatusChange = async (blogId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:2000/eco-market/blogs/${blogId}/status`, {
+      await fetch(` /blogs/${blogId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

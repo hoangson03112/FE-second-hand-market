@@ -32,7 +32,7 @@ const BlogForm = () => {
 
   const fetchBlog = async () => {
     try {
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/${id}`);
+      const response = await fetch(` /blogs/${id}`);
       const data = await response.json();
       setFormData({
         title: data.blog.title,
@@ -81,7 +81,7 @@ const BlogForm = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const url = isEdit ? `http://localhost:2000/eco-market/blogs/${id}` : 'http://localhost:2000/eco-market/blogs';
+      const url = isEdit ? ` /blogs/${id}` : ' /blogs';
       const method = isEdit ? 'PUT' : 'POST';
 
       const response = await fetch(url, {

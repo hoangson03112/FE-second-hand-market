@@ -9,13 +9,9 @@ export const ProductProvider = ({ children }) => {
   // Các phương thức API
   const getProduct = async (productID) => {
     try {
-      console.log(productID);
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/products/details",
-        {
-          params: { productID },
-        }
-      );
+      const response = await axios.get("/products/details", {
+        params: { productID },
+      });
 
       return response.data.data;
     } catch (error) {
@@ -26,9 +22,7 @@ export const ProductProvider = ({ children }) => {
 
   const getProducts = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/products"
-      );
+      const response = await axios.get("/products");
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product:", error);
@@ -38,20 +32,16 @@ export const ProductProvider = ({ children }) => {
 
   const getProductsByUser = async () => {
     const token = localStorage.getItem("token");
-    const response = await axios.get(
-      "http://localhost:2000/eco-market/products/by-user",
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const response = await axios.get("/products/by-user", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return response.data.data;
   };
   const getProductList = async (categoryID, subcategoryID) => {
     try {
-      const response = await axios.get(
-        "http://localhost:2000/eco-market/products/by-category",
-        {
-          params: { categoryID, subcategoryID },
-        }
-      );
+      const response = await axios.get("/products/by-category", {
+        params: { categoryID, subcategoryID },
+      });
       if (response.data) {
         return response.data.data;
       } else {
@@ -107,7 +97,7 @@ export const ProductProvider = ({ children }) => {
       }
 
       const response = await axios.post(
-        "http://localhost:2000/eco-market/products/create",
+        "/products/create",
         requestData,
         config
       );
@@ -134,7 +124,7 @@ export const ProductProvider = ({ children }) => {
   const updateProductStatus = async (slug, status) => {
     const token = localStorage.getItem("token");
     const response = await axios.patch(
-      "http://localhost:2000/eco-market/products/update-status",
+      "/products/update-status",
       {
         slug,
         status,
@@ -151,14 +141,11 @@ export const ProductProvider = ({ children }) => {
 
   const deleteProduct = async (productId) => {
     const token = localStorage.getItem("token");
-    const response = await axios.delete(
-      `http://localhost:2000/eco-market/products/${productId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.delete(`/products/${productId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return response.data;
   };

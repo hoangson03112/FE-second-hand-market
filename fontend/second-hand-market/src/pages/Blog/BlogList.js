@@ -23,7 +23,7 @@ const BlogList = () => {
     setLoading(true);
      setError(null);
     try {
-      let url = `http://localhost:2000/eco-market/blogs?page=${currentPage}&limit=6`;
+      let url = ` /blogs?page=${currentPage}&limit=6`;
       if (selectedTag) {
         url += `&tag=${selectedTag}`;
       }
@@ -52,7 +52,7 @@ const BlogList = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:2000/eco-market/blogs/search/${searchKeyword}?page=1&limit=6`);
+      const response = await fetch(` /blogs/search/${searchKeyword}?page=1&limit=6`);
       const data = await response.json();
       setBlogs(data.blogs);
       setTotalPages(data.totalPages);

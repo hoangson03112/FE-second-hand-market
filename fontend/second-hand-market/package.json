@@ -72,5 +72,5 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.6"
   },
-  "proxy": "http://localhost:2000/eco-market"
+  "proxy": "https://localhost:2000/eco-market"
 }

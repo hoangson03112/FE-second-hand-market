@@ -10,6 +10,7 @@ import AddressContext from "../../contexts/AddressContext";
 import { useAuth } from "../../contexts/AuthContext";
 import AccountContext from "../../contexts/AccountContext";
 import VoucherSelector from "../../pages/Voucher/VoucherSelector";
+import { useCoin } from "../../contexts/CoinProvider";
 const Checkout = () => {
   const { getProduct } = useProduct();
   const { deleteItem } = useCart();
@@ -43,6 +44,9 @@ const Checkout = () => {
   const [voucherDiscount, setVoucherDiscount] = useState(0);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
 
+  const [useCoins, setUseCoins] = useState(false);
+const { balance, useCoins: coinService } = useCoin();
+
   // States for location suggestions
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -75,6 +79,7 @@ const Checkout = () => {
         console.error(error);
       }
     };
+    
 
     const fetchAddresses = async () => {
       const addresses = await AddressContext.getAddresses();
@@ -180,6 +185,13 @@ const Checkout = () => {
     fetchWards();
   }, [newAddress.district, districts]);
 
+    const getCoinDiscount = () => {
+    if (!useCoins || balance <= 0) return 0;
+    const maxDiscount = getTotalAmount() * 0.3; // Max 30% of total
+    return Math.min(balance, maxDiscount);
+  };
+  
+
   // Calculate shipping fee and payment amounts when dependencies change
   useEffect(() => {
     const fee = calculateShippingFee(shippingMethod, selectedAddress);
@@ -195,7 +207,9 @@ const Checkout = () => {
   };
 
   const getFinalAmount = () => {
-    return Math.max(0, getTotalAmount() - voucherDiscount);
+    const total = getTotalAmount();
+    const coinDiscount = getCoinDiscount();
+    return Math.max(0, total - voucherDiscount - coinDiscount);
   };
 
   const calculateShippingFee = (method, address) => {
@@ -267,6 +281,7 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+     const coinDiscount = getCoinDiscount();
     const orderData = {
       products: selectedItems.map((item) => ({
         productId: item._id,
@@ -285,6 +300,13 @@ const Checkout = () => {
         navigate("/login");
         return;
       }
+
+         if (useCoins && coinDiscount > 0) {
+      const coinResult = await coinService(coinDiscount);
+      if (coinResult.status !== "success") {
+        throw new Error(coinResult.message || "Không thể sử dụng xu");
+      }
+    }
 
       const productsData = await Promise.all(
         orderData.products.map((product) => getProduct(product.productId))
@@ -998,6 +1020,32 @@ const Checkout = () => {
           background: rgba(34, 197, 94, 0.2);
           border: 1px solid rgba(34, 197, 94, 0.5);
         }
+           .coin-section {
+    background: linear-gradient(135deg, #f6e05e 0%, #d69e2e 100%);
+    border-radius: 12px;
+    color: #1a202c;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .coin-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+    transform: rotate(45deg);
+  }
+  .coin-switch .form-check-input:checked {
+    background-color: #d69e2e;
+    border-color: #d69e2e;
+  }
+  .coin-switch .form-check-label {
+    font-weight: 600;
+  }
+        }
 
         /* Payment Options Styling */
         .payment-option {
@@ -1662,6 +1710,31 @@ const Checkout = () => {
               </span>
             </div>
 
+              {balance > 0 && (
+      <div className="mb-3">
+        <Form.Check
+          type="switch"
+          id="use-coins-switch"
+          label={`Sử dụng xu (Bạn có ${balance.toLocaleString()} xu)`}
+          checked={useCoins}
+          onChange={(e) => setUseCoins(e.target.checked)}
+        />
+        {useCoins && (
+          <div className="mt-2 text-success">
+            <i className="bi bi-coin me-1"></i>
+            Được giảm: {getCoinDiscount().toLocaleString()}₫ (
+            {Math.min(balance, getTotalAmount() * 0.3).toLocaleString()} xu)
+          </div>
+        )}
+      </div>
+    )}
+
+
+          <div className="d-flex justify-content-between mb-2 fw-bold">
+            <span>Tổng thanh toán</span>
+            <span className="text-danger">
+              {getFinalAmount().toLocaleString()}₫
+            </span>
             {shippingMethod !== "direct" && (
               <div className="summary-row">
                 <span>Phí vận chuyển</span>
@@ -1730,6 +1803,7 @@ const Checkout = () => {
         </div>
       </div>
     </div>
+     </div>
   );
 };
 

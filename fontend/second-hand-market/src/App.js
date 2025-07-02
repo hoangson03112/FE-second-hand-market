@@ -13,6 +13,7 @@ import Checkout from "./components/Checkout/Checkout";
 import MyOrder from "./pages/Order/MyOrder";
 import PostProduct from "./pages/PostProduct/PostProduct";
 import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
+import LayoutSeller from "./components/LayoutSeller/LayoutSeller";
 import DashBoard from "./pages/DashBoard/DashBoard";
 import CategoryManagement from "./pages/Admin/CategoryManagement/CategoryManagement";
 import ProductManagement from "./pages/Admin/ProductManagement/ProductManagement";
@@ -20,7 +21,15 @@ import UserProfile from "./pages/UserProfile/UserProfile";
 import UserManagement from "./pages/Admin/ManageUser/ManageUser";
 import OrderManage from "./pages/Admin/OrderManage/OrderManage";
 
+import SellerDashboard from "./pages/Seller/SellerDashboard";
+import SellerProducts from "./pages/Seller/SellerProducts";
+import SellerOrders from "./pages/Seller/SellerOrders";
+import SellerVouchers from "./pages/Seller/SellerVouchers";
+import SellerAnalytics from "./pages/Seller/SellerAnalytics";
+
+
 import { AuthProvider } from "./contexts/AuthContext";
+import { CoinProvider } from "./contexts/CoinProvider";
 import { CartProvider } from "./contexts/CartContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { ProductProvider } from "./contexts/ProductContext";
@@ -54,9 +63,11 @@ if (token) {
 
 function App() {
   return (
+ 
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
+        <CoinProvider>
         <CartProvider>
           <ProductProvider>
             <CategoryProvider>
@@ -261,30 +272,76 @@ function App() {
                           }
                         />
 
-                        <Route
-                          path="/eco-market/blogs/:id"
-                          element={
-                            <Layout>
-                              <BlogDetail />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/seller/register"
-                          element={
-                            <Layout>
-                              <PostProduct />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/seller/products/create"
-                          element={
-                            <Layout>
-                              <PostProduct />
-                            </Layout>
-                          }
-                        />
+                      <Route
+                        path="/eco-market/blogs/:id"
+                        element={
+                          <Layout>
+                            <BlogDetail />
+                          </Layout>
+                        }
+                      />
+
+                              {/* Seller Routes */}
+                    <Route
+                      path="/eco-market/seller"
+                      element={
+                        <LayoutSeller>
+                          <SellerDashboard />
+                        </LayoutSeller>
+                      }
+                    />
+                      <Route
+                        path="/eco-market/seller/register"
+                        element={
+                          <Layout>
+                            <PostProduct />
+                          </Layout>
+                        }
+                      />
+                      <Route
+                        path="/eco-market/seller/products/create"
+                        element={
+                          <Layout>
+                            <PostProduct />
+                          </Layout>
+                        }
+                      />
+
+          
+                    <Route
+                      path="/eco-market/seller/products"
+                      element={
+                        <LayoutSeller>
+                          <SellerProducts />
+                        </LayoutSeller>
+                      }
+                    />
+                    <Route
+                      path="/eco-market/seller/orders"
+                      element={
+                        <LayoutSeller>
+                          <SellerOrders />
+                        </LayoutSeller>
+                      }
+                    />
+                    <Route
+                      path="/eco-market/seller/vouchers"
+                      element={
+                        <LayoutSeller>
+                          <SellerVouchers />
+                        </LayoutSeller>
+                      }
+                    />
+                    {/* <Route
+                      path="/eco-market/seller/analytics"
+                      element={
+                        <LayoutSeller>
+                          <SellerAnalytics />
+                        </LayoutSeller>
+                      }
+                    /> */}
+
+                    
                       </Routes>
                     </BrowserRouter>
                   </ChatProvider>
@@ -293,6 +350,7 @@ function App() {
             </CategoryProvider>
           </ProductProvider>
         </CartProvider>
+         </CoinProvider>
       </AuthProvider>
     </ThemeProvider>
   );

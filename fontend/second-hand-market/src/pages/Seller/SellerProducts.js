@@ -61,7 +61,7 @@ const SellerProducts = () => {
 
   const statusConfig = {
     pending: { color: 'warning', label: 'Chờ duyệt', bgColor: '#fff3e0' },
-    active: { color: 'success', label: 'Đang bán', bgColor: '#e8f5e8' },
+    approved: { color: 'success', label: 'Đang bán', bgColor: '#e8f5e8' },
     inactive: { color: 'default', label: 'Ngừng', bgColor: '#f5f5f5' },
     sold: { color: 'info', label: 'Hết hàng', bgColor: '#e3f2fd' }
   };
@@ -119,9 +119,9 @@ const SellerProducts = () => {
 
   const getStats = () => {
     const total = products.length;
-    const active = products.filter(p => p.status === 'active').length;
+    const approved = products.filter(p => p.status === 'approved').length;
     const sold = products.reduce((sum, p) => sum + (p.soldCount || 0), 0);
-    return { total, active, sold };
+    return { total, approved, sold };
   };
 
   const stats = getStats();
@@ -187,7 +187,7 @@ const SellerProducts = () => {
           >
             <MenuItem value="all">Tất cả</MenuItem>
             <MenuItem value="pending">Chờ duyệt</MenuItem>
-            <MenuItem value="active">Đang bán</MenuItem>
+            <MenuItem value="approved">Đang bán</MenuItem>
             <MenuItem value="inactive">Ngừng bán</MenuItem>
             <MenuItem value="sold">Hết hàng</MenuItem>
           </TextField>

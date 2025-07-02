@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -60,7 +59,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
 
   const statusOptions = [
     { value: 'pending', label: 'Chờ duyệt', color: 'warning' },
-    { value: 'active', label: 'Đang bán', color: 'success' },
+    { value: 'approved', label: 'Đã duyệt', color: 'success' },
     { value: 'inactive', label: 'Ngừng bán', color: 'default' },
     { value: 'sold', label: 'Hết hàng', color: 'info' }
   ];
@@ -182,50 +181,49 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
     return '';
   };
 
-// Trong handleSubmit
-const handleSubmit = async () => {
-  const validationError = validateForm();
-  if (validationError) {
-    setError(validationError);
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError('');
-
-    const updateData = new FormData();
-    
-    // Thêm các trường dữ liệu cơ bản
-    Object.keys(formData).forEach(key => {
-      updateData.append(key, formData[key]);
-    });
-
-    // Xử lý avatar
-    if (avatarFile) {
-      updateData.append('avatar', avatarFile);
-    } else if (!avatarPreview && product.avatar) {
-      // Nếu người dùng xóa avatar mà không thêm mới
-      updateData.append('removeAvatar', 'true');
+  const handleSubmit = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
     }
 
-    // Xử lý ảnh bổ sung
-    imageFiles.forEach(file => {
-      updateData.append('newImages', file);
-    });
+    try {
+      setLoading(true);
+      setError('');
 
-    // Gửi danh sách ảnh hiện tại cần giữ lại
-    updateData.append('existingImages', JSON.stringify(existingImages));
+      const updateData = new FormData();
+      
+      // Thêm các trường dữ liệu cơ bản
+      Object.keys(formData).forEach(key => {
+        updateData.append(key, formData[key]);
+      });
 
-    await SellerApi.updateProduct(product._id, updateData);
-    onSuccess?.();
-    handleClose();
-  } catch (err) {
-    setError(err.message || 'Có lỗi xảy ra khi cập nhật sản phẩm');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Xử lý avatar
+      if (avatarFile) {
+        updateData.append('avatar', avatarFile);
+      } else if (!avatarPreview && product.avatar) {
+        // Nếu người dùng xóa avatar mà không thêm mới
+        updateData.append('removeAvatar', 'true');
+      }
+
+      // Xử lý ảnh bổ sung
+      imageFiles.forEach(file => {
+        updateData.append('newImages', file);
+      });
+
+      // Gửi danh sách ảnh hiện tại cần giữ lại
+      updateData.append('existingImages', JSON.stringify(existingImages));
+
+      await SellerApi.updateProduct(product._id, updateData);
+      onSuccess?.();
+      handleClose();
+    } catch (err) {
+      setError(err.message || 'Có lỗi xảy ra khi cập nhật sản phẩm');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClose = () => {
     // Reset form
@@ -250,6 +248,14 @@ const handleSubmit = async () => {
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+  };
+
+  // Get available status options based on current status
+  const getAvailableStatusOptions = () => {
+    if (product?.status === 'approved') {
+      return statusOptions.filter(option => option.value !== 'approved');
+    }
+    return statusOptions.filter(option => option.value !== 'approved');
   };
 
   return (
@@ -372,7 +378,7 @@ const handleSubmit = async () => {
                     />
                   )}
                 >
-                  {statusOptions.map((option) => (
+                  {getAvailableStatusOptions().map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       <Chip
                         label={option.label}
@@ -382,6 +388,11 @@ const handleSubmit = async () => {
                     </MenuItem>
                   ))}
                 </Select>
+                {product?.status === 'approved' && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                    Sản phẩm đã được duyệt, không thể thay đổi trạng thái này
+                  </Typography>
+                )}
               </FormControl>
 
               {/* Description */}
@@ -482,7 +493,7 @@ const handleSubmit = async () => {
                   </Box>
                 )}
 
-                {/* New Images - FIX: Show previews of new images */}
+                {/* New Images */}
                 {imagePreviews.length > 0 && (
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="caption" color="text.secondary" gutterBottom>

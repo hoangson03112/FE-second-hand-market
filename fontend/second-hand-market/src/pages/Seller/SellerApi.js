@@ -2,7 +2,7 @@ import axios from "axios";
 
 class SellerApi {
   constructor() {
-    this.baseURL = "http://localhost:2000/eco-market";
+    this.baseURL = "/products";
   }
 
   // Get token from localStorage
@@ -14,7 +14,7 @@ class SellerApi {
   // Get all products of the seller
   async getMyProducts() {
     try {
-      const response = await axios.get(`${this.baseURL}/products/my-products`, {
+      const response = await axios.get(`${this.baseURL}/my-products2`, {
         headers: this.getAuthHeader(),
       });
       return response.data;
@@ -29,7 +29,7 @@ class SellerApi {
   // Get products by user (alternative endpoint)
   async getProductsByUser() {
     try {
-      const response = await axios.get(`${this.baseURL}/products/by-user`, {
+      const response = await axios.get(`${this.baseURL}/by-user`, {
         headers: this.getAuthHeader(),
       });
       return response.data;
@@ -66,7 +66,7 @@ class SellerApi {
       }
 
       const response = await axios.post(
-        `${this.baseURL}/products/create`,
+        `${this.baseURL}/create`,
         formData,
         {
           headers: {
@@ -88,7 +88,7 @@ class SellerApi {
   async updateProductStatus(slug, status) {
     try {
       const response = await axios.patch(
-        `${this.baseURL}/products/update-status`,
+        `${this.baseURL}/update-status`,
         { slug, status },
         {
           headers: this.getAuthHeader(),
@@ -107,7 +107,7 @@ class SellerApi {
   async deleteProduct(productId) {
     try {
       const response = await axios.delete(
-        `${this.baseURL}/products/${productId}`,
+        `${this.baseURL}/${productId}`,
         {
           headers: this.getAuthHeader(),
         }
@@ -125,7 +125,7 @@ class SellerApi {
   async getProductDetails(productID) {
     try {
       const response = await axios.get(
-        `${this.baseURL}/products/details?productID=${productID}`
+        `${this.baseURL}/details?productID=${productID}`
       );
       return response.data;
     } catch (error) {
@@ -139,7 +139,7 @@ class SellerApi {
   async updateProduct(productId, formData) {
   try {
     const response = await axios.put(
-      `${this.baseURL}/products/${productId}`,
+      `${this.baseURL}/${productId}`,
       formData,
       {
         headers: {

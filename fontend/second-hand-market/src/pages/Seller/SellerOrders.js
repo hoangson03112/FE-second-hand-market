@@ -147,7 +147,7 @@ const SellerOrders = () => {
       }
 
       const response = await axios.get(
-        'http://localhost:2000/eco-market/orders/my-seller-orders',
+        '/orders/my-seller-orders',
         {
           headers: {
             'Authorization': `Bearer ${token}`,

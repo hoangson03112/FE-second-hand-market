@@ -9,7 +9,7 @@ const coinService = {
       }
 
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/coins/check-in",
+        "/coins/check-in",
         {},
         {
           headers: {
@@ -35,7 +35,7 @@ const coinService = {
       }
 
       const { data } = await axios.get(
-        "http://localhost:2000/eco-market/coins/balance",
+        "/coins/balance",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,7 +58,7 @@ const coinService = {
       }
 
       const { data } = await axios.post(
-        "http://localhost:2000/eco-market/coins/use",
+        "/coins/use",
         { amount },
         {
           headers: {

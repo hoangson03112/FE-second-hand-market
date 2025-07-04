@@ -676,8 +676,8 @@ const { isAuthenticated } = useAuth();
     onClick={() => setShowCheckInModal(true)}
     style={{
       position: "fixed",
-      top: "75%",
-      right: "70px", 
+      top: "72%",
+      right: "85px", 
       transform: "translateY(-50%)", 
       zIndex: 1000,
       borderRadius: "50%",

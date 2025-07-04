@@ -59,11 +59,12 @@ import {
   StarOutlined,
 } from "@mui/icons-material";
 import axios from "axios";
-import CheckInModal from "../../components/Checkin/CheckInModal";
-import { useAuth } from "../../contexts/AuthContext";
 import productService from "../../services/productService";
 import ProductCard from "../../components/common/ProductCard/ProductCard";
 import CategoryCard from "../../components/common/CategoryCard/CategoryCard";
+
+import CheckInModal from "../../components/Checkin/CheckInModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Enhanced Styled Components with Keyframes
 const HeroSection = styled(Box)(({ theme }) => ({
@@ -374,11 +375,11 @@ export const Home = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [productsLoading, setProductsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-      const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const { isAuthenticated } = useAuth();
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+const { isAuthenticated } = useAuth();
 
   // Slider images data
   const sliderImages = [
@@ -668,14 +669,15 @@ export const Home = () => {
   ];
 
   return (
-    <div className="home-page">
-           {isAuthenticated && (
-         <button
+    <Box>
+
+      {isAuthenticated && (
+  <button
     onClick={() => setShowCheckInModal(true)}
     style={{
       position: "fixed",
-      top: "72%",
-      right: "85px", 
+      top: "75%",
+      right: "70px", 
       transform: "translateY(-50%)", 
       zIndex: 1000,
       borderRadius: "50%",
@@ -694,105 +696,7 @@ export const Home = () => {
   >
     <i className="bi bi-coin" style={{ fontSize: "1.5rem" }}></i>
   </button>
-      )}
-      {/* Floating Background Elements */}
-      <div className="floating-elements">
-        <div className="floating-element"></div>
-        <div className="floating-element"></div>
-        <div className="floating-element"></div>
-      </div>
-
-      {/* Hero Carousel */}
-      <section className="hero-section">
-        <div className="container-fluid p-0">
-          <div
-            id="carouselExampleRide"
-            className="carousel slide carousel-fade"
-            data-bs-ride="carousel"
-            data-bs-interval="5000"
-          >
-            <div className="carousel-indicators">
-              <button
-                type="button"
-                data-bs-target="#carouselExampleRide"
-                data-bs-slide-to="0"
-                className="active"
-                aria-current="true"
-                aria-label="Slide 1"
-              ></button>
-              <button
-                type="button"
-                data-bs-target="#carouselExampleRide"
-                data-bs-slide-to="1"
-                aria-label="Slide 2"
-              ></button>
-            </div>
-            <div className="carousel-inner">
-              <div className="carousel-item active">
-                <img
-                  src="/images/slide1.jpg"
-                  className="d-block w-100 carousel-image"
-                  alt="Slide 1"
-                />
-                <div className="carousel-caption d-none d-md-block">
-                  <h2 className="carousel-title">Chợ Đồ Cũ Trực Tuyến</h2>
-                  <p className="carousel-subtitle">
-                    Mua bán đồ cũ chất lượng, giá tốt nhất
-                  </p>
-                  <Link to="/eco-market" className="btn btn-primary btn-lg me-3">
-                    <i className="bi bi-compass me-2"></i>
-                    Khám phá ngay
-                  </Link>
-                  <Link to="/eco-market/post-product" className="btn btn-outline-primary btn-lg">
-                    <i className="bi bi-plus-circle me-2"></i>
-                    Đăng tin
-                  </Link>
-                </div>
-              </div>
-              <div className="carousel-item">
-                <img
-                  src="/images/slide2.jpg"
-                  className="d-block w-100 carousel-image"
-                  alt="Slide 2"
-                />
-                <div className="carousel-caption d-none d-md-block">
-                  <h2 className="carousel-title">Bán Đồ Cũ Dễ Dàng</h2>
-                  <p className="carousel-subtitle">
-                    Đăng tin miễn phí, bán nhanh chóng
-                  </p>
-                  <Link to="/eco-market/post-product" className="btn btn-success btn-lg me-3">
-                    <i className="bi bi-camera me-2"></i>
-                    Đăng tin ngay
-                  </Link>
-                  <Link to="/eco-market" className="btn btn-outline-primary btn-lg">
-                    <i className="bi bi-search me-2"></i>
-                    Tìm kiếm
-                  </Link>
-                </div>
-              </div>
-            </div>
-            <button
-              className="carousel-control-prev"
-              type="button"
-              data-bs-target="#carouselExampleRide"
-              data-bs-slide="prev"
-            >
-              <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-              <span className="visually-hidden">Previous</span>
-            </button>
-            <button
-              className="carousel-control-next"
-              type="button"
-              data-bs-target="#carouselExampleRide"
-              data-bs-slide="next"
-            >
-              <span className="carousel-control-next-icon" aria-hidden="true"></span>
-              <span className="visually-hidden">Next</span>
-            </button>
-          </div>
-        </div>
-      </section>
-    <Box>
+)}
       {/* Hero Section - Redesigned */}
       <HeroSection>
         {/* Clean Background with Subtle Pattern */}
@@ -1800,50 +1704,6 @@ export const Home = () => {
         </Container>
       </StatsSection>
 
-      {/* Stats Section */}
-      <section className="stats-section py-5">
-        <div className="container">
-          <div className="text-center mb-5">
-            <h2 className="section-title text-white mb-3">Được tin tướng bởi hàng ngàn người dùng</h2>
-            <p className="section-subtitle text-white opacity-75">Nền tảng mua bán đồ cũ hàng đầu Việt Nam</p>
-          </div>
-          <div className="row text-center">
-            <div className="col-md-3 col-6 mb-4">
-              <div className="stat-card">
-                <i className="bi bi-people-fill stat-icon"></i>
-                <h3 className="stat-number">10K+</h3>
-                <p className="stat-label">Người dùng</p>
-              </div>
-            </div>
-            <div className="col-md-3 col-6 mb-4">
-              <div className="stat-card">
-                <i className="bi bi-box-seam stat-icon"></i>
-                <h3 className="stat-number">50K+</h3>
-                <p className="stat-label">Sản phẩm</p>
-              </div>
-            </div>
-            <div className="col-md-3 col-6 mb-4">
-              <div className="stat-card">
-                <i className="bi bi-check-circle-fill stat-icon"></i>
-                <h3 className="stat-number">25K+</h3>
-                <p className="stat-label">Đã bán</p>
-              </div>
-            </div>
-            <div className="col-md-3 col-6 mb-4">
-              <div className="stat-card">
-                <i className="bi bi-star-fill stat-icon"></i>
-                <h3 className="stat-number">4.8</h3>
-                <p className="stat-label">Đánh giá</p>
-              </div>
-            </div>
-          </div>
-        </div>
-                <CheckInModal
-        show={showCheckInModal}
-        onHide={() => setShowCheckInModal(false)}
-      />
-      </section>
-   
       {/* Testimonials Section */}
       <SectionBox sx={{ py: 10, background: theme.palette.background.paper }}>
         <Container maxWidth="lg">
@@ -2046,33 +1906,30 @@ export const Home = () => {
 
       {/* Floating Action Buttons */}
       <Box sx={{ position: "fixed", bottom: 32, right: 32, zIndex: 1000 }}>
-          <Stack spacing={2}>
-            {/* Scroll to Top Button */}
-            <Zoom in={showScrollTop}>
-              <Fab
-                color="primary"
-                size="medium"
-                onClick={scrollToTop}
-                sx={{
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  "&:hover": {
-                    background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <ArrowUpward />
-              </Fab>
-            </Zoom>
-          </Stack>
-        </Box>
+        <Stack spacing={2}>
+          {/* Scroll to Top Button */}
+          <Zoom in={showScrollTop}>
+            <Fab
+              color="primary"
+              size="medium"
+              onClick={scrollToTop}
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                "&:hover": {
+                  background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.secondary.dark})`,
+                  transform: "scale(1.1)",
+                },
+              }}
+            >
+              <ArrowUpward />
+            </Fab>
+          </Zoom>
+        </Stack>
       </Box>
-
-      {/* CheckInModal */}
-      <CheckInModal
+       <CheckInModal
         show={showCheckInModal}
         onHide={() => setShowCheckInModal(false)}
       />
-    </div>
+    </Box>
   );
 };

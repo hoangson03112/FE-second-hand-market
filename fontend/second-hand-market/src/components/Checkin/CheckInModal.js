@@ -40,19 +40,13 @@ const CheckInModal = ({ show, onHide }) => {
   }, [show]);
 
   return (
-    <Modal 
-      show={show} 
-      onHide={onHide} 
-      centered 
-      backdrop="static"
-      size="md"
-    >
-      <Modal.Header 
-        closeButton 
+    <Modal show={show} onHide={onHide} centered backdrop="static" size="md">
+      <Modal.Header
+        closeButton
         className="border-0 pb-2"
-        style={{ 
+        style={{
           background: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
-          color: "white"
+          color: "white",
         }}
       >
         <Modal.Title className="fw-bold d-flex align-items-center">
@@ -60,42 +54,42 @@ const CheckInModal = ({ show, onHide }) => {
           Điểm danh hàng ngày
         </Modal.Title>
       </Modal.Header>
-      
+
       <Modal.Body className="px-4 py-4">
         <Card className="border-0 shadow-sm mb-3">
           <Card.Body className="text-center py-4">
             <div className="mb-3">
-              <div 
+              <div
                 className="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-                style={{ 
-                  width: "80px", 
-                  height: "80px", 
-                  background: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
-                  boxShadow: "0 4px 15px rgba(255, 215, 0, 0.3)"
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  background:
+                    "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
+                  boxShadow: "0 4px 15px rgba(255, 215, 0, 0.3)",
                 }}
               >
-                <i 
-                  className="bi bi-coin text-white" 
+                <i
+                  className="bi bi-coin text-white"
                   style={{ fontSize: "2.5rem" }}
                 ></i>
               </div>
             </div>
-            
-            <h5 className="fw-bold text-dark mb-2">
-              Nhận thưởng điểm danh
-            </h5>
-            
+
+            <h5 className="fw-bold text-dark mb-2">Nhận thưởng điểm danh</h5>
+
             <p className="text-muted mb-3">
               Điểm danh hàng ngày để nhận 200 xu miễn phí
             </p>
-            
+
             <div className="d-flex justify-content-center align-items-center mb-3">
-              <Badge 
-                bg="warning" 
+              <Badge
+                bg="warning"
                 className="px-3 py-2 fs-6 fw-bold"
-                style={{ 
-                  background: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
-                  border: "none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
+                  border: "none",
                 }}
               >
                 <i className="bi bi-wallet2 me-2"></i>
@@ -106,20 +100,24 @@ const CheckInModal = ({ show, onHide }) => {
         </Card>
 
         {message && (
-          <Alert 
-            variant={success ? "success" : "danger"} 
+          <Alert
+            variant={success ? "success" : "danger"}
             className="text-center border-0 shadow-sm"
             style={{
-              background: success 
+              background: success
                 ? "linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)"
-                : "linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%)"
+                : "linear-gradient(135deg, #f8d7da 0%, #f1aeb5 100%)",
             }}
           >
-            <i className={`bi ${success ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2`}></i>
+            <i
+              className={`bi ${
+                success ? "bi-check-circle" : "bi-exclamation-triangle"
+              } me-2`}
+            ></i>
             {message}
           </Alert>
         )}
-        
+
         <div className="text-center mt-3">
           <small className="text-muted">
             <i className="bi bi-info-circle me-1"></i>
@@ -127,19 +125,19 @@ const CheckInModal = ({ show, onHide }) => {
           </small>
         </div>
       </Modal.Body>
-      
+
       <Modal.Footer className="border-0 pt-0 pb-4 px-4">
         <div className="d-grid gap-2 w-100">
-          <Button 
-            variant="warning" 
+          <Button
+            variant="warning"
             size="lg"
             onClick={handleCheckIn}
             disabled={loading}
             className="fw-bold border-0 shadow-sm"
-            style={{ 
+            style={{
               background: "linear-gradient(135deg, #FFD700 0%, #FFA500 100%)",
               padding: "12px 0",
-              borderRadius: "8px"
+              borderRadius: "8px",
             }}
           >
             {loading ? (
@@ -161,9 +159,9 @@ const CheckInModal = ({ show, onHide }) => {
               </>
             )}
           </Button>
-          
-          <Button 
-            variant="outline-secondary" 
+
+          <Button
+            variant="outline-secondary"
             onClick={onHide}
             className="fw-semibold"
             style={{ borderRadius: "8px" }}

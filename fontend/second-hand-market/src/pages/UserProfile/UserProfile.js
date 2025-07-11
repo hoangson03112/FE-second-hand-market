@@ -73,6 +73,7 @@ import { formatDate } from "./../../utils/function";
 import { useProduct } from "../../contexts/ProductContext";
 import { useAuth } from "../../contexts/AuthContext";
 import authService from "../../services/authService";
+import { useNotification } from "../../hooks/useNotification";
 
 
 const theme = createTheme({
@@ -156,6 +157,7 @@ const theme = createTheme({
 const UserProfile = () => {
   const { getProductsByUser } = useProduct();
   const { updateProfile } = useAuth();
+  const { showSuccess, showError } = useNotification();
   const [activeTab, setActiveTab] = useState(0);
   const [editing, setEditing] = useState(false);
   const [account, setAccount] = useState({});
@@ -179,11 +181,6 @@ const UserProfile = () => {
     confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
 
   // Thêm state cho phân trang
   const [page, setPage] = useState(1);
@@ -259,11 +256,7 @@ const UserProfile = () => {
       setAccountUpdate(user);
     } catch (error) {
       console.error("Error fetching user account:", error);
-      setSnackbar({
-        open: true,
-        message: "Không thể tải thông tin tài khoản",
-        severity: "error",
-      });
+      showError("Không thể tải thông tin tài khoản");
     } finally {
       setLoading(false);
     }
@@ -289,11 +282,7 @@ const UserProfile = () => {
     const { oldPassword, newPassword, confirmPassword } = passwordData;
 
     if (newPassword !== confirmPassword) {
-      setSnackbar({
-        open: true,
-        message: "Mật khẩu mới không khớp!",
-        severity: "error",
-      });
+      showError("Mật khẩu mới không khớp!");
       return;
     }
 
@@ -304,11 +293,7 @@ const UserProfile = () => {
       });
 
       if (response.success) {
-        setSnackbar({
-          open: true,
-          message: "Đổi mật khẩu thành công!",
-          severity: "success",
-        });
+        showSuccess("Đổi mật khẩu thành công!");
         setOpenChangePassword(false);
         setPasswordData({
           oldPassword: "",
@@ -317,11 +302,7 @@ const UserProfile = () => {
         });
       }
     } catch (error) {
-      setSnackbar({
-        open: true,
-        message: error.message || "Đổi mật khẩu thất bại!",
-        severity: "error",
-      });
+      showError(error.message || "Đổi mật khẩu thất bại!");
     }
   };
 
@@ -385,20 +366,12 @@ const UserProfile = () => {
       setAddresses([...addresses, { ...newAddress, id: Date.now() }]);
     }
     setOpenAddressDialog(false);
-    setSnackbar({
-      open: true,
-      message: editingAddress ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!",
-      severity: "success",
-    });
+    showSuccess(editingAddress ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!");
   };
 
   const handleDeleteAddress = (addressId) => {
     setAddresses(addresses.filter(addr => addr.id !== addressId));
-    setSnackbar({
-      open: true,
-      message: "Xóa địa chỉ thành công!",
-      severity: "success",
-    });
+    showSuccess("Xóa địa chỉ thành công!");
   };
 
   const handleSetDefaultAddress = (addressId) => {
@@ -406,11 +379,7 @@ const UserProfile = () => {
       ...addr,
       isDefault: addr.id === addressId
     })));
-    setSnackbar({
-      open: true,
-      message: "Đã đặt làm địa chỉ mặc định!",
-      severity: "success",
-    });
+    showSuccess("Đã đặt làm địa chỉ mặc định!");
   };
 
   const renderInfoSection = () => {
@@ -1281,22 +1250,7 @@ const UserProfile = () => {
     );
   };
 
-  const renderSnackbar = () => (
-    <Snackbar
-      open={snackbar.open}
-      autoHideDuration={6000}
-      onClose={() => setSnackbar({ ...snackbar, open: false })}
-      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-    >
-      <Alert
-        severity={snackbar.severity}
-        sx={{ width: "100%" }}
-        variant="filled"
-      >
-        {snackbar.message}
-      </Alert>
-    </Snackbar>
-  );
+
 
   const renderReviewsTab = () => {
     if (loading) {
@@ -1597,7 +1551,6 @@ const UserProfile = () => {
             </Box>
           </Paper>
 
-          {renderSnackbar()}
         </Container>
       </Box>
     </ThemeProvider>

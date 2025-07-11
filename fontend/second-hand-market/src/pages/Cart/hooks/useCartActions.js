@@ -1,69 +1,92 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '../../../contexts/CartContext';
-import { CART_CONSTANTS } from '../constants';
+import { useDebouncedCallback } from '../../../hooks/useDebounce';
 
 export const useCartActions = (updateCart, clearSelections) => {
   const navigate = useNavigate();
-  const { deleteItem, updateQuantity } = useCart();
 
-  // Check authentication and get token
-  const checkAuth = useCallback(() => {
-    const token = localStorage.getItem(CART_CONSTANTS.STORAGE_KEYS.TOKEN);
-    if (!token) {
-      alert(CART_CONSTANTS.MESSAGES.LOGIN_REQUIRED);
-      navigate(CART_CONSTANTS.ROUTES.LOGIN);
-      return false;
-    }
-    return true;
-  }, [navigate]);
+  const handleDeleteItems = useCallback((productIds) => {
+    // Get current products
+    const currentProducts = JSON.parse(localStorage.getItem('cartProducts') || '[]');
+    
+    // Filter out deleted items
+    const updatedProducts = currentProducts.filter(product => 
+      !productIds.includes(product._id)
+    );
+    
+    // Update cart
+    updateCart(updatedProducts);
+    
+    // Save to localStorage (for persistence)
+    localStorage.setItem('cartProducts', JSON.stringify(updatedProducts));
+    
+    // Clear selections
+    clearSelections();
+    
+    console.log('Deleted items:', productIds);
+  }, [updateCart, clearSelections]);
 
-  // Delete multiple items
-  const handleDeleteItems = useCallback(async (productIds) => {
-    if (!checkAuth() || !productIds.length) return;
-
-    try {
-      const response = await deleteItem(productIds);
-      if (response.status === 'success') {
-        updateCart(response.cart);
-        clearSelections();
+  // Debounced update quantity to prevent too many API calls
+  const [debouncedUpdateQuantity] = useDebouncedCallback((productId, change) => {
+    // Get current products
+    const currentProducts = JSON.parse(localStorage.getItem('cartProducts') || '[]');
+    
+    // Update quantity
+    const updatedProducts = currentProducts.map(product => {
+      if (product._id === productId) {
+        const newQuantity = Math.max(1, product.quantity + change);
+        return { ...product, quantity: newQuantity };
       }
-    } catch (error) {
-      console.error('Error deleting items:', error);
-      // TODO: Show user-friendly error message
-    }
-  }, [checkAuth, deleteItem, updateCart, clearSelections]);
+      return product;
+    });
+    
+    // Update cart
+    updateCart(updatedProducts);
+    
+    // Save to localStorage
+    localStorage.setItem('cartProducts', JSON.stringify(updatedProducts));
+    
+    console.log('Updated quantity for product:', productId, 'change:', change);
+  }, 300, [updateCart]);
 
-  // Update item quantity
-  const handleUpdateQuantity = useCallback(async (productId, change) => {
-    if (!checkAuth()) return;
-
-    try {
-      const response = await updateQuantity(productId, change);
-      if (response.status === 'success') {
-        updateCart(response.cart);
+  const handleUpdateQuantity = useCallback((productId, change) => {
+    // Immediate UI update for better UX
+    const currentProducts = JSON.parse(localStorage.getItem('cartProducts') || '[]');
+    const updatedProducts = currentProducts.map(product => {
+      if (product._id === productId) {
+        const newQuantity = Math.max(1, product.quantity + change);
+        return { ...product, quantity: newQuantity };
       }
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      // TODO: Show user-friendly error message
-    }
-  }, [checkAuth, updateQuantity, updateCart]);
+      return product;
+    });
+    
+    // Immediate state update
+    updateCart(updatedProducts);
+    
+    // Debounced save to localStorage
+    debouncedUpdateQuantity(productId, change);
+  }, [updateCart, debouncedUpdateQuantity]);
 
-  // Navigate to checkout with selected items
   const handleCheckout = useCallback((selectedItems) => {
     if (selectedItems.length === 0) {
-      // TODO: Show warning message
+      alert('Vui lòng chọn sản phẩm để thanh toán');
       return;
     }
 
-    navigate(CART_CONSTANTS.ROUTES.CHECKOUT, {
+    // Save selected items for checkout (backup)
+    localStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
+    
+    // Navigate to checkout page with state
+    navigate('/eco-market/checkout', {
       state: { selectedItems }
     });
+    
+    console.log('Proceeding to checkout with items:', selectedItems);
   }, [navigate]);
 
-  // Navigate to home page
   const handleContinueShopping = useCallback(() => {
-    navigate(CART_CONSTANTS.ROUTES.HOME);
+    // Navigate back to home/products page
+    navigate('/eco-market/home');
   }, [navigate]);
 
   return {

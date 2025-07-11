@@ -25,7 +25,6 @@ import PersonalInfoStep from "./components/PersonalInfoStep";
 import PaymentInfoStep from "./components/PaymentInfoStep";
 import ConfirmationStep from "./components/ConfirmationStep";
 import { useNavigate } from "react-router-dom";
-import NotificationSnackbar from "../../components/NotificationSnackbar/NotificationSnackbar";
 
 // Animations
 const shimmer = keyframes`
@@ -122,8 +121,7 @@ export default function RegisterSeller() {
   });
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { notification, showSuccess, showError, showInfo, hideNotification } =
-    useNotification();
+  const { showSuccess, showError, showInfo } = useNotification();
 
   // Configuration data
   const cities = [
@@ -253,8 +251,6 @@ export default function RegisterSeller() {
       }
     } catch (error) {
       console.error("Error registering seller:", error);
-      hideNotification();
-
       showError(
         "❌ Đăng ký thất bại! Vui lòng kiểm tra kết nối mạng và thử lại.",
         7000
@@ -443,14 +439,6 @@ export default function RegisterSeller() {
         </StyledPaper>
       </Container>
 
-      {/* Notification Snackbar */}
-      <NotificationSnackbar
-        open={notification.open}
-        message={notification.message}
-        severity={notification.severity}
-        autoHideDuration={notification.autoHideDuration}
-        onClose={hideNotification}
-      />
     </Box>
   );
 }

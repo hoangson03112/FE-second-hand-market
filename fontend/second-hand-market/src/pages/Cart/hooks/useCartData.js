@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import AccountContext from "../../../contexts/AccountContext";
 import { useProduct } from "../../../contexts/ProductContext";
-import { CART_CONSTANTS } from "../constants";
+import { useAuth } from "../../../contexts/AuthContext";
+
+// Cache for API results to avoid repeated calls
+const cache = new Map();
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 export const useCartData = () => {
   const [cart, setCart] = useState([]);
@@ -9,38 +13,56 @@ export const useCartData = () => {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const { getProduct } = useProduct();
+  const { currentUser } = useAuth();
 
-  const fetchCartData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await AccountContext.Authentication();
-      if (data?.data?.account?.cart) {
-        console.log(data.data.account.cart);
-        setCart(data.data.account.cart);
-      }
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-      setError("Không thể tải giỏ hàng");
-    } finally {
+  useEffect(() => {
+    if (currentUser?.cart) {
+      setCart(currentUser.cart);
+    } else {
       setLoading(false);
     }
+  }, [currentUser]);
+
+  // Memoized cache functions
+  const getCachedData = useCallback((key) => {
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_EXPIRY) {
+      return cached.data;
+    }
+    return null;
+  }, []);
+
+  const setCachedData = useCallback((key, data) => {
+    cache.set(key, { data, timestamp: Date.now() });
   }, []);
 
   const fetchProductsWithQuantity = useCallback(
     async (cartItems) => {
       try {
+        setLoading(true);
+        setError(null);
+
         if (cartItems.length === 0) {
           setProducts([]);
+          setLoading(false);
           return;
         }
 
-        const productPromises = cartItems.map((item) =>
-          getProduct(item.productId)
-        );
+        // Parallel API calls with caching
+        const productPromises = cartItems.map(async (item) => {
+          const cacheKey = `product_${item.productId}`;
+          const cached = getCachedData(cacheKey);
+
+          if (cached) {
+            return cached;
+          }
+
+          const product = await getProduct(item.productId);
+          setCachedData(cacheKey, product);
+          return product;
+        });
+
         const productsData = await Promise.all(productPromises);
 
         const productsWithQuantity = productsData.map((product) => {
@@ -54,40 +76,51 @@ export const useCartData = () => {
         });
 
         setProducts(productsWithQuantity);
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching products:", err);
         setError("Không thể tải thông tin sản phẩm");
+        setLoading(false);
       }
     },
-    [getProduct]
+    [getProduct, getCachedData, setCachedData]
   );
 
-  const fetchSellers = useCallback(async (productList) => {
-    try {
-      if (productList.length === 0) {
-        setSellers([]);
-        return;
+  const fetchSellers = useCallback(
+    async (productList) => {
+      try {
+        if (productList.length === 0) {
+          setSellers([]);
+          return;
+        }
+
+        const uniqueSellerIds = [
+          ...new Set(productList.map((product) => product.seller._id)),
+        ];
+
+        // Parallel API calls with caching for sellers
+        const sellerPromises = uniqueSellerIds.map(async (sellerId) => {
+          const cacheKey = `seller_${sellerId}`;
+          const cached = getCachedData(cacheKey);
+
+          if (cached) {
+            return cached;
+          }
+
+          const seller = await AccountContext.getAccount(sellerId);
+          setCachedData(cacheKey, seller);
+          return seller;
+        });
+
+        const sellersData = await Promise.all(sellerPromises);
+        setSellers(sellersData);
+      } catch (err) {
+        console.error("Error fetching sellers:", err);
+        setError("Không thể tải thông tin người bán");
       }
-      console.log(productList);
-      const uniqueSellerIds = [
-        ...new Set(productList.map((product) => product.seller._id)),
-      ];
-      const sellerPromises = uniqueSellerIds.map((sellerId) =>
-        AccountContext.getAccount(sellerId)
-      );
-
-      const sellersData = await Promise.all(sellerPromises);
-      setSellers(sellersData);
-    } catch (err) {
-      console.error("Error fetching sellers:", err);
-      setError("Không thể tải thông tin người bán");
-    }
-  }, []);
-
-  // Initialize cart data
-  useEffect(() => {
-    fetchCartData();
-  }, [fetchCartData]);
+    },
+    [getCachedData, setCachedData]
+  );
 
   // Fetch products when cart changes
   useEffect(() => {
@@ -103,13 +136,18 @@ export const useCartData = () => {
     setCart(newCart);
   }, []);
 
-  return {
-    cart,
-    products,
-    sellers,
-    loading,
-    error,
-    updateCart,
-    refetchCart: fetchCartData,
-  };
+  // Memoized return object to prevent unnecessary re-renders
+  const returnValue = useMemo(
+    () => ({
+      cart,
+      products,
+      sellers,
+      loading,
+      error,
+      updateCart,
+    }),
+    [cart, products, sellers, loading, error, updateCart]
+  );
+
+  return returnValue;
 };

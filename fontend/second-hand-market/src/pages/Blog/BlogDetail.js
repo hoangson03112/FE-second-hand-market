@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button } from 'react-bootstrap';
 import './BlogDetail.css';
+import { useNotification } from '../../hooks/useNotification';
 
 const BlogDetail = () => {
   const { id } = useParams();
+  const { showWarning } = useNotification();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
@@ -95,7 +97,7 @@ const BlogDetail = () => {
   const handleLike = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Vui lòng đăng nhập để thích bài viết');
+      showWarning('Vui lòng đăng nhập để thích bài viết');
       return;
     }
 

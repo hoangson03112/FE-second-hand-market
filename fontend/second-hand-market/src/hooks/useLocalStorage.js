@@ -19,7 +19,7 @@ function useLocalStorage(key, initialValue) {
     }
   });
 
-  // Hàm để cập nhật giá trị trong state và localStorage
+
   const setValue = (value) => {
     try {
       // Cho phép value là một hàm (như setter của useState)

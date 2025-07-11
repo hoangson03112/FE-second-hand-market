@@ -36,6 +36,7 @@ import { ProductProvider } from "./contexts/ProductContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import { ChatProvider } from "./contexts/ChatContext";
 import { VoucherProvider } from "./contexts/VoucherContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 
 import Verification from "./pages/Verification/Verification";
 
@@ -66,7 +67,8 @@ function App() {
  
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
         <CoinProvider>
         <CartProvider>
           <ProductProvider>
@@ -352,6 +354,7 @@ function App() {
         </CartProvider>
          </CoinProvider>
       </AuthProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

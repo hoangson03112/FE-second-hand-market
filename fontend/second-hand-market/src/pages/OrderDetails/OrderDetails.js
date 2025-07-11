@@ -38,6 +38,7 @@ import AccountContext from "../../contexts/AccountContext";
 import { useChat } from "../../contexts/ChatContext";
 import CancelOrderModal from "../Order/components/CancelOrderModal";
 import { useOrder } from "../../contexts/OrderContext";
+import { useNotification } from "../../hooks/useNotification";
 
 // Custom styled stepper connector
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -112,6 +113,7 @@ function ColorlibStepIcon(props) {
 export default function OrderDetails() {
   const { findOrCreateWithOrder } = useChat();
   const { updateOrder } = useOrder();
+  const { showError } = useNotification();
   const { orderId } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -153,11 +155,11 @@ export default function OrderDetails() {
       );
       if (!response || !response.success) {
         console.error("Failed to create chat conversation:", response);
-        alert("Không thể kết nối với người bán. Vui lòng thử lại sau.");
+        showError("Không thể kết nối với người bán. Vui lòng thử lại sau.");
       }
     } catch (error) {
       console.error("Error creating chat conversation:", error);
-      alert("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
+      showError("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
     }
   };
 

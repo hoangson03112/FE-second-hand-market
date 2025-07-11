@@ -1,6 +1,5 @@
 import ApiService from "./ApiService";
 
-
 export const getAddresses = async (token) => {
   const res = await ApiService.get("/addresses", {
     headers: { Authorization: `Bearer ${token}` },
@@ -13,4 +12,4 @@ export const addAddress = async (address, token) => {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
-}; 
+};

@@ -72,20 +72,6 @@ class ShippingService {
       const weight = this.calculateTotalWeight(items);
       const dimensions = ghnService.calculateDimensions(items);
 
-      // Call GHN API
-      console.log("Calling GHN API with params:", {
-        fromWard: String(from.wardCode),
-        fromDistrict: parseInt(from.districtId),
-        toWard: String(to.wardCode),
-        toDistrict: parseInt(to.districtId),
-        weight: weight,
-        length: dimensions.length,
-        width: dimensions.width,
-        height: dimensions.height,
-        serviceId: serviceId,
-        insuranceValue: this.calculateTotalValue(items),
-      });
-
       const ghnResult = await ghnService.calculateShippingFee({
         fromWard: String(from.wardCode),
         fromDistrict: parseInt(from.districtId),
@@ -188,10 +174,6 @@ class ShippingService {
   }
 
   async calculateMultiShopShipping(shops, products, deliveryAddress) {
-    console.log("Products:", products);
-    console.log("Shops:", shops);
-    console.log("Delivery Address:", deliveryAddress);
-
     // Nhóm products theo seller
     const productsBySeller = {};
     products.forEach((product) => {
@@ -202,33 +184,14 @@ class ShippingService {
       productsBySeller[sellerId].push(product);
     });
 
-    console.log("Products grouped by seller:", productsBySeller);
-
     const calculations = await Promise.allSettled(
       Object.entries(productsBySeller).map(
         async ([sellerId, sellerProducts]) => {
           try {
-            console.log(`Calculating shipping for seller ${sellerId}:`);
-            console.log(`Seller products:`, sellerProducts);
-
             // Lấy địa chỉ từ product đầu tiên của seller (giả sử cùng seller có cùng địa chỉ)
             const firstProduct = sellerProducts[0];
             const fromDistrictId = firstProduct.seller.from_district_id;
             const fromWardCode = firstProduct.seller.from_ward_code;
-
-            console.log("Product address info:", {
-              from_district_id: fromDistrictId,
-              from_ward_code: fromWardCode,
-            });
-
-            console.log("Full product data for debugging:", {
-              productId: firstProduct._id,
-              productName: firstProduct.name,
-              seller: firstProduct.seller,
-              sellerAddress: firstProduct.seller?.address,
-              from_district_id: fromDistrictId,
-              from_ward_code: fromWardCode,
-            });
 
             // Kiểm tra thông tin địa chỉ product
             if (!fromDistrictId || !fromWardCode) {
@@ -250,9 +213,6 @@ class ShippingService {
                 districtId: deliveryAddress.districtId,
                 wardCode: deliveryAddress.wardCode,
               };
-
-              console.log("Using default from address:", defaultFromAddress);
-              console.log("To address:", toAddress);
 
               // Get available services first
               const services = await this.getAvailableServices(
@@ -308,9 +268,6 @@ class ShippingService {
               districtId: deliveryAddress.districtId,
               wardCode: deliveryAddress.wardCode,
             };
-
-            console.log("From address (from product):", fromAddress);
-            console.log("To address:", toAddress);
 
             // Get available services first
             const services = await this.getAvailableServices(
@@ -387,7 +344,6 @@ class ShippingService {
   }
 
   calculateTotalWeight(items) {
-    console.log("Calculating weight for items:", items);
     return items.reduce((total, item) => {
       // Kiểm tra và lấy weight từ estimatedWeight hoặc sử dụng default
       let weight = 500; // Default 500g

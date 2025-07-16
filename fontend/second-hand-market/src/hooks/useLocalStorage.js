@@ -19,7 +19,6 @@ function useLocalStorage(key, initialValue) {
     }
   });
 
-
   const setValue = (value) => {
     try {
       // Cho phép value là một hàm (như setter của useState)

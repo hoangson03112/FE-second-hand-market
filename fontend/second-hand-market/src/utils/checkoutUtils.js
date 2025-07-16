@@ -114,11 +114,7 @@ export const calculatePaymentAmounts = (paymentType, totalAmount, shippingFee, p
   }
 };
 
-/**
- * Groups products by seller
- * @param {Array} products - Array of products
- * @returns {Array} Array of orders grouped by seller
- */
+
 export const groupProductsBySeller = (products) => {
   const uniqueSellerIds = Array.from(
     new Set(
@@ -132,7 +128,12 @@ export const groupProductsBySeller = (products) => {
         .filter((product) => product.seller._id === sellerId)
         .map((product) => ({
           productId: product._id,
+          name: product.name,
+          price: product.price,
           quantity: product.quantity,
+          image: product.image,
+          _id: product._id,
+          estimatedWeight: product.estimatedWeight,
         }))
         .filter((product) => product.quantity > 0);
 

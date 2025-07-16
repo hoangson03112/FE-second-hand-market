@@ -27,6 +27,7 @@ import { useOrder } from "../../../contexts/OrderContext";
 import AccountContext from "../../../contexts/AccountContext";
 import { useChat } from "../../../contexts/ChatContext";
 import CancelOrderModal from "./CancelOrderModal";
+import { ghnService } from "../../../services/ghnService";
 
 const OrderItem = ({ order, setOrders }) => {
   const { findOrCreateWithOrder } = useChat();
@@ -34,9 +35,7 @@ const OrderItem = ({ order, setOrders }) => {
   const { updateOrder } = useOrder();
   const [products, setProducts] = useState([]);
   const [sellers, setSellers] = useState({});
-  const [totalAmount, setTotalAmount] = useState(0);
   const [totalDiscount, setTotalDiscount] = useState(0);
-  const [finalAmount, setFinalAmount] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const navigate = useNavigate();
 
@@ -59,25 +58,6 @@ const OrderItem = ({ order, setOrders }) => {
 
     fetchProducts();
   }, [getProduct, order]);
-
-  useEffect(() => {
-    // Tính tổng tiền gốc (giá sản phẩm × số lượng)
-    const originalTotal = products.reduce((total, product) => {
-      const orderProduct = order.products.find(
-        (p) => p.productId === product?._id
-      );
-      return total + product?.price * (orderProduct?.quantity || 0);
-    }, 0);
-
-    const finalTotal = order?.totalAmount || originalTotal;
-
-    // Tính tiền giảm giá = tiền gốc - tiền cuối cùng
-    const discountTotal = Math.max(0, originalTotal - finalTotal);
-
-    setTotalAmount(originalTotal);
-    setTotalDiscount(discountTotal);
-    setFinalAmount(finalTotal);
-  }, [products, order]);
 
   useEffect(() => {
     const fetchSellers = async () => {
@@ -109,6 +89,10 @@ const OrderItem = ({ order, setOrders }) => {
   const handleCancelOrder = async (orderId, reason, status) => {
     try {
       const data = await updateOrder(orderId, reason, status);
+      if (order.ghnOrderCode) {
+        await ghnService.cancelOrderGHN(order.ghnOrderCode);
+      }
+
       setOrders(data.orders);
       setShowCancelModal(false);
     } catch (error) {
@@ -136,7 +120,6 @@ const OrderItem = ({ order, setOrders }) => {
   };
 
   const handleViewDetails = () => {
-    console.log("🔍 Navigating to order details with ID:", order._id);
     navigate(`/eco-market/order-details/${order._id}`);
   };
 
@@ -149,12 +132,33 @@ const OrderItem = ({ order, setOrders }) => {
         bgColor: "#fff3e0",
         textColor: "#e65100",
       },
+      confirmed: {
+        label: "Đã xác nhận",
+        color: "success",
+        icon: <CheckCircle fontSize="small" />,
+        bgColor: "#e8f5e8",
+        textColor: "#2e7d32",
+      },
+      shipped: {
+        label: "Đã gửi cho vận chuyển",
+        color: "info",
+        icon: <LocalShipping fontSize="small" />,
+        bgColor: "#e3f2fd",
+        textColor: "#1976d2",
+      },
       shipping: {
         label: "Đang vận chuyển",
         color: "info",
         icon: <LocalShipping fontSize="small" />,
         bgColor: "#e3f2fd",
         textColor: "#1976d2",
+      },
+      delivered: {
+        label: "Đã giao hàng",
+        color: "success",
+        icon: <CheckCircle fontSize="small" />,
+        bgColor: "#e8f5e8",
+        textColor: "#2e7d32",
       },
       completed: {
         label: "Hoàn thành",
@@ -184,6 +188,15 @@ const OrderItem = ({ order, setOrders }) => {
         color: "default",
       }
     );
+  };
+
+  const handleCompleteOrder = async (order) => {
+    try {
+      const data = await updateOrder(order._id, "", "completed");
+      setOrders(data.orders);
+    } catch (error) {
+      console.error("Error completing order:", error);
+    }
   };
 
   const renderStatusButtons = () => {
@@ -233,6 +246,34 @@ const OrderItem = ({ order, setOrders }) => {
             </Button>
           </Stack>
         );
+      case "confirmed":
+        return (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleViewDetails}
+              startIcon={<Visibility />}
+              sx={{
+                ...buttonStyles,
+                bgcolor: "#1976d2",
+                "&:hover": { bgcolor: "#1565c0" },
+              }}
+            >
+              Xem chi tiết
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleContactSeller(order)}
+              startIcon={<ContactSupport />}
+              sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
+            >
+              Liên hệ người bán
+            </Button>
+          </Stack>
+        );
       case "shipping":
         return (
           <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -275,6 +316,60 @@ const OrderItem = ({ order, setOrders }) => {
               sx={buttonStyles}
             >
               Đã nhận được hàng
+            </Button>
+          </Stack>
+        );
+      case "delivered":
+        return (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleViewDetails}
+              startIcon={<Visibility />}
+              sx={{
+                ...buttonStyles,
+                bgcolor: "#1976d2",
+                "&:hover": { bgcolor: "#1565c0" },
+              }}
+            >
+              Xem chi tiết
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleCompleteOrder(order)}
+              startIcon={<ContactSupport />}
+              sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
+            >
+              Đã nhận hàng
+            </Button>
+          </Stack>
+        );
+      case "shipped":
+        return (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleViewDetails}
+              startIcon={<Visibility />}
+              sx={{
+                ...buttonStyles,
+                bgcolor: "#1976d2",
+                "&:hover": { bgcolor: "#1565c0" },
+              }}
+            >
+              Xem chi tiết
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleContactSeller(order)}
+              startIcon={<ContactSupport />}
+              sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
+            >
+              Liên hệ người bán
             </Button>
           </Stack>
         );
@@ -381,7 +476,13 @@ const OrderItem = ({ order, setOrders }) => {
     >
       <CardContent sx={{ p: 3 }}>
         {/* Header with Seller Info and Status */}
-        <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            position: "relative",
+            minHeight: 48,
+            mb: 3,
+          }}
+        >
           {Object.values(sellers).map((seller) => {
             const sellerProducts = products.filter(
               (product) => product?.seller._id === seller?._id
@@ -402,18 +503,8 @@ const OrderItem = ({ order, setOrders }) => {
                   gap: 2,
                 }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    "&:hover": {
-                      "& .seller-name": {
-                        color: "#1976d2",
-                      },
-                    },
-                  }}
-                >
+                {/* Bên trái: Shop */}
+                <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Avatar
                     src={seller?.avatar?.url}
                     alt={seller?.fullName}
@@ -422,34 +513,71 @@ const OrderItem = ({ order, setOrders }) => {
                       height: 48,
                       mr: 2,
                       border: "2px solid #f0f0f0",
+                      flexShrink: 0,
                     }}
                   />
                   <Typography
                     className="seller-name"
                     fontWeight="600"
                     fontSize="16px"
-                    sx={{ transition: "color 0.2s" }}
+                    sx={{
+                      transition: "color 0.2s",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: { xs: 120, sm: 200, md: 300 },
+                    }}
                   >
                     {seller?.fullName}
                   </Typography>
                 </Box>
-                <Chip
-                  icon={statusConfig.icon}
-                  label={statusConfig.label}
+                {/* Chip trạng thái sát lề phải */}
+                <Box
                   sx={{
-                    bgcolor: statusConfig.bgColor,
-                    color: statusConfig.textColor,
-                    fontWeight: 600,
-                    fontSize: "13px",
-                    height: 32,
-                    "& .MuiChip-icon": {
-                      color: statusConfig.textColor,
-                    },
+                    position: "absolute",
+                    right: 24,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
                   }}
-                />
+                >
+                  <Chip
+                    icon={statusConfig.icon}
+                    label={statusConfig.label}
+                    sx={{
+                      bgcolor: statusConfig.bgColor,
+                      color: statusConfig.textColor,
+                      fontWeight: 600,
+                      fontSize: "13px",
+                      height: 32,
+                      "& .MuiChip-icon": { color: statusConfig.textColor },
+                    }}
+                  />
+                  {order.shippingMethod === "ship-cod" &&
+                    order.statusPayment === false &&
+                    order.paymentMethod === "bank_transfer" && (
+                      <Chip
+                        label="Chưa thanh toán"
+                        color="warning"
+                        sx={{ fontWeight: 600, fontSize: "13px", height: 32 }}
+                      />
+                    )}
+                </Box>
               </Box>
             );
           })}
+        </Box>
+
+        {/* Ngày đặt ở góc dưới bên phải */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            Ngày đặt:{" "}
+            {order.createdAt
+              ? new Date(order.createdAt).toLocaleString("vi-VN")
+              : ""}
+          </Typography>
         </Box>
 
         <Divider sx={{ my: 2, borderColor: "#f0f0f0" }} />
@@ -559,10 +687,22 @@ const OrderItem = ({ order, setOrders }) => {
             >
               <Typography color="text.secondary">Tổng tiền hàng:</Typography>
               <Typography fontWeight="600">
-                {formatPrice(totalAmount)}
+                {formatPrice(order.totalAmount)}
               </Typography>
             </Box>
-
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+                maxWidth: 300,
+              }}
+            >
+              <Typography color="text.secondary">Phí vận chuyển:</Typography>
+              <Typography fontWeight="600">
+                {formatPrice(order.shippingFee)}
+              </Typography>
+            </Box>
             {totalDiscount > 0 && (
               <Box
                 sx={{
@@ -593,7 +733,7 @@ const OrderItem = ({ order, setOrders }) => {
                 Thành tiền:
               </Typography>
               <Typography fontSize="20px" color="error" fontWeight="700">
-                {formatPrice(finalAmount)}
+                {formatPrice(order.totalAmount + order.shippingFee)}
               </Typography>
             </Box>
           </Stack>

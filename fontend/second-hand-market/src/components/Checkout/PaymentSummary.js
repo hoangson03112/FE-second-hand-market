@@ -82,27 +82,41 @@ const PaymentMethodSummary = ({
   finalAmount,
   depositAmount,
   shippingFee,
+  hasMixedOrders,
+  codShippingAmount,
 }) => {
   const getPaymentMethodDisplay = () => {
+    // Use COD shipping amount if mixed orders, otherwise use full amount
+    // Add shipping fee to COD shipping amount for mixed orders
+    const displayAmount = hasMixedOrders ? (codShippingAmount + shippingFee) : finalAmount;
+
     switch (paymentMethod) {
       case PAYMENT_METHODS.COD:
         return {
-          title: "Thanh toán khi nhận hàng (COD)",
+          title: hasMixedOrders
+            ? "Thanh toán COD (chỉ đơn ship)"
+            : "Thanh toán khi nhận hàng (COD)",
           breakdown: [
             { label: "Thanh toán ngay:", amount: 0 },
-            { label: "COD khi nhận:", amount: finalAmount },
+            { label: "COD khi nhận:", amount: displayAmount },
           ],
-          subtitle: "Kiểm tra hàng trước khi thanh toán",
+          subtitle: hasMixedOrders
+            ? "Chỉ áp dụng cho đơn hàng ship COD"
+            : "Kiểm tra hàng trước khi thanh toán",
           icon: <AccountBalanceWallet />,
         };
       case PAYMENT_METHODS.BANK_TRANSFER:
         return {
-          title: "Chuyển khoản 100%",
+          title: hasMixedOrders
+            ? "Chuyển khoản (chỉ đơn ship)"
+            : "Chuyển khoản 100%",
           breakdown: [
-            { label: "Chuyển khoản ngay:", amount: finalAmount },
+            { label: "Chuyển khoản ngay:", amount: displayAmount },
             { label: "COD khi nhận:", amount: 0 },
           ],
-          subtitle: "Giao hàng nhanh, không cần COD",
+          subtitle: hasMixedOrders
+            ? "Chỉ áp dụng cho đơn hàng ship COD"
+            : "Giao hàng nhanh, không cần COD",
           icon: <CreditCard />,
         };
       default:
@@ -161,6 +175,20 @@ const PaymentSummary = ({
   finalAmount,
   paymentMethod,
   depositAmount,
+  hasMixedOrders,
+  directMeetingCount,
+  codShippingCount,
+  bankTransferCount,
+  directMeetingAmount,
+  codShippingAmount,
+  bankTransferAmount,
+  directMeetingOriginalAmount,
+  codShippingOriginalAmount,
+  bankTransferOriginalAmount,
+  directMeetingSavings,
+  codShippingSavings,
+  bankTransferSavings,
+  codShippingFee,
 }) => {
   const { balance } = useCoin();
 
@@ -174,7 +202,6 @@ const PaymentSummary = ({
       </Typography>
 
       <Box>
-        {/* Show original total if there are product discounts */}
         {totalProductSavings > 0 && (
           <SummaryRow
             label="Tổng tiền hàng (gốc)"
@@ -270,6 +297,8 @@ const PaymentSummary = ({
         finalAmount={finalAmount}
         depositAmount={depositAmount}
         shippingFee={shippingFee}
+        hasMixedOrders={hasMixedOrders}
+        codShippingAmount={codShippingAmount}
       />
     </Paper>
   );

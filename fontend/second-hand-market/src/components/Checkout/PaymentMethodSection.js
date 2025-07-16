@@ -37,7 +37,13 @@ const PaymentOption = ({
   onSelect,
   shippingFee,
   finalAmount,
+  codShippingAmount,
+  hasMixedOrders,
 }) => {
+
+  // Use COD shipping amount if mixed orders, otherwise use full amount
+  // Add shipping fee to COD shipping amount for mixed orders
+  const displayAmount = hasMixedOrders ? (codShippingAmount + shippingFee) : finalAmount;
 
   const getBreakdownData = () => {
     switch (method) {
@@ -46,25 +52,25 @@ const PaymentOption = ({
           immediate: {
             label: "Thanh toán ngay:",
             amount: 0,
-            sublabel: "Không cần trả trước",
+            sublabel: hasMixedOrders ? "Chỉ tính cho đơn ship COD" : "Không cần trả trước",
           },
           cod: {
             label: "Thanh toán khi nhận:",
-            amount: finalAmount,
-            sublabel: "Tổng tiền hàng + phí ship",
+            amount: displayAmount,
+            sublabel: hasMixedOrders ? "Chỉ áp dụng cho đơn ship COD" : "Tổng tiền hàng + phí ship",
           },
         };
       case PAYMENT_METHODS.BANK_TRANSFER:
         return {
           immediate: {
             label: "Chuyển khoản ngay:",
-            amount: finalAmount,
-            sublabel: "Tổng đơn hàng + phí ship",
+            amount: displayAmount,
+            sublabel: hasMixedOrders ? "Chỉ áp dụng cho đơn ship COD" : "Tổng đơn hàng + phí ship",
           },
           cod: {
             label: "COD khi nhận:",
             amount: 0,
-            sublabel: "Đã thanh toán trước",
+            sublabel: hasMixedOrders ? "Đã thanh toán trước cho đơn ship COD" : "Đã thanh toán trước",
           },
         };
       default:
@@ -229,6 +235,9 @@ const PaymentMethodSection = ({
   onPaymentMethodChange,
   shippingFee,
   finalAmount,
+  codShippingAmount,
+  codShippingOriginalAmount,
+  hasMixedOrders,
 }) => {
   return (
     <Paper
@@ -243,10 +252,25 @@ const PaymentMethodSection = ({
             Phương thức thanh toán
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Chọn cách thức thanh toán phù hợp với bạn
+            {hasMixedOrders 
+              ? "Chọn phương thức thanh toán cho các đơn hàng ship COD"
+              : "Chọn cách thức thanh toán phù hợp với bạn"
+            }
           </Typography>
         </Box>
       </Box>
+
+      {/* Mixed Order Notice */}
+      {hasMixedOrders && (
+        <Box sx={{ mb: 3 }}>
+          <Alert severity="info" variant="outlined">
+            <Typography variant="body2">
+              <strong>Lưu ý:</strong> Phương thức thanh toán này chỉ áp dụng cho các đơn hàng 
+              <strong> ship COD</strong>. Các đơn hàng giao dịch trực tiếp sẽ thanh toán khi gặp mặt.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
 
       {/* Payment Options */}
       <RadioGroup
@@ -274,6 +298,8 @@ const PaymentMethodSection = ({
                     onSelect={onPaymentMethodChange}
                     shippingFee={shippingFee}
                     finalAmount={finalAmount}
+                    codShippingAmount={codShippingAmount}
+                    hasMixedOrders={hasMixedOrders}
                   />
                 }
                 sx={{ margin: 0, width: "100%" }}

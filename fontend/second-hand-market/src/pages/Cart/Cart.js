@@ -23,7 +23,7 @@ import { useCartActions } from "./hooks/useCartActions";
  */
 const Cart = () => {
   // Data management
-  const { products, sellers, loading, error, updateCart } = useCartData();
+  const { products, sellers, loading, error } = useCartData();
 
   // Selection state management
   const {
@@ -43,9 +43,12 @@ const Cart = () => {
   const {
     handleDeleteItems,
     handleUpdateQuantity,
+    handleSetQuantity,
     handleCheckout,
     handleContinueShopping,
-  } = useCartActions(updateCart, clearSelections);
+    isItemUpdating,
+    isPending,
+  } = useCartActions(clearSelections);
 
   // Event handlers
   const handleDeleteSelected = () => {
@@ -129,6 +132,7 @@ const Cart = () => {
                 checkedItems={checkedItems}
                 onCheckboxChange={handleItemSelect}
                 onDeleteItem={handleDeleteSingleItem}
+                isItemUpdating={isItemUpdating}
               />
             </Table>
           </div>

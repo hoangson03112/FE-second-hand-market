@@ -97,7 +97,8 @@ function ColorlibStepIcon(props) {
     1: <ShoppingBag />,
     2: <Assignment />,
     3: <LocalShipping />,
-    4: <CheckCircle />,
+    4: <LocalShipping />,
+    5: <CheckCircle />,
   };
 
   return (
@@ -159,7 +160,9 @@ export default function OrderDetails() {
       }
     } catch (error) {
       console.error("Error creating chat conversation:", error);
-      showError("Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau.");
+      showError(
+        "Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau."
+      );
     }
   };
 
@@ -191,8 +194,10 @@ export default function OrderDetails() {
     switch (status) {
       case "pending":
         return "Chờ xác nhận";
-      case "processing":
-        return "Đang xử lý";
+      case "confirmed":
+        return "Đã xác nhận";
+      case "shipped":
+        return "Đã gửi cho vận chuyển";
       case "shipping":
         return "Đang giao hàng";
       case "completed":
@@ -208,7 +213,9 @@ export default function OrderDetails() {
     switch (status) {
       case "pending":
         return "warning";
-      case "processing":
+      case "confirmed":
+        return "success";
+      case "shipped":
         return "info";
       case "shipping":
         return "primary";
@@ -225,12 +232,14 @@ export default function OrderDetails() {
     switch (status) {
       case "pending":
         return 0;
-      case "processing":
+      case "confirmed":
         return 1;
-      case "shipping":
+      case "shipped":
         return 2;
-      case "completed":
+      case "shipping":
         return 3;
+      case "completed":
+        return 4;
       case "cancelled":
         return -1;
       default:
@@ -324,15 +333,22 @@ export default function OrderDetails() {
                 <StepLabel StepIconComponent={ColorlibStepIcon}>
                   <div className="step-label">Đã xác nhận</div>
                   <small className="text-muted step-date">
-                    {order.status === "processing" && "Đang chuẩn bị hàng"}
+                    {order.status === "confirmed" && "Đang chuẩn bị hàng"}
                   </small>
+                </StepLabel>
+              </Step>
+              <Step>
+                <StepLabel StepIconComponent={ColorlibStepIcon}>
+                  <div className="step-label">Đã gửi cho vận chuyển</div>
                 </StepLabel>
               </Step>
               <Step>
                 <StepLabel StepIconComponent={ColorlibStepIcon}>
                   <div className="step-label">Đang giao hàng</div>
                   <small className="text-muted step-date">
-                    {order.status === "shipping" && "Dự kiến giao trong 24h"}
+                    {order.status === "shipping" &&
+                      "Dự kiến giao hàng: " +
+                        formatDate(order.expectedDeliveryTime)}
                   </small>
                 </StepLabel>
               </Step>
@@ -340,35 +356,11 @@ export default function OrderDetails() {
                 <StepLabel StepIconComponent={ColorlibStepIcon}>
                   <div className="step-label">Đã nhận hàng</div>
                   <small className="text-muted step-date">
-                    {order.status === "completed" &&
-                      formatDate(order.deliveredAt || order.createdAt)}
+                    {order.status === "completed" && "Đã nhận hàng"}
                   </small>
                 </StepLabel>
               </Step>
             </Stepper>
-
-            {order.status === "shipping" && (
-              <div className="delivery-progress-bar">
-                <div className="progress mt-4">
-                  <div
-                    className="progress-bar progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-                    style={{
-                      width: "65%",
-                      backgroundColor: "#ee4d2d",
-                    }}
-                    aria-valuenow="65"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
-                </div>
-                <div className="d-flex justify-content-between mt-2 text-muted">
-                  <small>Đã giao hàng cho đơn vị vận chuyển</small>
-                  <small>Đang giao đến bạn</small>
-                  <small>Hoàn thành</small>
-                </div>
-              </div>
-            )}
           </Box>
         ) : (
           <div className="text-center py-3 cancelled-order mt-3">
@@ -411,7 +403,7 @@ export default function OrderDetails() {
                     Mã đơn hàng
                   </Typography>
                   <Typography variant="body1" className="fw-bold">
-                    {order._id}
+                    #{order.ghnOrderCode || order._id}
                   </Typography>
                 </div>
                 <div className="mb-3">
@@ -426,14 +418,16 @@ export default function OrderDetails() {
               <div className="col-md-6">
                 <div className="mb-3">
                   <Typography variant="body2" className="text-muted">
-                    Phương thức thanh toán
+                    Phương thức vận chuyển
                   </Typography>
                   <Typography
                     variant="body1"
                     className="d-flex align-items-center"
                   >
-                    <CreditCard fontSize="small" className="me-1" />
-                    Thanh toán khi nhận hàng
+                    <LocalShipping fontSize="small" className="me-1" />
+                    {order.shippingMethod === "ship-cod"
+                      ? "Giao hàng tận nơi"
+                      : "Giao dịch trực tiếp"}
                   </Typography>
                 </div>
                 <div className="mb-3">
@@ -442,12 +436,28 @@ export default function OrderDetails() {
                   </Typography>
                   <Chip
                     size="small"
-                    label={"Chưa thanh toán"}
-                    color={
-                      order.paymentStatus === "pending" ? "warning" : "success"
+                    label={
+                      order.statusPayment ? "Đã thanh toán" : "Chưa thanh toán"
                     }
+                    color={order.statusPayment ? "success" : "warning"}
                     variant="outlined"
                   />
+                </div>
+              </div>
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <Typography variant="body2" className="text-muted">
+                    Phương thức thanh toán
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    className="d-flex align-items-center"
+                  >
+                    <CreditCard fontSize="small" className="me-1" />
+                    {order.paymentMethod === "bank_transfer"
+                      ? "Chuyển khoản"
+                      : "Thanh toán khi nhận hàng"}
+                  </Typography>
                 </div>
               </div>
             </div>
@@ -560,20 +570,19 @@ export default function OrderDetails() {
                 {formatCurrency(order.totalAmount)}
               </Typography>
             </div>
-
-            {/* <div className="d-flex justify-content-between mb-2">
+            <div className="d-flex justify-content-between mb-2">
               <Typography variant="body1">Phí vận chuyển</Typography>
               <Typography variant="body1">
                 {formatCurrency(order.shippingFee)}
               </Typography>
-            </div> */}
+            </div>
 
-            {/* <div className="d-flex justify-content-between mb-3">
+            <div className="d-flex justify-content-between mb-3">
               <Typography variant="body1">Giảm giá</Typography>
-              <Typography variant="body1" className="text-success">
-                -{formatCurrency(order.discount)}
+              <Typography variant="body1">
+                -{formatCurrency(order.discount || 0)}
               </Typography>
-            </div> */}
+            </div>
 
             <Divider className="mb-3" />
 
@@ -582,7 +591,7 @@ export default function OrderDetails() {
                 Thành tiền
               </Typography>
               <Typography variant="h6" className="text-danger fw-bold">
-                {formatCurrency(order.totalAmount)}
+                {formatCurrency(order.totalAmount + order.shippingFee)}
               </Typography>
             </div>
 
@@ -594,7 +603,7 @@ export default function OrderDetails() {
                   fullWidth
                   startIcon={<CheckCircle />}
                 >
-                  Đánh giá sản phẩm
+                  Đánh giá người bán
                 </Button>
               )}
 

@@ -282,3 +282,49 @@
    transform: none !important;
    box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
  }
+
+/* Smooth transitions for quantity updates */
+.quantity-container {
+  transition: all 0.2s ease-in-out;
+}
+
+.quantity-display {
+  transition: transform 0.15s ease-in-out, color 0.15s ease-in-out;
+  display: inline-block;
+}
+
+.quantity-display.updating {
+  transform: scale(1.05);
+  color: #007bff;
+  font-weight: bold;
+}
+
+.quantity-button {
+  transition: all 0.15s ease-in-out !important;
+}
+
+.quantity-button:hover {
+  transform: scale(1.05) !important;
+}
+
+.quantity-button:active {
+  transform: scale(0.95) !important;
+}
+
+/* Smooth row transitions */
+tbody tr {
+  transition: background-color 0.2s ease-in-out;
+}
+
+tbody tr.updating {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Price update animation */
+.price-display {
+  transition: color 0.2s ease-in-out;
+}
+
+.price-display.updating {
+  color: #28a745;
+}

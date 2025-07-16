@@ -7,6 +7,7 @@ import emitter from "../../../utils/mitt";
 import { useCategory } from "../../../contexts/CategoryContext";
 import SearchBar from "../../common/Input";
 import { Menu, MenuItem } from "@mui/material";
+import { useCart } from "../../../contexts/CartContext";
 
 const Header = React.forwardRef((props, ref) => {
   const { getCategories } = useCategory();
@@ -18,7 +19,7 @@ const Header = React.forwardRef((props, ref) => {
   const dropdownRef = useRef(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
-
+  const { cart } = useCart();
   // Notification state
   const [notifications, setNotifications] = useState([
     {
@@ -107,10 +108,6 @@ const Header = React.forwardRef((props, ref) => {
       }
     };
     checkAuthentication();
-    emitter.on("CART_UPDATED", checkAuthentication);
-    return () => {
-      emitter.off("CART_UPDATED", checkAuthentication);
-    };
   }, []);
 
   // Fetch categories
@@ -410,7 +407,7 @@ const Header = React.forwardRef((props, ref) => {
                   <Link to="/eco-market/my-cart" className={styles.cartBtn}>
                     <i className="bi bi-bag-heart-fill"></i>
                     <span className={styles.badge}>
-                      {account.cart?.length || 0}
+                      {cart?.items?.length || 0}
                     </span>
                   </Link>
                 </div>
@@ -456,11 +453,14 @@ const Header = React.forwardRef((props, ref) => {
                         >
                           <i className="bi bi-box-seam me-2"></i>Đơn Hàng
                         </Link>
-                             {account?.role === "seller" && (
-                          <Link className="dropdown-item" to="/eco-market/seller">
-                           <i className="bi bi-shop me-2"></i>Gian Hàng
-                        </Link>
-                              )}
+                        {account?.role === "seller" && (
+                          <Link
+                            className="dropdown-item"
+                            to="/eco-market/seller"
+                          >
+                            <i className="bi bi-shop me-2"></i>Gian Hàng
+                          </Link>
+                        )}
 
                         {account?.role === "admin" && (
                           <Link

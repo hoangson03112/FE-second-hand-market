@@ -27,7 +27,6 @@ import SellerOrders from "./pages/Seller/SellerOrders";
 import SellerVouchers from "./pages/Seller/SellerVouchers";
 import SellerAnalytics from "./pages/Seller/SellerAnalytics";
 
-
 import { AuthProvider } from "./contexts/AuthContext";
 import { CoinProvider } from "./contexts/CoinProvider";
 import { CartProvider } from "./contexts/CartContext";
@@ -51,10 +50,14 @@ import BlogDetail from "./pages/Blog/BlogDetail";
 import AdminBlogList from "./pages/Admin/BlogManagement/AdminBlogList";
 import BlogForm from "./pages/Admin/BlogManagement/BlogForm";
 
-import VoucherList from "./pages/Voucher/VoucherList";
+// import VoucherList from "./pages/Voucher/VoucherList";
 import VoucherManagement from "./pages/Admin/VoucherManagement/VoucherManagement";
-import RegisterSeller from "./pages/RegisterSeller/RegisterSeller";
+// import RegisterSeller from "./pages/RegisterSeller/RegisterSeller";
 import SellerManagement from "./pages/Admin/SellerManagement/SellerManagement";
+
+// import QRPaymentPage from "./pages/PaymentResult/QRPaymentPage";
+import PaymentCancelPage from "./pages/PaymentResult/PaymentCancelPage";
+import PaymentSuccessPage from "./pages/PaymentResult/PaymentSuccessPage";
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
@@ -64,277 +67,274 @@ if (token) {
 
 function App() {
   return (
- 
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <NotificationProvider>
         <AuthProvider>
-        <CoinProvider>
-        <CartProvider>
-          <ProductProvider>
-            <CategoryProvider>
-              <OrderProvider>
-                <VoucherProvider>
-                  <ChatProvider>
-                    <BrowserRouter>
-                      <Routes>
-                        <Route
-                          path="/eco-market/admin"
-                          element={
-                            <LayoutAdmin>
-                              <DashBoard />
-                            </LayoutAdmin>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/admin/products"
-                          element={
-                            <LayoutAdmin>
-                              <ProductManagement />
-                            </LayoutAdmin>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/admin/categories"
-                          element={
-                            <LayoutAdmin>
-                              <CategoryManagement />
-                            </LayoutAdmin>
-                          }
-                        />
+          <CoinProvider>
+            <CartProvider>
+              <ProductProvider>
+                <CategoryProvider>
+                  <OrderProvider>
+                    <VoucherProvider>
+                      <ChatProvider>
+                        <BrowserRouter>
+                          <Routes>
+                            <Route
+                              path="/eco-market/admin"
+                              element={
+                                <LayoutAdmin>
+                                  <DashBoard />
+                                </LayoutAdmin>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/admin/products"
+                              element={
+                                <LayoutAdmin>
+                                  <ProductManagement />
+                                </LayoutAdmin>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/admin/categories"
+                              element={
+                                <LayoutAdmin>
+                                  <CategoryManagement />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/admin/blogs"
-                          element={
-                            <LayoutAdmin>
-                              <AdminBlogList />
-                            </LayoutAdmin>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/admin/blogs"
+                              element={
+                                <LayoutAdmin>
+                                  <AdminBlogList />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/admin/blogs/new"
-                          element={
-                            <LayoutAdmin>
-                              <BlogForm />
-                            </LayoutAdmin>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/admin/blogs/new"
+                              element={
+                                <LayoutAdmin>
+                                  <BlogForm />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/admin/blogs/edit/:id"
-                          element={
-                            <LayoutAdmin>
-                              <BlogForm />
-                            </LayoutAdmin>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/admin/blogs/edit/:id"
+                              element={
+                                <LayoutAdmin>
+                                  <BlogForm />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/admin/vouchers"
-                          element={
-                            <LayoutAdmin>
-                              <VoucherManagement />
-                            </LayoutAdmin>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/admin/vouchers"
+                              element={
+                                <LayoutAdmin>
+                                  <VoucherManagement />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/admin/sellers"
-                          element={
-                            <LayoutAdmin>
-                              <SellerManagement />
-                            </LayoutAdmin>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/admin/sellers"
+                              element={
+                                <LayoutAdmin>
+                                  <SellerManagement />
+                                </LayoutAdmin>
+                              }
+                            />
 
-                        <Route
-                          path="/"
-                          element={<Navigate to="/eco-market/home" />}
-                        />
-                        <Route
-                          path="/eco-market/home"
-                          element={
-                            <Layout>
-                              <Home />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market"
-                          element={
-                            <Layout>
-                              <ProductList />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/product"
-                          element={
-                            <Layout>
-                              <Product />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/user/profile"
-                          element={
-                            <Layout>
-                              <UserProfile />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/admin/customers"
-                          element={
-                            <LayoutAdmin>
-                              <UserManagement />
-                            </LayoutAdmin>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/admin/orders"
-                          element={
-                            <LayoutAdmin>
-                              <OrderManage />
-                            </LayoutAdmin>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/login"
-                          element={
-                            <Layout>
-                              <Login />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/register"
-                          element={
-                            <Layout>
-                              <Register />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/verification"
-                          element={
-                            <Layout>
-                              <Verification />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/my-cart"
-                          element={
-                            <Layout>
-                              <Cart />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/checkout"
-                          element={
-                            <Layout>
-                              <Checkout />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/customer/orders"
-                          element={
-                            <Layout>
-                              <MyOrder />
-                            </Layout>
-                          }
-                        />
+                            <Route
+                              path="/"
+                              element={<Navigate to="/eco-market/home" />}
+                            />
+                            <Route
+                              path="/eco-market/home"
+                              element={
+                                <Layout>
+                                  <Home />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market"
+                              element={
+                                <Layout>
+                                  <ProductList />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/product"
+                              element={
+                                <Layout>
+                                  <Product />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/user/profile"
+                              element={
+                                <Layout>
+                                  <UserProfile />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/admin/customers"
+                              element={
+                                <LayoutAdmin>
+                                  <UserManagement />
+                                </LayoutAdmin>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/admin/orders"
+                              element={
+                                <LayoutAdmin>
+                                  <OrderManage />
+                                </LayoutAdmin>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/login"
+                              element={
+                                <Layout>
+                                  <Login />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/register"
+                              element={
+                                <Layout>
+                                  <Register />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/verification"
+                              element={
+                                <Layout>
+                                  <Verification />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/my-cart"
+                              element={
+                                <Layout>
+                                  <Cart />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/checkout"
+                              element={
+                                <Layout>
+                                  <Checkout />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/customer/orders"
+                              element={
+                                <Layout>
+                                  <MyOrder />
+                                </Layout>
+                              }
+                            />
 
-                        <Route
-                          path="/eco-market/order-details/:orderId"
-                          element={
-                            <Layout>
-                              <OrderDetails />
-                            </Layout>
-                          }
-                        />
-                        <Route
-                          path="/eco-market/order-details"
-                          element={
-                            <Navigate to="/eco-market/customer/orders" />
-                          }
-                        />
+                            <Route
+                              path="/eco-market/order-details/:orderId"
+                              element={
+                                <Layout>
+                                  <OrderDetails />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/order-details"
+                              element={
+                                <Navigate to="/eco-market/customer/orders" />
+                              }
+                            />
 
-           
-                        <Route
-                          path="/eco-market/blogs"
-                          element={
-                            <Layout>
-                              <BlogList />
-                            </Layout>
-                          }
-                        />
+                            <Route
+                              path="/eco-market/blogs"
+                              element={
+                                <Layout>
+                                  <BlogList />
+                                </Layout>
+                              }
+                            />
 
-                      <Route
-                        path="/eco-market/blogs/:id"
-                        element={
-                          <Layout>
-                            <BlogDetail />
-                          </Layout>
-                        }
-                      />
+                            <Route
+                              path="/eco-market/blogs/:id"
+                              element={
+                                <Layout>
+                                  <BlogDetail />
+                                </Layout>
+                              }
+                            />
 
-                              {/* Seller Routes */}
-                    <Route
-                      path="/eco-market/seller"
-                      element={
-                        <LayoutSeller>
-                          <SellerDashboard />
-                        </LayoutSeller>
-                      }
-                    />
-                      <Route
-                        path="/eco-market/seller/register"
-                        element={
-                          <Layout>
-                            <PostProduct />
-                          </Layout>
-                        }
-                      />
-                      <Route
-                        path="/eco-market/seller/products/create"
-                        element={
-                          <Layout>
-                            <PostProduct />
-                          </Layout>
-                        }
-                      />
+                            {/* Seller Routes */}
+                            <Route
+                              path="/eco-market/seller"
+                              element={
+                                <LayoutSeller>
+                                  <SellerDashboard />
+                                </LayoutSeller>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/seller/register"
+                              element={
+                                <Layout>
+                                  <PostProduct />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/seller/products/create"
+                              element={
+                                <Layout>
+                                  <PostProduct />
+                                </Layout>
+                              }
+                            />
 
-          
-                    <Route
-                      path="/eco-market/seller/products"
-                      element={
-                        <LayoutSeller>
-                          <SellerProducts />
-                        </LayoutSeller>
-                      }
-                    />
-                    <Route
-                      path="/eco-market/seller/orders"
-                      element={
-                        <LayoutSeller>
-                          <SellerOrders />
-                        </LayoutSeller>
-                      }
-                    />
-                    <Route
-                      path="/eco-market/seller/vouchers"
-                      element={
-                        <LayoutSeller>
-                          <SellerVouchers />
-                        </LayoutSeller>
-                      }
-                    />
-                    {/* <Route
+                            <Route
+                              path="/eco-market/seller/products"
+                              element={
+                                <LayoutSeller>
+                                  <SellerProducts />
+                                </LayoutSeller>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/seller/orders"
+                              element={
+                                <LayoutSeller>
+                                  <SellerOrders />
+                                </LayoutSeller>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/seller/vouchers"
+                              element={
+                                <LayoutSeller>
+                                  <SellerVouchers />
+                                </LayoutSeller>
+                              }
+                            />
+                            {/* <Route
                       path="/eco-market/seller/analytics"
                       element={
                         <LayoutSeller>
@@ -343,17 +343,32 @@ function App() {
                       }
                     /> */}
 
-                    
-                      </Routes>
-                    </BrowserRouter>
-                  </ChatProvider>
-                </VoucherProvider>
-              </OrderProvider>
-            </CategoryProvider>
-          </ProductProvider>
-        </CartProvider>
-         </CoinProvider>
-      </AuthProvider>
+                            <Route
+                              path="/eco-market/payment-cancel"
+                              element={
+                                <Layout>
+                                  <PaymentCancelPage />
+                                </Layout>
+                              }
+                            />
+                            <Route
+                              path="/eco-market/payment-success"
+                              element={
+                                <Layout>
+                                  <PaymentSuccessPage />
+                                </Layout>
+                              }
+                            />
+                          </Routes>
+                        </BrowserRouter>
+                      </ChatProvider>
+                    </VoucherProvider>
+                  </OrderProvider>
+                </CategoryProvider>
+              </ProductProvider>
+            </CartProvider>
+          </CoinProvider>
+        </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
   );

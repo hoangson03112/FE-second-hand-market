@@ -24,14 +24,13 @@ import {
   VerifiedUser,
 } from "@mui/icons-material";
 
-import { CheckoutSkeleton } from "../../pages/Cart/components/SkeletonLoader.js";
-
 // Custom Hooks
 import { useCheckoutData } from "../../hooks/useCheckoutData";
 import { usePaymentCalculation } from "../../hooks/usePaymentCalculation";
 import { useAddressManagement } from "../../hooks/useAddressManagement";
 import { useOrderPlacement } from "../../hooks/useOrderPlacement";
 import { useShippingCalculation } from "../../hooks/useShippingCalculation";
+import { useOrderTypeCalculation } from "../../hooks/useOrderTypeCalculation";
 
 // Components
 import AddressSection from "./AddressSection";
@@ -116,20 +115,65 @@ const Checkout = () => {
     handleAddNewAddress,
   } = useAddressManagement(refreshAddresses);
 
-  const { isPlacingOrder, handlePlaceOrder } = useOrderPlacement({
+  const { isPlacingOrder, handlePlaceOrder: originalHandlePlaceOrder } =
+    useOrderPlacement(products);
+
+  // Order type calculation hook
+  const {
+    directMeetingCount,
+    codShippingCount,
+    bankTransferCount,
+    totalOrders,
+    hasMixedOrders,
+    directMeetingProducts,
+    codShippingProducts,
+    bankTransferProducts,
+    directMeetingAmount,
+    codShippingAmount,
+    bankTransferAmount,
+    directMeetingOriginalAmount,
+    codShippingOriginalAmount,
+    bankTransferOriginalAmount,
+    directMeetingSavings,
+    codShippingSavings,
+    bankTransferSavings,
+    getCodShippingFee,
+  } = useOrderTypeCalculation(
     products,
-    selectedAddress,
-    shippingMethod,
-    paymentMethod,
-    useCoins,
-    finalAmount,
-    depositAmount,
-    selectedShippingMethods: getSelectedShippingMethods(), // Use API-calculated methods
-  });
+    getSelectedShippingMethods(),
+    paymentMethod
+  );
+
+  // Wrapper function for place order
+  const handlePlaceOrder = async () => {
+    const calculatedCoinDiscount = useCoins
+      ? Math.min(finalAmount * 0.3, 100000)
+      : 0;
+
+    await originalHandlePlaceOrder({
+      products,
+      finalAmount,
+      shippingMethod,
+      selectedAddress,
+      selectedVoucher: null,
+      useCoins,
+      coinDiscount: calculatedCoinDiscount,
+      selectedShippingMethods: getSelectedShippingMethods(),
+      paymentMethod,
+    });
+  };
 
   // Handle shipping method selection for individual shops
   const handleShippingMethodChange = (sellerId, method) => {
     updateSelectedShipping(sellerId, method.code);
+  };
+
+  // Check if any order uses COD delivery (ship-cod)
+  const hasShipCodOrders = () => {
+    const selectedMethods = getSelectedShippingMethods();
+    return Object.values(selectedMethods).some(
+      (method) => method.id === "ship-cod"
+    );
   };
 
   // Handler functions
@@ -173,7 +217,7 @@ const Checkout = () => {
             chọn sản phẩm bạn muốn mua.
           </Typography>
           <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
-            <Link href="/cart" underline="none">
+            <Link href="/my-cart" underline="none">
               <Chip
                 label="Quay lại giỏ hàng"
                 color="primary"
@@ -237,7 +281,7 @@ const Checkout = () => {
               Trang chủ
             </Link>
             <Link
-              href="/cart"
+              href="/my-cart"
               color="inherit"
               underline="hover"
               sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
@@ -272,9 +316,7 @@ const Checkout = () => {
           </Box>
         )}
 
-        {/* Main Content */}
         <Grid container spacing={4}>
-          {/* Address Section */}
           <Grid item xs={12}>
             <AddressSection
               selectedAddress={selectedAddress}
@@ -282,7 +324,6 @@ const Checkout = () => {
             />
           </Grid>
 
-          {/* Products by Shop with Shipping Calculation */}
           <Grid item xs={12}>
             <ProductList
               products={products}
@@ -295,15 +336,31 @@ const Checkout = () => {
             />
           </Grid>
 
-          {/* Payment Method Section */}
-          <Grid item xs={12}>
-            <PaymentMethodSection
-              paymentMethod={paymentMethod}
-              onPaymentMethodChange={setPaymentMethod}
-              shippingFee={getTotalShippingFee()}
-              finalAmount={finalAmount}
-            />
-          </Grid>
+          {/* Mixed Order Info - Show if there are different order types */}
+          {hasMixedOrders && (
+            <Grid item xs={12}>
+              {/* XÓA: <MixedOrderInfo
+                directMeetingCount={directMeetingCount}
+                codShippingCount={codShippingCount}
+                bankTransferCount={bankTransferCount}
+              /> */}
+            </Grid>
+          )}
+
+          {/* Payment Method Section - Only show if there are COD orders */}
+          {hasShipCodOrders() && (
+            <Grid item xs={12}>
+              <PaymentMethodSection
+                paymentMethod={paymentMethod}
+                onPaymentMethodChange={setPaymentMethod}
+                shippingFee={getCodShippingFee()}
+                finalAmount={finalAmount}
+                codShippingAmount={codShippingAmount}
+                codShippingOriginalAmount={codShippingOriginalAmount}
+                hasMixedOrders={hasMixedOrders}
+              />
+            </Grid>
+          )}
 
           {/* Payment Summary */}
           <Grid item xs={12}>
@@ -316,11 +373,27 @@ const Checkout = () => {
               onCoinUsageToggle={handleCoinUsageToggle}
               coinDiscount={coinDiscount}
               shippingMethod={shippingMethod}
-              shippingFee={getTotalShippingFee()}
+              shippingFee={
+                hasMixedOrders ? getCodShippingFee() : getTotalShippingFee()
+              }
               platformFee={platformFee}
               finalAmount={finalAmount}
               paymentMethod={paymentMethod}
               depositAmount={depositAmount}
+              hasMixedOrders={hasMixedOrders}
+              directMeetingCount={directMeetingCount}
+              codShippingCount={codShippingCount}
+              bankTransferCount={bankTransferCount}
+              directMeetingAmount={directMeetingAmount}
+              codShippingAmount={codShippingAmount}
+              bankTransferAmount={bankTransferAmount}
+              directMeetingOriginalAmount={directMeetingOriginalAmount}
+              codShippingOriginalAmount={codShippingOriginalAmount}
+              bankTransferOriginalAmount={bankTransferOriginalAmount}
+              directMeetingSavings={directMeetingSavings}
+              codShippingSavings={codShippingSavings}
+              bankTransferSavings={bankTransferSavings}
+              codShippingFee={getCodShippingFee()}
             />
           </Grid>
 
@@ -329,6 +402,7 @@ const Checkout = () => {
             <CheckoutFooter
               onPlaceOrder={handlePlaceOrder}
               isLoading={isPlacingOrder}
+              hasPaymentOrders={hasShipCodOrders()}
             />
           </Grid>
         </Grid>

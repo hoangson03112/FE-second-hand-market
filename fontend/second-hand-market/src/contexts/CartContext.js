@@ -1,4 +1,11 @@
-import React, { createContext, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useEffect,
+  useContext,
+  useState,
+  useTransition,
+  startTransition,
+} from "react";
 import { useAuth } from "./AuthContext";
 import useLocalStorage from "../hooks/useLocalStorage";
 import axios from "axios";
@@ -7,44 +14,68 @@ const CartContext = createContext();
 const initialCart = {
   items: [],
   totalItems: 0,
-  totalAmount: 0,
   userId: null,
 };
 
 export const CartProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [cart, setCart] = useLocalStorage("cart", initialCart);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState(new Set()); // Track items being updated
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (currentUser) {
-      setCart((prevCart) => ({
-        ...prevCart,
-        userId: currentUser._id,
-      }));
+    if (currentUser && currentUser.cart && !isInitialized) {
+      // Only sync on first load or user change
+      setCart((prevCart) => {
+        if (prevCart.userId !== currentUser._id) {
+          return {
+            ...prevCart,
+            userId: currentUser._id,
+            items: currentUser.cart,
+            totalItems: currentUser.cart.length,
+          };
+        }
+        return prevCart;
+      });
+      setIsInitialized(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [currentUser, isInitialized]);
 
-  const addToCart = async (productId, quantity, userId) => {
+  const addToCart = async (productId, quantity) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "  /cart/add",
+        "/cart/add",
         {
           productId,
           quantity: quantity + "",
-          userId,
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`, 
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-
+      const productInCart = cart.items.find(
+        (item) => item.productId === productId
+      );
+      if (productInCart) {
+        const updatedCart = cart.items.map((item) => {
+          if (item.productId === productId) {
+            return { ...item, quantity: item.quantity + quantity };
+          }
+          return item;
+        });
+        setCart({ ...cart, items: updatedCart });
+      }
+      if (!productInCart) {
+        const updatedCart = [...cart.items, { productId, quantity }];
+        setCart({ ...cart, items: updatedCart });
+      }
       return response.data;
     } catch (error) {
-      console.error("Error fetching product list:", error);
+      console.error("Error adding to cart:", error);
       throw error;
     }
   };
@@ -52,42 +83,180 @@ export const CartProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await axios.delete("  /cart/delete-item", {
+      const response = await axios.delete("/cart/delete-item", {
         headers: {
-          Authorization: `Bearer ${token}`, // Gửi token trong header
+          Authorization: `Bearer ${token}`,
         },
         data: { productIds },
       });
 
+      if (response.data?.cart) {
+        setCart((prevCart) => ({
+          ...prevCart,
+          items: response.data.cart,
+          totalItems: response.data.cart.length,
+        }));
+      }
+
       return response.data;
     } catch (error) {
       console.error("Error deleting item:", error);
+      throw error;
     }
   };
   const updateQuantity = async (productId, quantity) => {
+    // Add to updating items
+    setUpdatingItems((prev) => new Set([...prev, productId]));
+
     try {
       const token = localStorage.getItem("token");
-
       const response = await axios.put(
-        "  /cart/update-quantity",
+        "/cart/update-quantity",
         { productId, quantity },
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Gửi token trong header
+            Authorization: `Bearer ${token}`,
           },
         }
       );
+
+      // Sync state with server response
+      if (response.data?.cart) {
+        setCart((prevCart) => ({
+          ...prevCart,
+          items: response.data.cart,
+          totalItems: response.data.cart.length,
+        }));
+      }
+
       return response.data;
     } catch (error) {
       console.error("Error updating quantity:", error);
+      throw error;
+    } finally {
+      // Remove from updating items
+      setUpdatingItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
     }
   };
+
+  // Optimistic update for immediate UI response
+  const updateQuantityOptimistic = (productId, newQuantity) => {
+    // Use startTransition for smooth, non-blocking updates
+    startTransition(() => {
+      setCart((prevCart) => {
+        const newItems = prevCart.items.map((item) =>
+          item.productId === productId
+            ? { ...item, quantity: newQuantity }
+            : item
+        );
+
+        // Calculate totalItems more efficiently
+        const totalItems = newItems.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+
+        return {
+          ...prevCart,
+          items: newItems,
+          totalItems,
+        };
+      });
+    });
+  };
+
+  // Rollback optimistic update if API fails
+  const rollbackQuantityUpdate = (productId, originalQuantity) => {
+    startTransition(() => {
+      setCart((prevCart) => {
+        const newItems = prevCart.items.map((item) =>
+          item.productId === productId
+            ? { ...item, quantity: originalQuantity }
+            : item
+        );
+
+        const totalItems = newItems.reduce(
+          (total, item) => total + item.quantity,
+          0
+        );
+
+        return {
+          ...prevCart,
+          items: newItems,
+          totalItems,
+        };
+      });
+    });
+  };
+
+  // Check if item is being updated
+  const isItemUpdating = (productId) => {
+    return updatingItems.has(productId);
+  };
+
+  const clearCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.delete("/cart/clear", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Clear state and localStorage
+      setCart({
+        items: [],
+        totalItems: 0,
+        userId: cart.userId,
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      throw error;
+    }
+  };
+
+  const syncCartFromServer = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/cart", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data?.cart) {
+        setCart((prevCart) => ({
+          ...prevCart,
+          items: response.data.cart,
+          totalItems: response.data.cart.length,
+        }));
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error syncing cart from server:", error);
+      throw error;
+    }
+  };
+
   const contextValue = {
     cart,
     setCart,
     addToCart,
     deleteItem,
     updateQuantity,
+    updateQuantityOptimistic,
+    rollbackQuantityUpdate,
+    isItemUpdating,
+    isPending,
+    clearCart,
+    syncCartFromServer,
   };
 
   return (

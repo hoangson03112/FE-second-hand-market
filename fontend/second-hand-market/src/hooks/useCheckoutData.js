@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProduct } from "../contexts/ProductContext";
 import AddressContext from "../contexts/AddressContext";
@@ -6,33 +6,37 @@ import AccountContext from "../contexts/AccountContext";
 import { useNotification } from "./useNotification";
 import { FORM_VALIDATION_MESSAGES } from "../constants/checkout";
 
-export const useCheckoutData = (selectedItems) => {
+export const useCheckoutData = (selectedItemsParam) => {
+  // Memo hóa selectedItems, chỉ lấy từ localStorage 1 lần nếu không có props
+  const selectedItems = useMemo(() => {
+    if (selectedItemsParam && selectedItemsParam.length > 0)
+      return selectedItemsParam;
+    const local = localStorage.getItem("checkoutItems");
+    return local ? JSON.parse(local) : [];
+  }, [selectedItemsParam]);
+
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [sellers, setSellers] = useState([]);
-
   const { getProduct } = useProduct();
   const { showWarning, showError } = useNotification();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to cart if no items selected
     if (!selectedItems || selectedItems.length === 0) {
       showWarning(FORM_VALIDATION_MESSAGES.NO_SELECTED_ITEMS);
-      navigate("/eco-market/cart");
+      navigate("/eco-market/my-cart");
       return;
     }
 
+    let isMounted = true;
     const fetchProducts = async () => {
       try {
-        // Parallel API calls for better performance
         const productsData = await Promise.all(
           selectedItems.map((item) => getProduct(item._id))
         );
-
-        // Merge cart quantities with product data
         const productsWithQuantity = productsData.map((product) => {
           const cartItem = selectedItems.find(
             (item) => item._id === product._id
@@ -42,8 +46,7 @@ export const useCheckoutData = (selectedItems) => {
             quantity: cartItem?.quantity || 0,
           };
         });
-
-        setProducts(productsWithQuantity);
+        if (isMounted) setProducts(productsWithQuantity);
       } catch (error) {
         console.error("Error fetching products:", error);
         showError(FORM_VALIDATION_MESSAGES.FAILED_TO_LOAD_PRODUCTS);
@@ -54,7 +57,6 @@ export const useCheckoutData = (selectedItems) => {
       try {
         const addresses = await AddressContext.getAddresses();
         setAddresses(addresses);
-
         const defaultAddress = addresses.find(
           (address) => address.isDefault === true
         );
@@ -65,14 +67,16 @@ export const useCheckoutData = (selectedItems) => {
       }
     };
 
-    // Run fetchProducts and fetchAddresses in parallel for better performance
     Promise.allSettled([fetchProducts(), fetchAddresses()])
       .then(() => {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
+    return () => {
+      isMounted = false;
+    };
   }, [selectedItems, navigate, showWarning, showError, getProduct]);
 
   useEffect(() => {

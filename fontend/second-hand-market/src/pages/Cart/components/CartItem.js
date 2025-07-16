@@ -83,6 +83,7 @@ const CartItem = memo(
     checkedItems,
     onCheckboxChange,
     onDeleteItem,
+    isItemUpdating,
   }) => {
     const [failedImages, setFailedImages] = useState(new Set());
 
@@ -258,21 +259,25 @@ const CartItem = memo(
                   {formatPrice(product.price)}
                 </td>
                 <td className="align-middle">
-                  <div className="d-flex align-items-center justify-content-center">
+                  <div className="d-flex align-items-center justify-content-center quantity-container">
                     <Button
                       variant="outline-secondary"
                       size="sm"
-                      className="p-1"
+                      className="p-1 quantity-button"
                       onClick={() => handleQuantityChange(product._id, -1)}
                       disabled={product.quantity <= 1}
                     >
                       <Remove fontSize="small" />
                     </Button>
-                    <span className="mx-2 fw-bold">{product.quantity}</span>
+                    <span 
+                      className={`mx-2 fw-bold quantity-display ${isItemUpdating?.(product._id) ? 'updating' : ''}`}
+                    >
+                      {product.quantity}
+                    </span>
                     <Button
                       variant="outline-secondary"
                       size="sm"
-                      className="p-1"
+                      className="p-1 quantity-button"
                       onClick={() => handleQuantityChange(product._id, 1)}
                     >
                       <Add fontSize="small" />
@@ -280,7 +285,9 @@ const CartItem = memo(
                   </div>
                 </td>
                 <td className="text-center fw-bold align-middle text-danger">
-                  {formatPrice(product.price * product.quantity)}
+                  <span className={`price-display ${isItemUpdating?.(product._id) ? 'updating' : ''}`}>
+                    {formatPrice(product.price * product.quantity)}
+                  </span>
                 </td>
                 <td className="text-center align-middle">
                   <Button

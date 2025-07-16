@@ -64,6 +64,7 @@ const MyOrder = () => {
     { label: "Tất cả", value: "all" },
     { label: "Chờ xác nhận", value: "pending" },
     { label: "Đang vận chuyển", value: "shipping" },
+    { label: "Đã giao hàng", value: "delivered" },
     { label: "Hoàn thành", value: "completed" },
     { label: "Đã hủy", value: "cancelled" },
     { label: "Trả hàng/Hoàn tiền", value: "REFUND" },
@@ -73,6 +74,7 @@ const MyOrder = () => {
     setLoading(true);
     try {
       const data = await getOrder();
+      console.log(data);
       setOrders(data.orders);
       setFilteredOrders(data.orders);
     } catch (error) {

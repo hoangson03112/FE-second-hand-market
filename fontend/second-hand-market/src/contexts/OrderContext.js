@@ -14,14 +14,11 @@ export const OrderProvider = ({ children }) => {
         return { message: "Chưa đăng nhập", status: 401 };
       }
 
-      const response = await axios.get(
-        "  /orders/my-orders",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("  /orders/my-orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       return response.data;
     } catch (error) {
@@ -35,7 +32,7 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-  const updateOrder = async (orderId, reason, status) => {
+  const updateOrder = async (orderId, reason = "", status) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -67,7 +64,35 @@ export const OrderProvider = ({ children }) => {
       };
     }
   };
-
+  const updatePaymentStatus = async (orderId, status) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return { message: "Chưa đăng nhập", status: 401 };
+      }
+      const response = await axios.patch(
+        "  /orders/update-payment-status",
+        {
+          orderId,
+          status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      return {
+        message:
+          error.response?.data?.message ||
+          "Có lỗi xảy ra khi cập nhật trạng thái thanh toán",
+        status: error.response?.status || 500,
+      };
+    }
+  };
   const getOrdersByAdmin = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -75,14 +100,11 @@ export const OrderProvider = ({ children }) => {
         return { message: "Chưa đăng nhập", status: 401 };
       }
 
-      const response = await axios.get(
-        "  /orders",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("  /orders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       return response.data;
     } catch (error) {
@@ -96,21 +118,18 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-    const getMySellerOrders = async () => {
+  const getMySellerOrders = async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
         return { message: "Chưa đăng nhập", status: 401 };
       }
 
-      const response = await axios.get(
-        "  /orders/my-seller-orders",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("/orders/seller/my", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       return response.data;
     } catch (error) {
@@ -157,13 +176,12 @@ export const OrderProvider = ({ children }) => {
     }
   };
 
-
   const contextValue = {
     getOrder,
     updateOrder,
     getOrdersByAdmin,
-
-     getMySellerOrders,
+    updatePaymentStatus,
+    getMySellerOrders,
     updateOrderBySeller,
   };
 

@@ -3,8 +3,6 @@ import ApiService from "./ApiService";
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
 const authService = {
-
-
   login: async (username, password) => {
     const response = await ApiService.post("/accounts/login", {
       username,
@@ -21,8 +19,6 @@ const authService = {
   register: async (userData) => {
     return await ApiService.post("/auth/register", userData);
   },
-
-
 
   getCurrentUser: () => {
     const userStr = localStorage.getItem(USER_KEY);

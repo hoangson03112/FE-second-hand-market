@@ -1,28 +1,19 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import AccountContext from "../../../contexts/AccountContext";
 import { useProduct } from "../../../contexts/ProductContext";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useCart } from "../../../contexts/CartContext";
 
 // Cache for API results to avoid repeated calls
 const cache = new Map();
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
 
 export const useCartData = () => {
-  const [cart, setCart] = useState([]);
   const [products, setProducts] = useState([]);
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { getProduct } = useProduct();
-  const { currentUser } = useAuth();
-
-  useEffect(() => {
-    if (currentUser?.cart) {
-      setCart(currentUser.cart);
-    } else {
-      setLoading(false);
-    }
-  }, [currentUser]);
+  const { cart } = useCart();
 
   // Memoized cache functions
   const getCachedData = useCallback((key) => {
@@ -43,7 +34,7 @@ export const useCartData = () => {
         setLoading(true);
         setError(null);
 
-        if (cartItems.length === 0) {
+        if (!cartItems || cartItems.length === 0) {
           setProducts([]);
           setLoading(false);
           return;
@@ -124,17 +115,15 @@ export const useCartData = () => {
 
   // Fetch products when cart changes
   useEffect(() => {
-    fetchProductsWithQuantity(cart);
-  }, [cart, fetchProductsWithQuantity]);
+    // cart.items là array từ CartContext
+    const cartItems = cart.items || [];
+    fetchProductsWithQuantity(cartItems);
+  }, [cart.items, fetchProductsWithQuantity]);
 
   // Fetch sellers when products change
   useEffect(() => {
     fetchSellers(products);
   }, [products, fetchSellers]);
-
-  const updateCart = useCallback((newCart) => {
-    setCart(newCart);
-  }, []);
 
   // Memoized return object to prevent unnecessary re-renders
   const returnValue = useMemo(
@@ -144,9 +133,8 @@ export const useCartData = () => {
       sellers,
       loading,
       error,
-      updateCart,
     }),
-    [cart, products, sellers, loading, error, updateCart]
+    [cart, products, sellers, loading, error]
   );
 
   return returnValue;

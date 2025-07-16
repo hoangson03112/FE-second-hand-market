@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Drawer,
@@ -53,7 +53,7 @@ const LayoutAdmin = ({ children }) => {
   const [open, setOpen] = useState(!isMobile);
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 960) {
@@ -81,7 +81,11 @@ const LayoutAdmin = ({ children }) => {
   const isActive = (path) => {
     return location.pathname === path;
   };
-
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/eco-market/home");
+    window.location.reload();
+  };
   const menuItems = [
     { text: "Trang tổng quan", icon: <HomeIcon />, path: "/eco-market/admin" },
     {
@@ -123,7 +127,7 @@ const LayoutAdmin = ({ children }) => {
       text: "Đăng xuất",
       icon: <ExitToAppIcon />,
       path: "#",
-      onClick: () => console.log("Logout"),
+      onClick: handleLogout,
     },
   ];
 

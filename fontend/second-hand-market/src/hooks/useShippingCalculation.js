@@ -27,7 +27,7 @@ export const useShippingCalculation = (sellers, products, deliveryAddress) => {
         if (result.services && result.services.length > 0) {
           acc[result.shopId] = {
             services: result.services,
-            selectedService: result.services[0], // Auto-select first service
+            selectedService: result.services[0],
             loading: false,
             error: null,
           };

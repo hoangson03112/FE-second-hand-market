@@ -1,26 +1,26 @@
+import axios from "axios";
+
 class GHNService {
   constructor() {
     this.baseURL = "https://dev-online-gateway.ghn.vn/shiip/public-api";
-    // Thay đổi các giá trị này bằng token và shop ID thực của bạn
     this.token = process.env.REACT_APP_GHN_TOKEN;
     this.shopId = 196531;
   }
+  async createOrder(ghnOrderData) {
+    const response = await axios.post(
+      `${this.baseURL}/v2/shipping-order/create`,
+      ghnOrderData,
+      {
+        headers: {
+          Token: this.token,
+          ShopId: this.shopId,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  }
 
-  /**
-   * Calculate shipping fee by dynamically selecting the first valid service.
-   * If no valid service, return fixed fee 30k.
-   * @param {Object} params
-   * @param {string} params.fromWard
-   * @param {number} params.fromDistrict
-   * @param {string} params.toWard
-   * @param {number} params.toDistrict
-   * @param {number} params.weight
-   * @param {number} [params.length]
-   * @param {number} [params.width]
-   * @param {number} [params.height]
-   * @param {number} [params.insuranceValue]
-   * @returns {Object} Shipping fee info
-   */
   async calculateShippingFee({
     fromWard,
     fromDistrict,
@@ -33,14 +33,21 @@ class GHNService {
     insuranceValue = 0,
   }) {
     try {
-      // Validate địa chỉ trước khi gọi API
       if (!fromWard || !fromDistrict || !toWard || !toDistrict) {
-        console.error("Missing address parameters:", { fromWard, fromDistrict, toWard, toDistrict });
+        console.error("Missing address parameters:", {
+          fromWard,
+          fromDistrict,
+          toWard,
+          toDistrict,
+        });
         throw new Error("Thiếu thông tin địa chỉ");
       }
 
       // Lấy danh sách service hợp lệ
-      const services = await this.getAvailableServices(fromDistrict, toDistrict);
+      const services = await this.getAvailableServices(
+        fromDistrict,
+        toDistrict
+      );
       let serviceId = null;
       if (services && services.length > 0) {
         serviceId = services[0].service_id;
@@ -59,14 +66,9 @@ class GHNService {
         };
       }
 
-      const response = await fetch(`${this.baseURL}/v2/shipping-order/fee`, {
-        method: "POST",
-        headers: {
-          Token: this.token,
-          ShopId: this.shopId,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${this.baseURL}/v2/shipping-order/fee`,
+        {
           service_id: serviceId,
           insurance_value: insuranceValue,
           coupon: null,
@@ -78,11 +80,17 @@ class GHNService {
           length: parseInt(length),
           width: parseInt(width),
           height: parseInt(height),
-        }),
-      });
+        },
+        {
+          headers: {
+            Token: this.token,
+            ShopId: this.shopId,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const data = await response.json();
-      console.log("GHN API response:", data);
+      const data = response.data;
       if (data.code === 200) {
         return {
           total: data.data.total,
@@ -93,7 +101,6 @@ class GHNService {
           expected_delivery_time: data.data.expected_delivery_time,
         };
       } else {
-        console.warn("GHN API Warning:", data.message);
         // Nếu lỗi từ GHN, trả về phí ship mặc định 30k
         return {
           total: 30000,
@@ -122,23 +129,22 @@ class GHNService {
 
   async getAvailableServices(fromDistrict, toDistrict) {
     try {
-      const response = await fetch(
+      const response = await axios.post(
         `${this.baseURL}/v2/shipping-order/available-services`,
         {
-          method: "POST",
+          shop_id: parseInt(this.shopId),
+          from_district: parseInt(fromDistrict),
+          to_district: parseInt(toDistrict),
+        },
+        {
           headers: {
             Token: this.token,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            shop_id: parseInt(this.shopId),
-            from_district: parseInt(fromDistrict),
-            to_district: parseInt(toDistrict),
-          }),
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.code === 200 && data.data.length > 0) {
         return data.data;
@@ -151,20 +157,6 @@ class GHNService {
       return this.getFallbackServices();
     }
   }
-
-  /**
-   * Get available services with pricing information for user display
-   * @param {Object} params - Shipping parameters
-   * @param {string} params.fromWard - From ward code (from seller/product)
-   * @param {number} params.fromDistrict - From district ID (from seller/product)
-   * @param {string} params.toWard - To ward code (from user delivery address)
-   * @param {number} params.toDistrict - To district ID (from user delivery address)
-   * @param {number} params.weight - Package weight in grams
-   * @param {number} params.length - Package length in cm
-   * @param {number} params.width - Package width in cm
-   * @param {number} params.height - Package height in cm
-   * @returns {Array} Array of services with pricing and display information
-   */
   async getServicesWithPricing(params) {
     try {
       const {
@@ -180,13 +172,21 @@ class GHNService {
 
       // Validate required parameters
       if (!fromWard || !fromDistrict || !toWard || !toDistrict) {
-        console.error("Missing required address parameters:", { fromWard, fromDistrict, toWard, toDistrict });
+        console.error("Missing required address parameters:", {
+          fromWard,
+          fromDistrict,
+          toWard,
+          toDistrict,
+        });
         throw new Error("Thiếu thông tin địa chỉ gửi hàng hoặc nhận hàng");
       }
 
       // First get available services
-      const availableServices = await this.getAvailableServices(fromDistrict, toDistrict);
-      
+      const availableServices = await this.getAvailableServices(
+        fromDistrict,
+        toDistrict
+      );
+
       if (!availableServices || availableServices.length === 0) {
         console.warn("No services available, returning fallback");
         return this.getFormattedFallbackServices();
@@ -224,7 +224,10 @@ class GHNService {
               isRecommended: service.service_id === 53320, // Standard service
             };
           } catch (error) {
-            console.warn(`Failed to calculate pricing for service ${service.service_id}:`, error);
+            console.warn(
+              `Failed to calculate pricing for service ${service.service_id}:`,
+              error
+            );
             // Return service with fallback pricing
             const fallbackPricing = this.getFallbackPricing(service.service_id);
             return {
@@ -249,8 +252,8 @@ class GHNService {
 
       // Filter successful results and sort by fee
       const validServices = servicesWithPricing
-        .filter(result => result.status === 'fulfilled')
-        .map(result => result.value)
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value)
         .sort((a, b) => a.fee - b.fee);
 
       // Mark first service as selected
@@ -259,27 +262,21 @@ class GHNService {
         validServices[0].isFirstService = true;
       }
 
-      return validServices.length > 0 ? validServices : this.getFormattedFallbackServices();
+      return validServices.length > 0
+        ? validServices
+        : this.getFormattedFallbackServices();
     } catch (error) {
       console.error("Error getting services with pricing:", error);
       return this.getFormattedFallbackServices();
     }
   }
 
-  /**
-   * Get services for a specific route with simplified parameters
-   * @param {Object} sellerAddress - Seller address (from product/seller)
-   * @param {Object} deliveryAddress - User's delivery address
-   * @param {Array} products - Array of products for weight calculation
-   * @returns {Array} Array of formatted services
-   */
   async getServicesForRoute(sellerAddress, deliveryAddress, products = []) {
     try {
-      // Validate addresses
       if (!sellerAddress?.ward || !sellerAddress?.district) {
         throw new Error("Thiếu thông tin địa chỉ người bán");
       }
-      
+
       if (!deliveryAddress?.ward || !deliveryAddress?.district) {
         throw new Error("Thiếu thông tin địa chỉ giao hàng");
       }
@@ -288,9 +285,9 @@ class GHNService {
       const dimensions = this.calculateDimensions(products);
 
       const services = await this.getServicesWithPricing({
-        fromWard: sellerAddress.ward,        // From seller address
+        fromWard: sellerAddress.ward, // From seller address
         fromDistrict: sellerAddress.district, // From seller address
-        toWard: deliveryAddress.ward,        // To user delivery address
+        toWard: deliveryAddress.ward, // To user delivery address
         toDistrict: deliveryAddress.district, // To user delivery address
         weight,
         ...dimensions,
@@ -303,19 +300,6 @@ class GHNService {
     }
   }
 
-  /**
-   * Get first available service and calculate shipping fee
-   * @param {Object} params - Shipping parameters
-   * @param {string} params.fromWard - From ward code (from seller/product)
-   * @param {number} params.fromDistrict - From district ID (from seller/product)
-   * @param {string} params.toWard - To ward code (from user delivery address)
-   * @param {number} params.toDistrict - To district ID (from user delivery address)
-   * @param {number} params.weight - Package weight in grams
-   * @param {number} params.length - Package length in cm
-   * @param {number} params.width - Package width in cm
-   * @param {number} params.height - Package height in cm
-   * @returns {Object} First service with pricing information
-   */
   async getFirstServiceWithPricing(params) {
     try {
       const {
@@ -329,15 +313,22 @@ class GHNService {
         height = 10,
       } = params;
 
-      // Validate required parameters
       if (!fromWard || !fromDistrict || !toWard || !toDistrict) {
-        console.error("Missing required address parameters:", { fromWard, fromDistrict, toWard, toDistrict });
+        console.error("Missing required address parameters:", {
+          fromWard,
+          fromDistrict,
+          toWard,
+          toDistrict,
+        });
         throw new Error("Thiếu thông tin địa chỉ gửi hàng hoặc nhận hàng");
       }
 
       // Get available services
-      const availableServices = await this.getAvailableServices(fromDistrict, toDistrict);
-      
+      const availableServices = await this.getAvailableServices(
+        fromDistrict,
+        toDistrict
+      );
+
       if (!availableServices || availableServices.length === 0) {
         console.warn("No services available, using fallback");
         const fallbackService = this.getFormattedFallbackServices()[0];
@@ -349,7 +340,7 @@ class GHNService {
 
       // Get the first service
       const firstService = availableServices[0];
-      
+
       try {
         // Calculate pricing for the first service
         const pricing = await this.calculateShippingFee({
@@ -381,9 +372,14 @@ class GHNService {
           isFirstService: true,
         };
       } catch (error) {
-        console.warn(`Failed to calculate pricing for first service ${firstService.service_id}:`, error);
+        console.warn(
+          `Failed to calculate pricing for first service ${firstService.service_id}:`,
+          error
+        );
         // Return first service with fallback pricing
-        const fallbackPricing = this.getFallbackPricing(firstService.service_id);
+        const fallbackPricing = this.getFallbackPricing(
+          firstService.service_id
+        );
         return {
           id: firstService.service_id,
           code: firstService.service_id.toString(),
@@ -413,20 +409,13 @@ class GHNService {
     }
   }
 
-  /**
-   * Get first service for a specific route with simplified parameters
-   * @param {Object} sellerAddress - Seller address (from product/seller)
-   * @param {Object} deliveryAddress - User's delivery address
-   * @param {Array} products - Array of products for weight calculation
-   * @returns {Object} First service with pricing information
-   */
   async getFirstServiceForRoute(sellerAddress, deliveryAddress, products = []) {
     try {
       // Validate addresses
       if (!sellerAddress?.ward || !sellerAddress?.district) {
         throw new Error("Thiếu thông tin địa chỉ người bán");
       }
-      
+
       if (!deliveryAddress?.ward || !deliveryAddress?.district) {
         throw new Error("Thiếu thông tin địa chỉ giao hàng");
       }
@@ -435,9 +424,9 @@ class GHNService {
       const dimensions = this.calculateDimensions(products);
 
       const firstService = await this.getFirstServiceWithPricing({
-        fromWard: sellerAddress.ward,        // From seller address
+        fromWard: sellerAddress.ward, // From seller address
         fromDistrict: sellerAddress.district, // From seller address
-        toWard: deliveryAddress.ward,        // To user delivery address
+        toWard: deliveryAddress.ward, // To user delivery address
         toDistrict: deliveryAddress.district, // To user delivery address
         weight,
         ...dimensions,
@@ -455,11 +444,6 @@ class GHNService {
     }
   }
 
-  /**
-   * Get the first service from a list of services and mark it as selected
-   * @param {Array} services - Array of services
-   * @returns {Object} First service marked as selected
-   */
   getFirstServiceFromList(services) {
     if (!services || services.length === 0) {
       const fallbackService = this.getFormattedFallbackServices()[0];
@@ -479,15 +463,10 @@ class GHNService {
     return firstService;
   }
 
-  /**
-   * Calculate shipping fee using the first available service
-   * @param {Object} params - Shipping parameters
-   * @returns {Object} Shipping fee calculation result
-   */
   async calculateShippingFeeWithFirstService(params) {
     try {
       const firstService = await this.getFirstServiceWithPricing(params);
-      
+
       return {
         service: firstService,
         fee: firstService.fee,
@@ -496,7 +475,10 @@ class GHNService {
         isFallback: firstService.isFallback || false,
       };
     } catch (error) {
-      console.error("Error calculating shipping fee with first service:", error);
+      console.error(
+        "Error calculating shipping fee with first service:",
+        error
+      );
       const fallbackService = this.getFormattedFallbackServices()[0];
       return {
         service: fallbackService,
@@ -507,16 +489,9 @@ class GHNService {
       };
     }
   }
-
-  /**
-   * Extract seller address from product or seller object
-   * @param {Object} product - Product object with seller information
-   * @param {Object} seller - Seller object (optional, if not provided will use product.seller)
-   * @returns {Object} Seller address object
-   */
   extractSellerAddress(product, seller = null) {
     const sellerData = seller || product.seller;
-    
+
     if (!sellerData) {
       throw new Error("Không tìm thấy thông tin người bán");
     }
@@ -527,7 +502,9 @@ class GHNService {
     }
 
     if (!address.ward || !address.district) {
-      throw new Error("Địa chỉ người bán không đầy đủ (thiếu phường/xã hoặc quận/huyện)");
+      throw new Error(
+        "Địa chỉ người bán không đầy đủ (thiếu phường/xã hoặc quận/huyện)"
+      );
     }
 
     return {
@@ -538,19 +515,15 @@ class GHNService {
       fullAddress: `${address.address}, ${address.ward}, ${address.district}, ${address.province}`,
     };
   }
-
-  /**
-   * Validate delivery address from user
-   * @param {Object} deliveryAddress - User's delivery address
-   * @returns {Object} Validated delivery address object
-   */
   validateDeliveryAddress(deliveryAddress) {
     if (!deliveryAddress) {
       throw new Error("Chưa chọn địa chỉ giao hàng");
     }
 
     if (!deliveryAddress.ward || !deliveryAddress.district) {
-      throw new Error("Địa chỉ giao hàng không đầy đủ (thiếu phường/xã hoặc quận/huyện)");
+      throw new Error(
+        "Địa chỉ giao hàng không đầy đủ (thiếu phường/xã hoặc quận/huyện)"
+      );
     }
 
     return {
@@ -562,22 +535,13 @@ class GHNService {
     };
   }
 
-  /**
-   * Calculate shipping for a single product with seller and delivery addresses
-   * @param {Object} product - Product object
-   * @param {Object} deliveryAddress - User's delivery address
-   * @param {Object} seller - Seller object (optional)
-   * @returns {Object} Shipping calculation result
-   */
   async calculateProductShipping(product, deliveryAddress, seller = null) {
     try {
-      // Extract seller address from product
       const sellerAddress = this.extractSellerAddress(product, seller);
-      
-      // Validate delivery address
-      const validatedDeliveryAddress = this.validateDeliveryAddress(deliveryAddress);
 
-      // Get first service for this route
+      const validatedDeliveryAddress =
+        this.validateDeliveryAddress(deliveryAddress);
+
       const firstService = await this.getFirstServiceForRoute(
         sellerAddress,
         validatedDeliveryAddress,
@@ -599,16 +563,8 @@ class GHNService {
       throw error;
     }
   }
-
-  /**
-   * Calculate shipping for multiple products grouped by seller
-   * @param {Array} products - Array of products
-   * @param {Object} deliveryAddress - User's delivery address
-   * @returns {Object} Shipping calculation results grouped by seller
-   */
   async calculateMultiProductShipping(products, deliveryAddress) {
     try {
-      // Group products by seller
       const productsBySeller = products.reduce((acc, product) => {
         const sellerId = product.seller?._id;
         if (!acc[sellerId]) {
@@ -621,11 +577,14 @@ class GHNService {
       const results = {};
 
       // Calculate shipping for each seller
-      for (const [sellerId, sellerProducts] of Object.entries(productsBySeller)) {
+      for (const [sellerId, sellerProducts] of Object.entries(
+        productsBySeller
+      )) {
         try {
           const firstProduct = sellerProducts[0];
           const sellerAddress = this.extractSellerAddress(firstProduct);
-          const validatedDeliveryAddress = this.validateDeliveryAddress(deliveryAddress);
+          const validatedDeliveryAddress =
+            this.validateDeliveryAddress(deliveryAddress);
 
           const firstService = await this.getFirstServiceForRoute(
             sellerAddress,
@@ -644,7 +603,10 @@ class GHNService {
             isFallback: firstService.isFallback || false,
           };
         } catch (error) {
-          console.error(`Error calculating shipping for seller ${sellerId}:`, error);
+          console.error(
+            `Error calculating shipping for seller ${sellerId}:`,
+            error
+          );
           results[sellerId] = {
             sellerId,
             error: error.message,
@@ -659,10 +621,6 @@ class GHNService {
       throw error;
     }
   }
-
-  /**
-   * Get service type name by ID
-   */
   getServiceTypeName(typeId) {
     const typeNames = {
       1: "Giao hàng nội thành",
@@ -673,10 +631,6 @@ class GHNService {
     };
     return typeNames[typeId] || "Giao hàng tiêu chuẩn";
   }
-
-  /**
-   * Get service description by service ID
-   */
   getServiceDescription(serviceId) {
     const descriptions = {
       53320: "Giao hàng trong 3-5 ngày làm việc, phù hợp với hầu hết đơn hàng",
@@ -685,10 +639,6 @@ class GHNService {
     };
     return descriptions[serviceId] || "Dịch vụ giao hàng đáng tin cậy";
   }
-
-  /**
-   * Get service icon by service ID
-   */
   getServiceIcon(serviceId) {
     const icons = {
       53320: "🚚", // Standard
@@ -697,10 +647,6 @@ class GHNService {
     };
     return icons[serviceId] || "📦";
   }
-
-  /**
-   * Get formatted fallback services for display
-   */
   getFormattedFallbackServices() {
     return [
       {
@@ -714,7 +660,8 @@ class GHNService {
         insuranceFee: 0,
         pickupFee: 0,
         estimatedTime: "3-5 ngày",
-        description: "Giao hàng trong 3-5 ngày làm việc, phù hợp với hầu hết đơn hàng",
+        description:
+          "Giao hàng trong 3-5 ngày làm việc, phù hợp với hầu hết đơn hàng",
         icon: "🚚",
         isRecommended: true,
         isFallback: true,
@@ -738,10 +685,6 @@ class GHNService {
     ];
   }
 
-  /**
-   * Get all available service types for display
-   * @returns {Array} Array of all service types with descriptions
-   */
   getAllServiceTypes() {
     return [
       {
@@ -782,12 +725,6 @@ class GHNService {
     ];
   }
 
-  /**
-   * Check if shipping is available for a specific route
-   * @param {Object} sellerAddress - Seller address (from product/seller)
-   * @param {Object} deliveryAddress - User's delivery address
-   * @returns {Object} Object with availability status and message
-   */
   async checkShippingAvailability(sellerAddress, deliveryAddress) {
     try {
       if (!sellerAddress?.district || !deliveryAddress?.district) {
@@ -799,8 +736,8 @@ class GHNService {
       }
 
       const services = await this.getAvailableServices(
-        sellerAddress.district,    // From seller address
-        deliveryAddress.district   // To user delivery address
+        sellerAddress.district, // From seller address
+        deliveryAddress.district // To user delivery address
       );
 
       if (services && services.length > 0) {
@@ -826,23 +763,26 @@ class GHNService {
     }
   }
 
-  /**
-   * Get service details by service ID
-   * @param {number} serviceId - Service ID
-   * @returns {Object} Service details
-   */
   getServiceDetails(serviceId) {
     const serviceDetails = {
       53320: {
         id: 53320,
-        code: "53320",
+        code: "53322",
         name: "Giao hàng tiêu chuẩn",
         shortName: "Tiêu chuẩn",
         type: "Giao hàng tiêu chuẩn",
-        description: "Giao hàng trong 3-5 ngày làm việc, phù hợp với hầu hết đơn hàng",
+        description:
+          "Giao hàng trong 3-5 ngày làm việc, phù hợp với hầu hết đơn hàng",
         icon: "🚚",
-        features: ["Đảm bảo thời gian giao hàng", "Bảo hiểm hàng hóa", "Theo dõi đơn hàng"],
-        restrictions: ["Không giao hàng vào chủ nhật", "Không giao hàng sau 18h"],
+        features: [
+          "Đảm bảo thời gian giao hàng",
+          "Bảo hiểm hàng hóa",
+          "Theo dõi đơn hàng",
+        ],
+        restrictions: [
+          "Không giao hàng vào chủ nhật",
+          "Không giao hàng sau 18h",
+        ],
       },
       53321: {
         id: 53321,
@@ -853,7 +793,10 @@ class GHNService {
         description: "Giao hàng trong 1-2 ngày làm việc, ưu tiên tốc độ",
         icon: "⚡",
         features: ["Giao hàng nhanh", "Ưu tiên xử lý", "Bảo hiểm hàng hóa"],
-        restrictions: ["Phí vận chuyển cao hơn", "Không giao hàng vào chủ nhật"],
+        restrictions: [
+          "Phí vận chuyển cao hơn",
+          "Không giao hàng vào chủ nhật",
+        ],
       },
       100039: {
         id: 100039,
@@ -863,35 +806,43 @@ class GHNService {
         type: "Giao hàng tiết kiệm",
         description: "Giao hàng tiết kiệm trong 5-7 ngày làm việc",
         icon: "💰",
-        features: ["Chi phí thấp nhất", "Bảo hiểm cơ bản", "Phù hợp hàng hóa không khẩn cấp"],
-        restrictions: ["Thời gian giao hàng lâu", "Không giao hàng vào cuối tuần"],
+        features: [
+          "Chi phí thấp nhất",
+          "Bảo hiểm cơ bản",
+          "Phù hợp hàng hóa không khẩn cấp",
+        ],
+        restrictions: [
+          "Thời gian giao hàng lâu",
+          "Không giao hàng vào cuối tuần",
+        ],
       },
     };
 
-    return serviceDetails[serviceId] || {
-      id: serviceId,
-      code: serviceId.toString(),
-      name: "Dịch vụ giao hàng",
-      shortName: "Giao hàng",
-      type: "Giao hàng tiêu chuẩn",
-      description: "Dịch vụ giao hàng đáng tin cậy",
-      icon: "📦",
-      features: ["Giao hàng an toàn", "Theo dõi đơn hàng"],
-      restrictions: ["Không giao hàng vào chủ nhật"],
-    };
+    return (
+      serviceDetails[serviceId] || {
+        id: serviceId,
+        code: serviceId.toString(),
+        name: "Dịch vụ giao hàng",
+        shortName: "Giao hàng",
+        type: "Giao hàng tiêu chuẩn",
+        description: "Dịch vụ giao hàng đáng tin cậy",
+        icon: "📦",
+        features: ["Giao hàng an toàn", "Theo dõi đơn hàng"],
+        restrictions: ["Không giao hàng vào chủ nhật"],
+      }
+    );
   }
 
   async getProvinces() {
     try {
-      const response = await fetch(`${this.baseURL}/master-data/province`, {
-        method: "GET",
+      const response = await axios.get(`${this.baseURL}/master-data/province`, {
         headers: {
           Token: this.token,
           "Content-Type": "application/json",
         },
       });
 
-      const data = await response.json();
+      const data = response.data;
       return data.code === 200 ? data.data : [];
     } catch (error) {
       console.error("GHN Provinces Error:", error);
@@ -901,18 +852,20 @@ class GHNService {
 
   async getDistricts(provinceId) {
     try {
-      const response = await fetch(`${this.baseURL}/master-data/district`, {
-        method: "POST",
-        headers: {
-          Token: this.token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${this.baseURL}/master-data/district`,
+        {
           province_id: parseInt(provinceId),
-        }),
-      });
+        },
+        {
+          headers: {
+            Token: this.token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const data = await response.json();
+      const data = response.data;
       return data.code === 200 ? data.data : [];
     } catch (error) {
       console.error("GHN Districts Error:", error);
@@ -922,18 +875,20 @@ class GHNService {
 
   async getWards(districtId) {
     try {
-      const response = await fetch(`${this.baseURL}/master-data/ward`, {
-        method: "POST",
-        headers: {
-          Token: this.token,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${this.baseURL}/master-data/ward`,
+        {
           district_id: parseInt(districtId),
-        }),
-      });
+        },
+        {
+          headers: {
+            Token: this.token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const data = await response.json();
+      const data = response.data;
       return data.code === 200 ? data.data : [];
     } catch (error) {
       console.error("GHN Wards Error:", error);
@@ -941,7 +896,6 @@ class GHNService {
     }
   }
 
-  // Fallback pricing when GHN API is not available
   getFallbackPricing(serviceId) {
     const fallbackPrices = {
       53320: { total: 30000, expected_delivery_time: "3-5 ngày" }, // Standard
@@ -957,7 +911,6 @@ class GHNService {
     );
   }
 
-  // Fallback services when GHN API is not available
   getFallbackServices() {
     return [
       {
@@ -975,9 +928,7 @@ class GHNService {
     ];
   }
 
-  // Helper method to calculate package dimensions
   calculateDimensions(products) {
-    // Simple calculation based on product count
     const totalProducts = products.reduce(
       (sum, product) => sum + product.quantity,
       0
@@ -990,12 +941,52 @@ class GHNService {
     };
   }
 
-  // Helper method to calculate total weight
   calculateWeight(products) {
     return products.reduce((total, product) => {
       const productWeight = product.weight || 500; // Default 500g if weight not specified
       return total + productWeight * product.quantity;
     }, 0);
+  }
+
+  async cancelOrderGHN(orderCode) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/v2/switch-status/cancel`,
+        {
+          order_codes: [orderCode],
+        },
+        {
+          headers: {
+            Token: this.token,
+            ShopId: this.shopId,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error canceling order:", error);
+    }
+  }
+  async returnOrderGHN(orderCode) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/v2/switch-status/return`,
+        {
+          order_codes: [orderCode],
+        },
+        {
+          headers: {
+            Token: this.token,
+            ShopId: this.shopId,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error canceling order:", error);
+    }
   }
 }
 

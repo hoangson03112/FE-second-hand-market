@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from 'react-bootstrap';
-import ProductItem from './ProductItem';
-import { formatPrice, calculateTotalWithDiscounts } from '../../utils/checkoutUtils';
-import { shippingService } from '../../services/shippingService';
-import ShippingMethodSelector from './ShippingMethodSelector';
+import React, { useState, useEffect } from "react";
+import { Card } from "react-bootstrap";
+import ProductItem from "./ProductItem";
+import {
+  formatPrice,
+  calculateTotalWithDiscounts,
+} from "../../utils/checkoutUtils";
+import { shippingService } from "../../services/shippingService";
+import ShippingMethodSelector from "./ShippingMethodSelector";
 
-const ShopSection = ({ 
-  seller, 
-  products, 
+const ShopSection = ({
+  seller,
+  products,
   deliveryAddress,
   onShippingMethodChange,
   selectedShippingMethods,
   shippingData,
-  shippingLoading
+  shippingLoading,
 }) => {
   // Calculate shop total with discounts applied
   const shopTotals = calculateTotalWithDiscounts(products);
@@ -25,7 +28,7 @@ const ShopSection = ({
     services: [],
     selectedService: null,
     loading: false,
-    error: null
+    error: null,
   };
 
   const handleServiceChange = (service) => {
@@ -39,10 +42,10 @@ const ShopSection = ({
         <div className="d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center">
             <img
-              src={seller?.avatar?.url || '/default-avatar.png'}
+              src={seller?.avatar?.url || "/default-avatar.png"}
               alt={seller.fullName}
               className="rounded-circle me-3"
-              style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+              style={{ width: "40px", height: "40px", objectFit: "cover" }}
             />
             <div>
               <h6 className="mb-0">
@@ -50,8 +53,8 @@ const ShopSection = ({
                 {seller.fullName}
               </h6>
               <small className="text-muted">
-                <i className="bi bi-geo-alt me-1"></i>
-                {seller.address?.district || 'Không rõ địa chỉ'}
+                <i className="bi bi-geo-alt me-1 text-danger"></i>
+                {seller?.province || "Không rõ địa chỉ"}
               </small>
             </div>
           </div>
@@ -62,13 +65,17 @@ const ShopSection = ({
                 <div className="text-muted small text-decoration-line-through">
                   {formatPrice(originalShopTotal)}₫
                 </div>
-                <div className="fw-bold text-primary">{formatPrice(shopTotal)}₫</div>
+                <div className="fw-bold text-primary">
+                  {formatPrice(shopTotal)}₫
+                </div>
                 <div className="small fw-bold text-muted">
                   Tiết kiệm: {formatPrice(shopSavings)}₫
                 </div>
               </div>
             ) : (
-              <div className="fw-bold text-primary">{formatPrice(shopTotal)}₫</div>
+              <div className="fw-bold text-primary">
+                {formatPrice(shopTotal)}₫
+              </div>
             )}
           </div>
         </div>
@@ -79,16 +86,26 @@ const ShopSection = ({
         <div className="table-responsive">
           <table className="table align-middle mb-0">
             <thead className="bg-light">
-              <tr style={{ fontSize: '0.9rem' }}>
+              <tr style={{ fontSize: "0.9rem" }}>
                 <th style={{ width: "50%" }}>Sản phẩm</th>
-                <th className="text-center" style={{ width: "15%" }}>Đơn giá</th>
-                <th className="text-center" style={{ width: "15%" }}>Số lượng</th>
-                <th className="text-center" style={{ width: "20%" }}>Thành tiền</th>
+                <th className="text-center" style={{ width: "15%" }}>
+                  Đơn giá
+                </th>
+                <th className="text-center" style={{ width: "15%" }}>
+                  Số lượng
+                </th>
+                <th className="text-center" style={{ width: "20%" }}>
+                  Thành tiền
+                </th>
               </tr>
             </thead>
             <tbody>
               {products.map((product) => (
-                <ProductItem key={product._id} product={product} showBorder={false} />
+                <ProductItem
+                  key={product._id}
+                  product={product}
+                  showBorder={false}
+                />
               ))}
             </tbody>
           </table>
@@ -110,4 +127,4 @@ const ShopSection = ({
   );
 };
 
-export default ShopSection; 
+export default ShopSection;

@@ -40,22 +40,22 @@ import {
   Remove,
   Add,
   FlashOn,
-  Favorite,
-  FavoriteBorder,
-  Share,
   Storefront,
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
   Star,
+  Store,
+  CheckCircle,
+  Favorite,
+  Share,
+  CompareArrows,
+  AssignmentReturn,
+  VerifiedUser,
+  AccessTime,
 } from "@mui/icons-material";
 
 // Constants
-const TABS = [
-  { id: "description", label: "Mô tả sản phẩm" },
-  { id: "specs", label: "Thông số kỹ thuật" },
-  { id: "reviews", label: "Đánh giá" },
-];
 
 const SAFETY_TIPS = [
   "Gặp mặt tại nơi công cộng",
@@ -113,6 +113,16 @@ const formatPrice = (price) => {
     style: "currency",
     currency: "VND",
   }).format(price);
+};
+
+const formatMonthYear = (dateString) => {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}/${date.getFullYear()}`;
+  } catch (error) {
+    return "N/A";
+  }
 };
 
 // Custom TabPanel component for MUI
@@ -431,7 +441,7 @@ export const Product = () => {
                           bgcolor: "#f1f5f9",
                           borderRadius: 3,
                           overflow: "hidden",
-                          aspectRatio: "4/3",
+                          minHeight: "400px",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -443,9 +453,11 @@ export const Product = () => {
                           src={product?.images?.[currentImageIndex]?.url || ""}
                           alt={product?.name || "Product image"}
                           sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            width: "auto",
+                            height: "auto",
+                            objectFit: "contain",
                             borderRadius: 2,
                           }}
                           onError={(e) => {}}
@@ -533,14 +545,15 @@ export const Product = () => {
                   </Grid>
 
                   {/* Product Info */}
+                  {/* Product Info */}
                   <Grid item xs={12} md={5} sx={{ p: 4, bgcolor: "#fafafa" }}>
                     <Stack spacing={3}>
                       {/* Title & Badges */}
                       <Box>
                         <Typography variant="h4" fontWeight={700} gutterBottom>
-                          {product?.name || "Tên sản phẩm"}
+                          {product?.name || "Đang tải thông tin sản phẩm..."}
                         </Typography>
-                        <Stack direction="row" spacing={1}>
+                        <Stack direction="row" spacing={1} flexWrap="wrap">
                           <Chip
                             label={product?.condition || "Mới"}
                             color="success"
@@ -549,10 +562,30 @@ export const Product = () => {
                           />
                           <Chip
                             label={`Còn ${product?.stock || 0} sản phẩm`}
-                            color="info"
+                            color={product?.stock > 0 ? "info" : "error"}
                             variant="outlined"
                             size="small"
                           />
+                          {product?.category && (
+                            <Chip
+                              label={
+                                typeof product.category === "object"
+                                  ? product.category.name
+                                  : product.category
+                              }
+                              color="light"
+                              variant="outlined"
+                              size="small"
+                            />
+                          )}
+                          {product?.isPopular && (
+                            <Chip
+                              label="Bán chạy"
+                              color="warning"
+                              variant="filled"
+                              size="small"
+                            />
+                          )}
                         </Stack>
                       </Box>
 
@@ -568,19 +601,41 @@ export const Product = () => {
                             color="error.main"
                             fontWeight={700}
                           >
-                            {formatPrice(product?.price || 0)}
+                            {product?.price
+                              ? formatPrice(product.price)
+                              : "Liên hệ"}
                           </Typography>
-                          {product?.originalPrice && (
-                            <Typography
-                              variant="h6"
-                              color="text.secondary"
-                              sx={{ textDecoration: "line-through" }}
-                            >
-                              {formatPrice(product.originalPrice)}
-                            </Typography>
-                          )}
+                          {product?.originalPrice &&
+                            product.originalPrice > product.price && (
+                              <Typography
+                                variant="h6"
+                                color="text.secondary"
+                                sx={{ textDecoration: "line-through" }}
+                              >
+                                {formatPrice(product.originalPrice)}
+                              </Typography>
+                            )}
+                          {product?.originalPrice &&
+                            product.originalPrice > product.price && (
+                              <Chip
+                                label={`-${Math.round(
+                                  ((product.originalPrice - product.price) /
+                                    product.originalPrice) *
+                                    100
+                                )}%`}
+                                color="error"
+                                size="small"
+                                variant="filled"
+                              />
+                            )}
                         </Stack>
-                        <Stack direction="row" spacing={3} sx={{ mt: 1 }}>
+
+                        <Stack
+                          direction="row"
+                          spacing={3}
+                          sx={{ mt: 1 }}
+                          flexWrap="wrap"
+                        >
                           <Box
                             sx={{
                               display: "flex",
@@ -590,7 +645,345 @@ export const Product = () => {
                           >
                             <LocationOn color="error" fontSize="small" />
                             <Typography variant="body2">
-                              {product?.seller?.location || "Chưa xác định"}
+                              {product?.seller?.province || "Chưa xác định"}
+                            </Typography>
+                          </Box>
+
+                          {product?.seller?.rating && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <Star color="warning" fontSize="small" />
+                              <Typography variant="body2">
+                                {product.seller.rating}/5
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
+                      </Box>
+
+                      {/* Product Details */}
+                      {(product?.brand ||
+                        product?.model ||
+                        product?.warranty) && (
+                        <Box>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={600}
+                            gutterBottom
+                          >
+                            Thông tin sản phẩm:
+                          </Typography>
+                          <Stack spacing={1}>
+                            {product?.brand && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Thương hiệu:
+                                </Typography>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {typeof product.brand === "object"
+                                    ? product.brand.name
+                                    : product.brand}
+                                </Typography>
+                              </Box>
+                            )}
+                            {product?.model && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Model:
+                                </Typography>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {typeof product.model === "object"
+                                    ? product.model.name
+                                    : product.model}
+                                </Typography>
+                              </Box>
+                            )}
+                            {product?.warranty && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  Bảo hành:
+                                </Typography>
+                                <Typography variant="body2" fontWeight={500}>
+                                  {typeof product.warranty === "object"
+                                    ? product.warranty.name
+                                    : product.warranty}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {/* Quantity */}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={600}
+                          gutterBottom
+                        >
+                          Số lượng:
+                        </Typography>
+                        <Box
+                          sx={{
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 1,
+                            justifyContent: "center",
+                            alignContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                          >
+                            <IconButton
+                              onClick={() => handleQuantityChange(quantity - 1)}
+                              disabled={quantity <= 1 || !product?.stock}
+                              sx={{
+                                border: "1px solid #e2e8f0",
+                                borderRadius: "50%",
+                                width: 40,
+                                height: 40,
+                              }}
+                            >
+                              <Remove />
+                            </IconButton>
+                            <Typography
+                              variant="h6"
+                              fontWeight={600}
+                              sx={{ minWidth: 40, textAlign: "center" }}
+                            >
+                              {quantity}
+                            </Typography>
+                            <IconButton
+                              onClick={() => handleQuantityChange(quantity + 1)}
+                              disabled={
+                                quantity >= (product?.stock || 0) ||
+                                !product?.stock
+                              }
+                              sx={{
+                                border: "1px solid #e2e8f0",
+                                borderRadius: "50%",
+                                width: 40,
+                                height: 40,
+                              }}
+                            >
+                              <Add />
+                            </IconButton>
+                          </Stack>
+                        </Box>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          alignContent: "center",
+                          m: 0,
+                        }}
+                      >
+                        {product?.stock && product.stock < 10 && (
+                          <Typography
+                            variant="caption"
+                            color="warning.main"
+                            sx={{ display: "block" }}
+                          >
+                            Chỉ còn {product.stock} sản phẩm!
+                          </Typography>
+                        )}
+                      </Box>
+                      {/* Shipping Info */}
+                      {product?.shipping && (
+                        <Box>
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={600}
+                            gutterBottom
+                          >
+                            Thông tin vận chuyển:
+                          </Typography>
+                          <Stack spacing={1}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <LocalShipping color="primary" fontSize="small" />
+                              <Typography variant="body2">
+                                {product.shipping.method ||
+                                  "Giao hàng tiêu chuẩn"}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              <AccessTime color="primary" fontSize="small" />
+                              <Typography variant="body2">
+                                {product.shipping.estimatedDays || "2-3"} ngày
+                              </Typography>
+                            </Box>
+                            {product.shipping.isFree && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <CheckCircle color="success" fontSize="small" />
+                                <Typography
+                                  variant="body2"
+                                  color="success.main"
+                                >
+                                  Miễn phí vận chuyển
+                                </Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {/* Action Buttons */}
+                      <Stack spacing={2}>
+                        <Button
+                          onClick={handlePurchaseNow}
+                          variant="contained"
+                          size="large"
+                          startIcon={<FlashOn />}
+                          disabled={
+                            actionLoading ||
+                            !product?.stock ||
+                            product?.stock <= 0
+                          }
+                          sx={{
+                            py: 1.5,
+                            borderRadius: 2,
+                            textTransform: "none",
+                            fontSize: "1rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {actionLoading
+                            ? "Đang xử lý..."
+                            : !product?.stock || product?.stock <= 0
+                            ? "Hết hàng"
+                            : "Mua ngay"}
+                        </Button>
+                        <Button
+                          onClick={handleAddToCart}
+                          variant="outlined"
+                          size="large"
+                          startIcon={<ShoppingCart />}
+                          disabled={
+                            actionLoading ||
+                            !product?.stock ||
+                            product?.stock <= 0
+                          }
+                          sx={{
+                            py: 1.5,
+                            borderRadius: 2,
+                            textTransform: "none",
+                            fontSize: "1rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {actionLoading
+                            ? "Đang thêm..."
+                            : !product?.stock || product?.stock <= 0
+                            ? "Hết hàng"
+                            : "Thêm vào giỏ hàng"}
+                        </Button>
+
+                        {/* Additional Actions */}
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          justifyContent="center"
+                        >
+                          <Button
+                            variant="text"
+                            startIcon={<Favorite />}
+                            // onClick={handleAddToWishlist}
+                            disabled={actionLoading}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Yêu thích
+                          </Button>
+                          <Button
+                            variant="text"
+                            startIcon={<Share />}
+                            // onClick={handleShare}
+                            sx={{ textTransform: "none" }}
+                          >
+                            Chia sẻ
+                          </Button>
+                          <Button
+                            variant="text"
+                            startIcon={<CompareArrows />}
+                            // onClick={handleCompare}
+                            sx={{ textTransform: "none" }}
+                          >
+                            So sánh
+                          </Button>
+                        </Stack>
+                      </Stack>
+
+                      {/* Trust Badges */}
+                      <Box sx={{ pt: 2, borderTop: "1px solid #e2e8f0" }}>
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          justifyContent="center"
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Security color="success" fontSize="small" />
+                            <Typography variant="caption">
+                              Thanh toán bảo mật
                             </Typography>
                           </Box>
                           <Box
@@ -600,93 +993,25 @@ export const Product = () => {
                               gap: 0.5,
                             }}
                           >
-                            <LocalShipping color="success" fontSize="small" />
-                            <Typography variant="body2">
-                              Miễn phí ship
+                            <AssignmentReturn color="info" fontSize="small" />
+                            <Typography variant="caption">
+                              Đổi trả 7 ngày
+                            </Typography>
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <VerifiedUser color="primary" fontSize="small" />
+                            <Typography variant="caption">
+                              Chính hãng 100%
                             </Typography>
                           </Box>
                         </Stack>
                       </Box>
-
-                      {/* Quantity */}
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight={600}
-                          gutterBottom
-                        >
-                          Số lượng:
-                        </Typography>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <IconButton
-                            onClick={() => handleQuantityChange(quantity - 1)}
-                            disabled={quantity <= 1}
-                            sx={{
-                              border: "1px solid #e2e8f0",
-                              borderRadius: "50%",
-                              width: 40,
-                              height: 40,
-                            }}
-                          >
-                            <Remove />
-                          </IconButton>
-                          <Typography
-                            variant="h6"
-                            fontWeight={600}
-                            sx={{ minWidth: 40, textAlign: "center" }}
-                          >
-                            {quantity}
-                          </Typography>
-                          <IconButton
-                            onClick={() => handleQuantityChange(quantity + 1)}
-                            disabled={quantity >= (product?.stock || 0)}
-                            sx={{
-                              border: "1px solid #e2e8f0",
-                              borderRadius: "50%",
-                              width: 40,
-                              height: 40,
-                            }}
-                          >
-                            <Add />
-                          </IconButton>
-                        </Stack>
-                      </Box>
-
-                      {/* Action Buttons */}
-                      <Stack spacing={2}>
-                        <Button
-                          onClick={handlePurchaseNow}
-                          variant="contained"
-                          size="large"
-                          startIcon={<FlashOn />}
-                          disabled={actionLoading}
-                          sx={{
-                            py: 1.5,
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontSize: "1rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {actionLoading ? "Đang xử lý..." : "Mua ngay"}
-                        </Button>
-                        <Button
-                          onClick={handleAddToCart}
-                          variant="outlined"
-                          size="large"
-                          startIcon={<ShoppingCart />}
-                          disabled={actionLoading}
-                          sx={{
-                            py: 1.5,
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontSize: "1rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {actionLoading ? "Đang thêm..." : "Thêm vào giỏ hàng"}
-                        </Button>
-                      </Stack>
                     </Stack>
                   </Grid>
                 </Grid>
@@ -726,7 +1051,7 @@ export const Product = () => {
                     />
                     <Box>
                       <Typography variant="h6" fontWeight={600}>
-                        {product?.seller?.name || account?.name}
+                        {product?.seller?.fullName}
                       </Typography>
                       <Box
                         sx={{
@@ -738,23 +1063,19 @@ export const Product = () => {
                       >
                         <LocationOn fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          {product?.seller?.location ||
-                            account?.location ||
-                            "Chưa xác định"}
+                          {product?.seller?.province || "Chưa xác định"}
                         </Typography>
                       </Box>
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <Rating
-                          value={
-                            product?.seller?.rating || account?.rating || 5
-                          }
+                          value={product?.seller?.rating || 0}
                           readOnly
                           size="small"
                         />
                         <Typography variant="body2" color="text.secondary">
-                          ({product?.seller?.rating || account?.rating || 5})
+                          ({product?.seller?.rating || 0})
                         </Typography>
                       </Box>
                     </Box>
@@ -772,10 +1093,7 @@ export const Product = () => {
                         }}
                       >
                         <Typography variant="h6" fontWeight={700}>
-                          {product?.seller?.responseRate ||
-                            account?.responseRate ||
-                            95}
-                          %
+                          {product?.seller?.responseRate || 0}%
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Phản hồi
@@ -793,9 +1111,7 @@ export const Product = () => {
                         }}
                       >
                         <Typography variant="h6" fontWeight={700}>
-                          {product?.seller?.joinDate ||
-                            account?.joinDate ||
-                            "2023"}
+                          {formatMonthYear(product?.seller?.createdAt)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Tham gia
@@ -864,7 +1180,6 @@ export const Product = () => {
             >
               <Tab label="Mô tả sản phẩm" />
               <Tab label="Thông số kỹ thuật" />
-              <Tab label="Đánh giá" />
             </Tabs>
           </Box>
 
@@ -895,8 +1210,10 @@ export const Product = () => {
                         <TableCell sx={{ fontWeight: 500, width: "50%" }}>
                           {spec.label}
                         </TableCell>
-                        
-                        <TableCell sx={{  width: "50%" }}>{spec.value}</TableCell>
+
+                        <TableCell sx={{ width: "50%" }}>
+                          {spec.value}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -910,18 +1227,6 @@ export const Product = () => {
                   Không có thông số kỹ thuật
                 </Typography>
               )}
-            </TabPanel>
-
-            <TabPanel value={activeTab} index={2}>
-              <Box sx={{ textAlign: "center", py: 6 }}>
-                <Star sx={{ fontSize: 60, color: "grey.300", mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Chưa có đánh giá
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Hãy là người đầu tiên đánh giá sản phẩm này
-                </Typography>
-              </Box>
             </TabPanel>
           </CardContent>
         </Card>

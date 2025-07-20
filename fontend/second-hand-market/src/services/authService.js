@@ -15,9 +15,14 @@ const authService = {
     }
     return response;
   },
-
   register: async (userData) => {
-    return await ApiService.post("/auth/register", userData);
+    const response = await ApiService.post("/auth/register", userData);
+    if (response.status === "success" && response.token) {
+      localStorage.setItem(TOKEN_KEY, response.token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+      ApiService.setupInterceptors(response.token);
+    }
+    return response;
   },
 
   getCurrentUser: () => {

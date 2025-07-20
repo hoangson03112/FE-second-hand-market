@@ -102,7 +102,7 @@ const steps = [
 
 export default function RegisterSeller() {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(1);
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     avatar: null,
@@ -111,6 +111,9 @@ export default function RegisterSeller() {
     province: "",
     district: "",
     ward: "",
+    province_id: "",
+    from_district_id: "",
+    from_ward_code: "",
     idCardFront: null,
     idCardBack: null,
     bankName: "",
@@ -123,15 +126,6 @@ export default function RegisterSeller() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showSuccess, showError, showInfo } = useNotification();
 
-  // Configuration data
-  const cities = [
-    "Hà Nội",
-    "TP. Hồ Chí Minh",
-    "Đà Nẵng",
-    "Hải Phòng",
-    "Cần Thơ",
-  ];
-
   const banks = [
     "Vietcombank",
     "Techcombank",
@@ -141,8 +135,21 @@ export default function RegisterSeller() {
     "MB Bank",
   ];
 
-  // Handlers
   const handleInputChange = (field, value) => {
+    console.log(value);
+    console.log(field);
+    if (field === "province") {
+      setFormData((prev) => ({ ...prev, [field]: value.ProvinceName }));
+      setFormData((prev) => ({ ...prev, province_id: value.ProvinceID }));
+    }
+    if (field === "district") {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setFormData((prev) => ({ ...prev, from_district_id: value.DistrictID }));
+    }
+    if (field === "ward") {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setFormData((prev) => ({ ...prev, from_ward_code: value.WardCode }));
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -156,8 +163,8 @@ export default function RegisterSeller() {
           formData.avatar !== null &&
           formData.address.trim() !== "" &&
           formData.province !== "" &&
-          formData.district.trim() !== "" &&
-          formData.ward.trim() !== "" &&
+          formData.district !== "" &&
+          formData.ward !== "" &&
           formData.idCardFront !== null &&
           formData.idCardBack !== null
         );
@@ -181,8 +188,8 @@ export default function RegisterSeller() {
         if (!formData.avatar) errors.push("Chưa tải lên ảnh đại diện");
         if (!formData.address.trim()) errors.push("Chưa nhập địa chỉ lấy hàng");
         if (!formData.province) errors.push("Chưa chọn tỉnh/thành phố");
-        if (!formData.district.trim()) errors.push("Chưa nhập quận/huyện");
-        if (!formData.ward.trim()) errors.push("Chưa nhập phường/xã");
+        if (!formData.district) errors.push("Chưa chọn quận/huyện");
+        if (!formData.ward) errors.push("Chưa chọn phường/xã");
         if (!formData.idCardFront)
           errors.push("Chưa tải lên ảnh CCCD mặt trước");
         if (!formData.idCardBack) errors.push("Chưa tải lên ảnh CCCD mặt sau");
@@ -279,7 +286,6 @@ export default function RegisterSeller() {
           <PersonalInfoStep
             formData={formData}
             onInputChange={handleInputChange}
-            cities={cities}
             validateStep={validateStep}
             getStepErrors={getStepErrors}
             stepIndex={1}
@@ -438,7 +444,6 @@ export default function RegisterSeller() {
           </Box>
         </StyledPaper>
       </Container>
-
     </Box>
   );
 }

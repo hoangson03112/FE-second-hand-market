@@ -41,7 +41,7 @@ export const useOrderPlacement = (selectedItems) => {
       sellerId: order.sellerId,
       products: order.products,
     };
-
+    console.log(orderPayload);
     const orderResponse = await axios.post("/orders", orderPayload, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -361,7 +361,7 @@ export const useOrderPlacement = (selectedItems) => {
     paymentMethod = "cod",
   }) => {
     setIsPlacingOrder(true);
-
+    if (isPlacingOrder) return;
     try {
       if (!selectedAddress) {
         throw new Error(FORM_VALIDATION_MESSAGES.ADDRESS_REQUIRED);

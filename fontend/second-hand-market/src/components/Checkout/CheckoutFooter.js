@@ -92,8 +92,6 @@ const CheckoutFooter = ({
           <Button
             variant="contained"
             size="large"
-            onClick={onPlaceOrder}
-            disabled={isLoading}
             startIcon={
               isLoading ? (
                 <CircularProgress size={20} color="inherit" />
@@ -101,6 +99,8 @@ const CheckoutFooter = ({
                 <Security />
               )
             }
+            onClick={isLoading ? undefined : onPlaceOrder}
+            disabled={isLoading}
             sx={{
               py: 1.5,
               px: 4,

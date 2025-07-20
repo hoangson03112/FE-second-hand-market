@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,12 +11,15 @@ import {
   MenuItem,
   Box,
   Avatar,
+  InputAdornment,
 } from "@mui/material";
-import { Person, Badge } from "@mui/icons-material";
+import { Person, Badge, Search } from "@mui/icons-material";
 import { styled, keyframes } from "@mui/material/styles";
 import { Slide } from "@mui/material";
 import ImageUploadBox from "./ImageUploadBox";
 import ValidationErrorBox from "./ValidationErrorBox";
+import { useAddressManagement } from "../../../hooks/useAddressManagement";
+import axios from "axios";
 
 // Animations
 const float = keyframes`
@@ -42,11 +45,129 @@ const FloatingAvatar = styled(Avatar)(({ theme }) => ({
 const PersonalInfoStep = ({
   formData,
   onInputChange,
-  cities,
   validateStep,
   getStepErrors,
   stepIndex = 1,
 }) => {
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+  const [provinceSearch, setProvinceSearch] = useState("");
+  const [districtSearch, setDistrictSearch] = useState("");
+  const [wardSearch, setWardSearch] = useState("");
+
+  useEffect(() => {
+    const fetchProvinces = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_GHN_API_URL}/province`,
+          {
+            headers: { Token: process.env.REACT_APP_GHN_TOKEN },
+          }
+        );
+        setProvinces(response.data.data);
+      } catch (error) {
+        console.error("Error fetching provinces:", error);
+      }
+    };
+
+    fetchProvinces();
+  }, []);
+
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (formData.province_id) {
+        try {
+          const response = await axios.get(
+            `${process.env.REACT_APP_GHN_API_URL}/district`,
+            {
+              headers: { Token: process.env.REACT_APP_GHN_TOKEN },
+              params: { province_id: formData.province_id },
+            }
+          );
+          setDistricts(response.data.data);
+        } catch (error) {
+          console.error("Error fetching districts:", error);
+        }
+      } else {
+        setDistricts([]);
+      }
+    };
+
+    fetchDistricts();
+  }, [formData.province_id]);
+
+  // Fetch wards when district changes
+  useEffect(() => {
+    const fetchWards = async () => {
+      if (formData.from_district_id) {
+        try {
+          const response = await axios.get(
+            `${process.env.REACT_APP_GHN_API_URL}/ward`,
+            {
+              headers: { Token: process.env.REACT_APP_GHN_TOKEN },
+              params: { district_id: formData.from_district_id },
+            }
+          );
+          setWards(response.data.data);
+        } catch (error) {
+          console.error("Error fetching wards:", error);
+        }
+      } else {
+        setWards([]);
+      }
+    };
+
+    fetchWards();
+  }, [formData.from_district_id]);
+
+  // Filter functions
+  const filteredProvinces = provinces.filter((province) =>
+    province.ProvinceName.toLowerCase().includes(provinceSearch.toLowerCase())
+  );
+
+  const filteredDistricts = districts.filter((district) =>
+    district.DistrictName.toLowerCase().includes(districtSearch.toLowerCase())
+  );
+
+  const filteredWards = wards.filter((ward) =>
+    ward.WardName.toLowerCase().includes(wardSearch.toLowerCase())
+  );
+
+  // Handle province change with search reset
+  const handleProvinceChange = (e) => {
+    onInputChange("province", e.target.value);
+    setProvinceSearch(""); // Reset search
+  };
+
+  // Handle district change with search reset
+  const handleDistrictChange = (e) => {
+    onInputChange("district", e.target.value);
+    setDistrictSearch(""); // Reset search
+  };
+
+  // Handle ward change with search reset
+  const handleWardChange = (e) => {
+    onInputChange("ward", e.target.value);
+    setWardSearch(""); // Reset search
+  };
+
+  // Handle search input changes
+  const handleProvinceSearchChange = (e) => {
+    e.stopPropagation();
+    setProvinceSearch(e.target.value);
+  };
+
+  const handleDistrictSearchChange = (e) => {
+    e.stopPropagation();
+    setDistrictSearch(e.target.value);
+  };
+
+  const handleWardSearchChange = (e) => {
+    e.stopPropagation();
+    setWardSearch(e.target.value);
+  };
+
   return (
     <Slide direction="left" in timeout={600}>
       <StyledCard elevation={0}>
@@ -124,58 +245,200 @@ const PersonalInfoStep = ({
 
             <Grid item xs={12} md={4}>
               <FormControl fullWidth required>
-                <InputLabel>Thành phố</InputLabel>
+                <InputLabel>Thành phố/ Tỉnh</InputLabel>
                 <Select
                   value={formData.province}
-                  label="Thành phố"
-                  onChange={(e) => onInputChange("province", e.target.value)}
+                  label="Thành phố/ Tỉnh"
+                  onChange={handleProvinceChange}
                   sx={{ borderRadius: 3 }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                      },
+                    },
+                  }}
                 >
-                  {cities.map((province) => (
-                    <MenuItem key={province} value={province}>
-                      {province}
+                  <MenuItem sx={{ p: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <TextField
+                      fullWidth
+                      placeholder="Tìm kiếm tỉnh/thành phố..."
+                      value={provinceSearch}
+                      onChange={handleProvinceSearchChange}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      variant="standard"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search sx={{ color: "#9ca3af", fontSize: 20 }} />
+                          </InputAdornment>
+                        ),
+                        disableUnderline: true,
+                      }}
+                      sx={{
+                        p: 1,
+                        "& .MuiInputBase-input": {
+                          fontSize: "0.875rem",
+                        },
+                      }}
+                    />
+                  </MenuItem>
+                  {filteredProvinces.length > 0 ? (
+                    filteredProvinces.map((province) => (
+                      <MenuItem
+                        key={province.ProvinceID}
+                        value={province}
+                        sx={{
+                          fontSize: "0.875rem",
+                          py: 0.5,
+                        }}
+                      >
+                        {province.ProvinceName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem
+                      disabled
+                      sx={{ fontSize: "0.875rem", fontStyle: "italic" }}
+                    >
+                      Không tìm thấy tỉnh/thành phố
                     </MenuItem>
-                  ))}
+                  )}
                 </Select>
               </FormControl>
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Quận/Huyện"
-                required
-                value={formData.district}
-                onChange={(e) => onInputChange("district", e.target.value)}
-                placeholder="Quận/Huyện"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 3,
-                    "&:hover fieldset": {
-                      borderColor: "#344960",
+              <FormControl fullWidth required>
+                <InputLabel>Quận/Huyện</InputLabel>
+                <Select
+                  value={formData.district}
+                  label="Quận/Huyện"
+                  onChange={handleDistrictChange}
+                  sx={{ borderRadius: 3 }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                      },
                     },
-                  },
-                }}
-              />
+                  }}
+                >
+                  <MenuItem sx={{ p: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <TextField
+                      fullWidth
+                      placeholder="Tìm kiếm quận/huyện..."
+                      value={districtSearch}
+                      onChange={handleDistrictSearchChange}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      variant="standard"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search sx={{ color: "#9ca3af", fontSize: 20 }} />
+                          </InputAdornment>
+                        ),
+                        disableUnderline: true,
+                      }}
+                      sx={{
+                        p: 1,
+                        "& .MuiInputBase-input": {
+                          fontSize: "0.875rem",
+                        },
+                      }}
+                    />
+                  </MenuItem>
+                  {filteredDistricts.length > 0 ? (
+                    filteredDistricts.map((district) => (
+                      <MenuItem
+                        key={district.DistrictID}
+                        value={district}
+                        sx={{
+                          fontSize: "0.875rem",
+                          py: 0.5,
+                        }}
+                      >
+                        {district.DistrictName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem
+                      disabled
+                      sx={{ fontSize: "0.875rem", fontStyle: "italic" }}
+                    >
+                      Không tìm thấy quận/huyện
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="Phường/Xã"
-                required
-                value={formData.ward}
-                onChange={(e) => onInputChange("ward", e.target.value)}
-                placeholder="Phường/Xã"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 3,
-                    "&:hover fieldset": {
-                      borderColor: "#344960",
+              <FormControl fullWidth required>
+                <InputLabel>Phường/Xã</InputLabel>
+                <Select
+                  value={formData.ward}
+                  label="Phường/Xã"
+                  onChange={handleWardChange}
+                  sx={{ borderRadius: 3 }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 300,
+                      },
                     },
-                  },
-                }}
-              />
+                  }}
+                >
+                  <MenuItem sx={{ p: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <TextField
+                      fullWidth
+                      placeholder="Tìm kiếm phường/xã..."
+                      value={wardSearch}
+                      onChange={handleWardSearchChange}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      variant="standard"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Search sx={{ color: "#9ca3af", fontSize: 20 }} />
+                          </InputAdornment>
+                        ),
+                        disableUnderline: true,
+                      }}
+                      sx={{
+                        p: 1,
+                        "& .MuiInputBase-input": {
+                          fontSize: "0.875rem",
+                        },
+                      }}
+                    />
+                  </MenuItem>
+                  {filteredWards.length > 0 ? (
+                    filteredWards.map((ward) => (
+                      <MenuItem
+                        key={ward.WardCode}
+                        value={ward}
+                        sx={{
+                          fontSize: "0.875rem",
+                          py: 0.5,
+                        }}
+                      >
+                        {ward.WardName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem
+                      disabled
+                      sx={{ fontSize: "0.875rem", fontStyle: "italic" }}
+                    >
+                      Không tìm thấy phường/xã
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
             </Grid>
 
             {/* Ảnh CMND/CCCD */}
@@ -219,7 +482,7 @@ const PersonalInfoStep = ({
           </Grid>
 
           {/* Validation Errors */}
-          <ValidationErrorBox 
+          <ValidationErrorBox
             errors={!validateStep(stepIndex) ? getStepErrors(stepIndex) : []}
           />
         </CardContent>
@@ -228,4 +491,4 @@ const PersonalInfoStep = ({
   );
 };
 
-export default PersonalInfoStep; 
+export default PersonalInfoStep;

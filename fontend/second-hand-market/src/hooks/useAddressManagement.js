@@ -40,6 +40,7 @@ export const useAddressManagement = (refreshAddresses) => {
   // Fetch provinces on component mount
   useEffect(() => {
     const fetchProvinces = async () => {
+      
       try {
         const response = await axios.get(
           `${process.env.REACT_APP_GHN_API_URL}/province`,
@@ -171,7 +172,6 @@ export const useAddressManagement = (refreshAddresses) => {
   };
 
   const handleSelectWard = (ward) => {
-    console.log(ward.WardCode);
     setNewAddress({
       ...newAddress,
       ward: ward.WardName,
@@ -180,7 +180,6 @@ export const useAddressManagement = (refreshAddresses) => {
     setShowWardDropdown(false);
   };
 
-  // Handle adding new address
   const handleAddNewAddress = async () => {
     try {
       if (!validateAddress(newAddress)) {
@@ -216,7 +215,6 @@ export const useAddressManagement = (refreshAddresses) => {
     }
   };
 
-  // Handle dropdown focus
   const handleLocationFocus = (type) => {
     switch (type) {
       case "province":
@@ -240,7 +238,6 @@ export const useAddressManagement = (refreshAddresses) => {
     }
   };
 
-  // Handle dropdown blur
   const handleLocationBlur = (type) => {
     setTimeout(() => {
       switch (type) {
@@ -258,17 +255,12 @@ export const useAddressManagement = (refreshAddresses) => {
   };
 
   return {
-    // Modal states
     showAddressModal,
     setShowAddressModal,
     showNewAddressForm,
     setShowNewAddressForm,
-
-    // Form state
     newAddress,
     setNewAddress,
-
-    // Location data
     provinces,
     districts,
     wards,

@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       setLoading(true);
       const response = await authService.register(userData);
+
       return response;
     } catch (err) {
       setError(err.message || "Đăng ký thất bại");

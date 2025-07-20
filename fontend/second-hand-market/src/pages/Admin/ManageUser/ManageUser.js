@@ -36,7 +36,7 @@ import {
   Person,
 } from "@mui/icons-material";
 import AccountContext from "../../../contexts/AccountContext";
-import { formatDate } from "../../../utils/function";
+import { formatDate } from "../../../utils/helpers";
 import {
   Close as CloseIcon,
   DeleteForever as DeleteIcon,
@@ -191,7 +191,6 @@ export default function UserManagement() {
         currentUser.status
       );
 
-
       if (data.account) {
         getUserList();
         setDialogOpen(false);
@@ -316,14 +315,14 @@ export default function UserManagement() {
         <Typography variant="h4" fontWeight="bold">
           Quản lý người dùng
         </Typography>
-        <Button
+        {/* <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAddUser}
           sx={{ bgcolor: "primary.main", color: "white" }}
         >
           Thêm người dùng
-        </Button>
+        </Button> */}
       </Box>
 
       <Paper sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -581,11 +580,11 @@ export default function UserManagement() {
                   select
                   label="Vai trò"
                   name="role"
-                  value={currentUser ? currentUser.role : "user"}
+                  value={currentUser ? currentUser.role : "buyer"}
                   onChange={handleInputChange}
                 >
                   <MenuItem value="admin">Quản trị viên</MenuItem>
-                  <MenuItem value="user">Người dùng</MenuItem>
+                  <MenuItem value="buyer">Người dùng</MenuItem>
                 </TextField>
               </Grid>
             </Grid>
@@ -711,11 +710,11 @@ export default function UserManagement() {
                         select
                         label="Vai trò"
                         name="role"
-                        value={currentUser ? currentUser.role : "user"}
+                        value={currentUser ? currentUser.role : "buyer"}
                         onChange={handleInputChange}
                       >
                         <MenuItem value="admin">Quản trị viên</MenuItem>
-                        <MenuItem value="user">Người dùng</MenuItem>
+                        <MenuItem value="buyer">Người dùng</MenuItem>
                       </TextField>
                     </Grid>
                     {/* Address Section */}

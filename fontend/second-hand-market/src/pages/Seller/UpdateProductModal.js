@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -19,74 +19,73 @@ import {
   Chip,
   CircularProgress,
   Paper,
-  Stack
-} from '@mui/material';
+  Stack,
+} from "@mui/material";
 import {
   PhotoCamera,
   Delete as DeleteIcon,
   Close as CloseIcon,
-  CloudUpload as UploadIcon
-} from '@mui/icons-material';
-import SellerApi from './SellerApi';
+  CloudUpload as UploadIcon,
+} from "@mui/icons-material";
+import SellerApi from "./SellerApi";
 import { useCategory } from "../../contexts/CategoryContext";
 
 const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
   const { getCategories, getCategory } = useCategory();
-  
+  console.log(product);
+
   // Form states
   const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    stock: '',
-    description: '',
-    categoryId: '',
-    subcategoryId: '',
-    status: 'pending'
+    name: "",
+    price: "",
+    stock: "",
+    description: "",
+    categoryId: "",
+    subcategoryId: "",
+    status: "pending",
   });
-  
+
   // UI states
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  
+
   // Image states
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
 
   const statusOptions = [
-    { value: 'pending', label: 'Chờ duyệt', color: 'warning' },
-    { value: 'approved', label: 'Đã duyệt', color: 'success' },
-    { value: 'inactive', label: 'Ngừng bán', color: 'default' },
-    { value: 'sold', label: 'Hết hàng', color: 'info' }
+    { value: "approved", label: "Đang bán", color: "success" },
+    { value: "inactive", label: "Ngừng bán", color: "warning" },
   ];
 
   // Initialize form when product changes
   useEffect(() => {
     if (product && open) {
       setFormData({
-        name: product.name || '',
-        price: product.price || '',
-        stock: product.stock || '',
-        description: product.description || '',
-        categoryId: product.categoryId || '',
-        subcategoryId: product.subcategoryId || '',
-        status: product.status || 'pending'
+        name: product.name || "",
+        price: product.price || "",
+        stock: product.stock || "",
+        description: product.description || "",
+        categoryId: product.categoryId._id || "",
+        subcategoryId: product.subcategoryId._id || "",
+        status: product.status || "pending",
       });
-      
+
       // Set existing images - FIX: Reset all image states first
       setAvatarFile(null);
-      setAvatarPreview(product.avatar?.url || '');
+      setAvatarPreview(product.avatar?.url || "");
       setImageFiles([]);
       setExistingImages(product.images || []);
       setImagePreviews([]);
-      
+
       // Load categories
       loadCategories();
-      
+
       // Load subcategories if category exists
       if (product.categoryId) {
         loadSubcategories(product.categoryId);
@@ -99,29 +98,28 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
       const categoriesData = await getCategories();
       setCategories(categoriesData || []);
     } catch (err) {
-      console.error('Error loading categories:', err);
+      console.error("Error loading categories:", err);
     }
   };
 
-  const loadSubcategories = async (categoryId) => {
+  const loadSubcategories = async () => {
     try {
-      const categoryData = await getCategory(categoryId);
-      setSubcategories(categoryData?.subcategories || []);
+      setSubcategories(product.categoryId?.subcategories || []);
     } catch (err) {
-      console.error('Error loading subcategories:', err);
+      console.error("Error loading subcategories:", err);
       setSubcategories([]);
     }
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Load subcategories when category changes
-    if (field === 'categoryId') {
-      setFormData(prev => ({ ...prev, subcategoryId: '' }));
+    if (field === "categoryId") {
+      setFormData((prev) => ({ ...prev, subcategoryId: "" }));
       if (value) {
         loadSubcategories(value);
       } else {
@@ -143,19 +141,19 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
 
   const removeAvatar = () => {
     setAvatarFile(null);
-    setAvatarPreview('');
+    setAvatarPreview("");
   };
 
   // Images handling - FIX: Separate new images from existing images
   const handleImagesChange = (event) => {
     const files = Array.from(event.target.files);
     if (files.length > 0) {
-      setImageFiles(prev => [...prev, ...files]);
-      
-      files.forEach(file => {
+      setImageFiles((prev) => [...prev, ...files]);
+
+      files.forEach((file) => {
         const reader = new FileReader();
         reader.onload = () => {
-          setImagePreviews(prev => [...prev, reader.result]);
+          setImagePreviews((prev) => [...prev, reader.result]);
         };
         reader.readAsDataURL(file);
       });
@@ -164,21 +162,22 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
 
   // FIX: Remove new image (not existing)
   const removeNewImage = (index) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeExistingImage = (index) => {
-    setExistingImages(prev => prev.filter((_, i) => i !== index));
+    setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) return 'Tên sản phẩm không được để trống';
-    if (!formData.price || formData.price <= 0) return 'Giá sản phẩm phải lớn hơn 0';
-    if (!formData.stock || formData.stock < 0) return 'Số lượng không được âm';
-    if (!formData.categoryId) return 'Vui lòng chọn danh mục';
-    if (!formData.subcategoryId) return 'Vui lòng chọn danh mục con';
-    return '';
+    if (!formData.name.trim()) return "Tên sản phẩm không được để trống";
+    if (!formData.price || formData.price <= 0)
+      return "Giá sản phẩm phải lớn hơn 0";
+    if (!formData.stock || formData.stock < 0) return "Số lượng không được âm";
+    if (!formData.categoryId) return "Vui lòng chọn danh mục";
+    if (!formData.subcategoryId) return "Vui lòng chọn danh mục con";
+    return "";
   };
 
   const handleSubmit = async () => {
@@ -190,36 +189,36 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const updateData = new FormData();
-      
+
       // Thêm các trường dữ liệu cơ bản
-      Object.keys(formData).forEach(key => {
+      Object.keys(formData).forEach((key) => {
         updateData.append(key, formData[key]);
       });
 
       // Xử lý avatar
       if (avatarFile) {
-        updateData.append('avatar', avatarFile);
+        updateData.append("avatar", avatarFile);
       } else if (!avatarPreview && product.avatar) {
         // Nếu người dùng xóa avatar mà không thêm mới
-        updateData.append('removeAvatar', 'true');
+        updateData.append("removeAvatar", "true");
       }
 
       // Xử lý ảnh bổ sung
-      imageFiles.forEach(file => {
-        updateData.append('newImages', file);
+      imageFiles.forEach((file) => {
+        updateData.append("newImages", file);
       });
 
       // Gửi danh sách ảnh hiện tại cần giữ lại
-      updateData.append('existingImages', JSON.stringify(existingImages));
+      updateData.append("existingImages", JSON.stringify(existingImages));
 
       await SellerApi.updateProduct(product._id, updateData);
       onSuccess?.();
       handleClose();
     } catch (err) {
-      setError(err.message || 'Có lỗi xảy ra khi cập nhật sản phẩm');
+      setError(err.message || "Có lỗi xảy ra khi cập nhật sản phẩm");
     } finally {
       setLoading(false);
     }
@@ -228,48 +227,74 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
   const handleClose = () => {
     // Reset form
     setFormData({
-      name: '',
-      price: '',
-      stock: '',
-      description: '',
-      categoryId: '',
-      subcategoryId: '',
-      status: 'pending'
+      name: "",
+      price: "",
+      stock: "",
+      description: "",
+      categoryId: "",
+      subcategoryId: "",
+      status: "pending",
     });
     setAvatarFile(null);
-    setAvatarPreview('');
+    setAvatarPreview("");
     setImageFiles([]);
     setImagePreviews([]);
     setExistingImages([]);
-    setError('');
+    setError("");
     setLoading(false);
     onClose();
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
   };
 
   // Get available status options based on current status
   const getAvailableStatusOptions = () => {
-    if (product?.status === 'approved') {
-      return statusOptions.filter(option => option.value !== 'approved');
+    if (!product?.status) return statusOptions;
+    switch (product.status) {
+      case "selling":
+        // Đang bán chỉ được chuyển sang ngừng bán hoặc hết hàng
+        return statusOptions.filter(
+          (opt) =>
+            opt.value === "paused" ||
+            opt.value === "sold" ||
+            opt.value === "selling"
+        );
+      case "paused":
+        // Ngừng bán chỉ được chuyển sang đang bán hoặc hết hàng
+        return statusOptions.filter(
+          (opt) =>
+            opt.value === "selling" ||
+            opt.value === "sold" ||
+            opt.value === "paused"
+        );
+      case "sold":
+        // Hết hàng không được chuyển lại trạng thái khác
+        return statusOptions.filter((opt) => opt.value === "sold");
+      default:
+        return statusOptions;
     }
-    return statusOptions.filter(option => option.value !== 'approved');
   };
 
   return (
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="md"
+      maxWidth="xl"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 2 }
+        sx: { borderRadius: 2 },
       }}
     >
       <DialogTitle sx={{ pb: 1, pr: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <Typography variant="h6" fontWeight="bold">
             Cập nhật sản phẩm
           </Typography>
@@ -294,7 +319,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
               <TextField
                 label="Tên sản phẩm"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 fullWidth
                 required
                 variant="outlined"
@@ -307,11 +332,15 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                     label="Giá bán"
                     type="number"
                     value={formData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
+                    onChange={(e) => handleInputChange("price", e.target.value)}
                     fullWidth
                     required
                     InputProps={{
-                      endAdornment: <Typography variant="body2" color="text.secondary">đ</Typography>
+                      endAdornment: (
+                        <Typography variant="body2" color="text.secondary">
+                          đ
+                        </Typography>
+                      ),
                     }}
                   />
                 </Grid>
@@ -320,7 +349,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                     label="Số lượng"
                     type="number"
                     value={formData.stock}
-                    onChange={(e) => handleInputChange('stock', e.target.value)}
+                    onChange={(e) => handleInputChange("stock", e.target.value)}
                     fullWidth
                     required
                   />
@@ -334,7 +363,9 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                     <InputLabel>Danh mục</InputLabel>
                     <Select
                       value={formData.categoryId}
-                      onChange={(e) => handleInputChange('categoryId', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("categoryId", e.target.value)
+                      }
                       label="Danh mục"
                     >
                       {categories.map((category) => (
@@ -346,11 +377,17 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                   </FormControl>
                 </Grid>
                 <Grid item xs={6}>
-                  <FormControl fullWidth required disabled={!formData.categoryId}>
+                  <FormControl
+                    fullWidth
+                    required
+                    disabled={!formData.categoryId}
+                  >
                     <InputLabel>Danh mục con</InputLabel>
                     <Select
                       value={formData.subcategoryId}
-                      onChange={(e) => handleInputChange('subcategoryId', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("subcategoryId", e.target.value)
+                      }
                       label="Danh mục con"
                     >
                       {subcategories.map((subcategory) => (
@@ -368,12 +405,16 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                 <InputLabel>Trạng thái</InputLabel>
                 <Select
                   value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  onChange={(e) => handleInputChange("status", e.target.value)}
                   label="Trạng thái"
                   renderValue={(value) => (
                     <Chip
-                      label={statusOptions.find(opt => opt.value === value)?.label}
-                      color={statusOptions.find(opt => opt.value === value)?.color}
+                      label={
+                        statusOptions.find((opt) => opt.value === value)?.label
+                      }
+                      color={
+                        statusOptions.find((opt) => opt.value === value)?.color
+                      }
                       size="small"
                     />
                   )}
@@ -388,8 +429,12 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                     </MenuItem>
                   ))}
                 </Select>
-                {product?.status === 'approved' && (
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                {product?.status === "approved" && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
                     Sản phẩm đã được duyệt, không thể thay đổi trạng thái này
                   </Typography>
                 )}
@@ -399,7 +444,9 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
               <TextField
                 label="Mô tả sản phẩm"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 fullWidth
                 multiline
                 rows={4}
@@ -412,11 +459,18 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
           <Grid item xs={12} md={4}>
             <Stack spacing={2}>
               {/* Avatar */}
-              <Paper sx={{ p: 2, textAlign: 'center' }}>
+              <Paper sx={{ p: 2, textAlign: "center" }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Ảnh đại diện
                 </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
                   <Avatar
                     src={avatarPreview}
                     sx={{ width: 120, height: 120 }}
@@ -427,7 +481,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                   <Box>
                     <input
                       accept="image/*"
-                      style={{ display: 'none' }}
+                      style={{ display: "none" }}
                       id="avatar-upload"
                       type="file"
                       onChange={handleAvatarChange}
@@ -443,7 +497,11 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                       </Button>
                     </label>
                     {avatarPreview && (
-                      <IconButton size="small" onClick={removeAvatar} color="error">
+                      <IconButton
+                        size="small"
+                        onClick={removeAvatar}
+                        color="error"
+                      >
                         <DeleteIcon />
                       </IconButton>
                     )}
@@ -456,31 +514,35 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                 <Typography variant="subtitle2" gutterBottom>
                   Ảnh bổ sung
                 </Typography>
-                
+
                 {/* Existing Images */}
                 {existingImages.length > 0 && (
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Ảnh hiện tại:
                     </Typography>
                     <Grid container spacing={1}>
                       {existingImages.map((image, index) => (
                         <Grid item xs={6} key={`existing-${index}`}>
-                          <Box sx={{ position: 'relative' }}>
+                          <Box sx={{ position: "relative" }}>
                             <Avatar
                               src={image.url}
                               variant="rounded"
-                              sx={{ width: '100%', height: 80 }}
+                              sx={{ width: "100%", height: 80 }}
                             />
                             <IconButton
                               size="small"
                               sx={{
-                                position: 'absolute',
+                                position: "absolute",
                                 top: -8,
                                 right: -8,
-                                bgcolor: 'error.main',
-                                color: 'white',
-                                '&:hover': { bgcolor: 'error.dark' }
+                                bgcolor: "error.main",
+                                color: "white",
+                                "&:hover": { bgcolor: "error.dark" },
                               }}
                               onClick={() => removeExistingImage(index)}
                             >
@@ -496,27 +558,31 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                 {/* New Images */}
                 {imagePreviews.length > 0 && (
                   <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      gutterBottom
+                    >
                       Ảnh mới thêm:
                     </Typography>
                     <Grid container spacing={1}>
                       {imagePreviews.map((preview, index) => (
                         <Grid item xs={6} key={`new-${index}`}>
-                          <Box sx={{ position: 'relative' }}>
+                          <Box sx={{ position: "relative" }}>
                             <Avatar
                               src={preview}
                               variant="rounded"
-                              sx={{ width: '100%', height: 80 }}
+                              sx={{ width: "100%", height: 80 }}
                             />
                             <IconButton
                               size="small"
                               sx={{
-                                position: 'absolute',
+                                position: "absolute",
                                 top: -8,
                                 right: -8,
-                                bgcolor: 'error.main',
-                                color: 'white',
-                                '&:hover': { bgcolor: 'error.dark' }
+                                bgcolor: "error.main",
+                                color: "white",
+                                "&:hover": { bgcolor: "error.dark" },
                               }}
                               onClick={() => removeNewImage(index)}
                             >
@@ -532,7 +598,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                 {/* Upload Button */}
                 <input
                   accept="image/*"
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                   id="images-upload"
                   type="file"
                   multiple
@@ -552,7 +618,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
 
               {/* Current Product Info */}
               {product && (
-                <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+                <Paper sx={{ p: 2, bgcolor: "grey.50" }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Thông tin hiện tại
                   </Typography>
@@ -563,7 +629,8 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
                     Đã bán: {product.soldCount || 0}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Tạo: {new Date(product.createdAt).toLocaleDateString('vi-VN')}
+                    Tạo:{" "}
+                    {new Date(product.createdAt).toLocaleDateString("vi-VN")}
                   </Typography>
                 </Paper>
               )}
@@ -573,11 +640,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
       </DialogContent>
 
       <DialogActions sx={{ p: 2.5, gap: 1 }}>
-        <Button
-          onClick={handleClose}
-          disabled={loading}
-          variant="outlined"
-        >
+        <Button onClick={handleClose} disabled={loading} variant="outlined">
           Hủy
         </Button>
         <Button
@@ -586,7 +649,7 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
           variant="contained"
           startIcon={loading ? <CircularProgress size={16} /> : null}
         >
-          {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+          {loading ? "Đang cập nhật..." : "Cập nhật"}
         </Button>
       </DialogActions>
     </Dialog>

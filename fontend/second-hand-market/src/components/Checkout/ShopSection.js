@@ -35,6 +35,7 @@ const ShopSection = ({
     onShippingMethodChange(seller._id, service);
   };
 
+
   return (
     <Card className="mb-4 shop-section">
       {/* Shop Header */}

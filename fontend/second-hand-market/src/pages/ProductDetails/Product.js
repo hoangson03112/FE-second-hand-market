@@ -313,10 +313,17 @@ export const Product = () => {
         return;
       }
 
+      const checkoutData = {
+        selectedItems: [{ ...product, _id: product._id, quantity }],
+      };
+
+      localStorage.setItem(
+        "checkoutItems",
+        JSON.stringify(checkoutData.selectedItems)
+      );
+
       navigate("/eco-market/checkout", {
-        state: {
-          selectedItems: [{ ...product, productId: product._id, quantity }],
-        },
+        state: checkoutData,
       });
     } catch (error) {
       console.error("Error during purchase:", error);

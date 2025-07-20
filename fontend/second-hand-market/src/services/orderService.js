@@ -2,7 +2,7 @@ import ApiService from "./ApiService";
 
 const orderService = {
   getAllOrders: async () => {
-    return await ApiService.get("/orders");
+    return await ApiService.get("/orders/admin/all");
   },
 
   getOrderById: async (id) => {

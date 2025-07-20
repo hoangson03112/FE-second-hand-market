@@ -5,8 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardMedia,
-  CardActions,
   Chip,
   Container,
   Divider,
@@ -29,7 +27,6 @@ import {
   Badge,
   createTheme,
   ThemeProvider,
-  Pagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -49,7 +46,6 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   Star as StarIcon,
-  ShoppingBag as ShoppingBagIcon,
   LocalShipping as ShippingIcon,
   Watch as WatchIcon,
   Lock as LockIcon,
@@ -69,8 +65,7 @@ import {
 } from "@mui/icons-material";
 import Swal from "sweetalert2";
 import AccountContext from "../../contexts/AccountContext";
-import { formatDate } from "./../../utils/function";
-import { useProduct } from "../../contexts/ProductContext";
+import { formatDate } from "./../../utils/helpers";
 import { useAuth } from "../../contexts/AuthContext";
 import authService from "../../services/authService";
 import { useNotification } from "../../hooks/useNotification";
@@ -155,7 +150,6 @@ const theme = createTheme({
 });
 
 const UserProfile = () => {
-  const { getProductsByUser } = useProduct();
   const { updateProfile } = useAuth();
   const { showSuccess, showError } = useNotification();
   const [activeTab, setActiveTab] = useState(0);
@@ -173,7 +167,6 @@ const UserProfile = () => {
     },
   });
   const [loading, setLoading] = useState(true);
-  const [userProducts, setUserProducts] = useState([]);
   const [openChangePassword, setOpenChangePassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     oldPassword: "",
@@ -182,9 +175,7 @@ const UserProfile = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Thêm state cho phân trang
-  const [page, setPage] = useState(1);
-  const [productsPerPage] = useState(6);
+
 
   // State cho quản lý địa chỉ
   const [addresses, setAddresses] = useState([
@@ -262,19 +253,7 @@ const UserProfile = () => {
     }
   };
 
-  const fetchProductsOfUser = async () => {
-    try {
-      const data = await getProductsByUser();
-      console.log(data);
-
-      setUserProducts(data);
-    } catch (error) {
-      console.error("Error fetching user products:", error);
-    }
-  };
-
   useEffect(() => {
-    fetchProductsOfUser();
     fetchAccount();
   }, []);
 
@@ -329,10 +308,7 @@ const UserProfile = () => {
     }
   };
 
-  // Xử lý thay đổi trang
-  const handlePageChange = (event, value) => {
-    setPage(value);
-  };
+
 
   // Functions cho quản lý địa chỉ
   const handleAddAddress = () => {
@@ -1055,200 +1031,7 @@ const UserProfile = () => {
     );
   };
 
-  const renderProductsTab = () => {
-    if (loading) {
-      return (
-        <Box sx={{ mt: 2 }}>
-          <Grid container spacing={2}>
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <Grid item xs={12} sm={6} md={4} key={item}>
-                <Card>
-                  <Skeleton variant="rectangular" height={200} />
-                  <CardContent>
-                    <Skeleton variant="text" height={30} width="80%" />
-                    <Skeleton variant="text" height={24} width="40%" />
-                    <Skeleton variant="text" height={20} width="30%" />
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      );
-    }
 
-    if (userProducts.length === 0) {
-      return (
-        <Box
-          sx={{
-            mt: 4,
-            textAlign: "center",
-            p: 4,
-          }}
-        >
-          <ShoppingBagIcon
-            sx={{ fontSize: 60, color: "text.secondary", mb: 2 }}
-          />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Bạn chưa có sản phẩm nào
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Hãy đăng sản phẩm để bắt đầu bán hàng
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{
-              background: "linear-gradient(135deg, #2D1B69, #4A3B8C)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #1A0F3D, #2D1B69)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 25px rgba(45,27,105,0.3)",
-              },
-              transition: "all 0.3s ease",
-              textTransform: "none",
-              fontWeight: 600,
-            }}
-          >
-            Đăng sản phẩm mới
-          </Button>
-        </Box>
-      );
-    }
-
-    // Tính toán phân trang
-    const indexOfLastProduct = page * productsPerPage;
-    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-    const currentProducts = userProducts.slice(
-      indexOfFirstProduct,
-      indexOfLastProduct
-    );
-    const totalPages = Math.ceil(userProducts.length / productsPerPage);
-
-    return (
-      <Box sx={{ mt: 3 }}>
-        <Grid container spacing={3}>
-          {currentProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={4} key={product.id}>
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition: "transform 0.3s",
-                  "&:hover": { transform: "translateY(-5px)", boxShadow: 5 },
-                  borderTop: "3px solid #2D1B69",
-                }}
-              >
-                <Box sx={{ position: "relative" }}>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={product.avatar}
-                    alt={product.name}
-                    sx={{ objectFit: "cover" }}
-                  />
-                  <Chip
-                    label={
-                      product.status === "pending"
-                        ? "Chờ duyệt"
-                        : product.status === "approved"
-                        ? "Đã duyệt"
-                        : "Từ chối"
-                    }
-                    color={
-                      product.status === "pending"
-                        ? "warning"
-                        : product.status === "approved"
-                        ? "success"
-                        : "error"
-                    }
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: 10,
-                      right: 10,
-                    }}
-                  />
-                </Box>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography
-                    gutterBottom
-                    variant="h6"
-                    component="div"
-                    noWrap
-                    title={product.name}
-                    sx={{ fontWeight: 500 }}
-                  >
-                    {product.name}
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color="primary"
-                    sx={{ fontWeight: "bold", mb: 1 }}
-                  >
-                    {product?.price?.toLocaleString("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    })}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography variant="body2" color="text.secondary">
-                      Số lượng: {product.stock}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {formatDate(product.createdAt)}
-                    </Typography>
-                  </Box>
-                </CardContent>
-                <CardActions sx={{ p: 2, pt: 0 }}>
-                  <Button size="small" color="primary">
-                    Chỉnh sửa
-                  </Button>
-                  <Button size="small" color="error">
-                    Xóa
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Thêm phân trang */}
-        {totalPages > 1 && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              size="large"
-              sx={{
-                "& .MuiPaginationItem-root": {
-                  "&.Mui-selected": {
-                    background: "linear-gradient(135deg, #2D1B69, #4A3B8C)",
-                    color: "white",
-                    "&:hover": {
-                      background: "linear-gradient(135deg, #1A0F3D, #2D1B69)",
-                    },
-                  },
-                  "&:hover": {
-                    backgroundColor: "rgba(45,27,105,0.1)",
-                  },
-                },
-              }}
-            />
-          </Box>
-        )}
-      </Box>
-    );
-  };
 
 
 
@@ -1472,16 +1255,7 @@ const UserProfile = () => {
                       border: '1px solid rgba(212,175,55,0.5)',
                     }} 
                   />
-                  <Chip 
-                    icon={<ShoppingBagIcon />} 
-                    label={`${userProducts.length} sản phẩm`}
-                    sx={{ 
-                      bgcolor: 'rgba(212,175,55,0.3)', 
-                      color: 'white',
-                      fontWeight: 500,
-                      border: '1px solid rgba(212,175,55,0.5)',
-                    }} 
-                  />
+
                 </Box>
               </Box>
             </Box>
@@ -1520,11 +1294,7 @@ const UserProfile = () => {
                 iconPosition="start"
                 label="Thông tin cá nhân"
               />
-              <Tab
-                icon={<ShoppingBagIcon />}
-                iconPosition="start"
-                label="Sản phẩm"
-              />
+
               <Tab
                 icon={<LocationIcon />}
                 iconPosition="start"
@@ -1544,10 +1314,9 @@ const UserProfile = () => {
             
             <Box sx={{ p: { xs: 2, md: 3 } }}>
               {activeTab === 0 && renderPersonalInfoTab()}
-              {activeTab === 1 && renderProductsTab()}
-              {activeTab === 2 && renderAddressTab()}
-              {activeTab === 3 && renderReviewsTab()}
-              {activeTab === 4 && renderSecurityTab()}
+              {activeTab === 1 && renderAddressTab()}
+              {activeTab === 2 && renderReviewsTab()}
+              {activeTab === 3 && renderSecurityTab()}
             </Box>
           </Paper>
 

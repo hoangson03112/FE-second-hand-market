@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       setLoading(true);
       const response = await authService.login(username, password);
+
       setCurrentUser(response.user);
       setIsAuthenticated(true);
       return response;

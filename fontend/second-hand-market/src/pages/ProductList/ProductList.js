@@ -43,35 +43,7 @@ import { useCategory } from "../../contexts/CategoryContext";
 import { useProduct } from "../../contexts/ProductContext";
 import { formatPrice } from "../../utils/function";
 import { ProductCard } from "./components/ProductCard";
-
-// Professional styled components
-const StyledCard = styled(Card)(({ theme }) => ({
-  height: "100%",
-  display: "flex",
-  flexDirection: "column",
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: theme.spacing(1),
-  transition: "box-shadow 0.2s ease-in-out",
-  "&:hover": {
-    boxShadow: theme.shadows[4],
-  },
-}));
-
-const ProductImageContainer = styled(Box)({
-  position: "relative",
-  height: 200,
-  overflow: "hidden",
-  backgroundColor: "#fafafa",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-});
-
-const ProductImage = styled("img")({
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-});
+import { useAuth } from "./../../contexts/AuthContext";
 
 const HeaderSection = styled(Box)(({ theme }) => ({
   borderBottom: `1px solid ${theme.palette.divider}`,
@@ -94,7 +66,7 @@ function ProductList() {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
+  const { currentUser } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -151,8 +123,15 @@ function ProductList() {
 
         try {
           const productsData = await getProductList(categoryID, subcategoryID);
+          console.log(currentUser);
+
           if (Array.isArray(productsData)) {
-            setProducts(sortProducts(productsData, sortOption));
+            setProducts(
+              sortProducts(
+                productsData,
+                sortOption
+              )
+            );
           } else {
             console.error("Expected array of products but got:", productsData);
             setProducts([]);

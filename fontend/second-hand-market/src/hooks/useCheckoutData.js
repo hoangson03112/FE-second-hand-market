@@ -5,12 +5,13 @@ import AddressContext from "../contexts/AddressContext";
 import AccountContext from "../contexts/AccountContext";
 import { useNotification } from "./useNotification";
 import { FORM_VALIDATION_MESSAGES } from "../constants/checkout";
+import SellerContext from "../contexts/SellerContext";
 
 export const useCheckoutData = (selectedItemsParam) => {
-  // Memo hóa selectedItems, chỉ lấy từ localStorage 1 lần nếu không có props
   const selectedItems = useMemo(() => {
-    if (selectedItemsParam && selectedItemsParam.length > 0)
+    if (selectedItemsParam && selectedItemsParam.length > 0) {
       return selectedItemsParam;
+    }
     const local = localStorage.getItem("checkoutItems");
     return local ? JSON.parse(local) : [];
   }, [selectedItemsParam]);
@@ -35,16 +36,28 @@ export const useCheckoutData = (selectedItemsParam) => {
     const fetchProducts = async () => {
       try {
         const productsData = await Promise.all(
-          selectedItems.map((item) => getProduct(item._id))
+          selectedItems.map(async (item) => {
+            const productId = item._id || item.productId;
+            try {
+              const product = await getProduct(productId);
+              return product;
+            } catch (error) {
+              console.error("Error fetching product:", error);
+
+              return item;
+            }
+          })
         );
         const productsWithQuantity = productsData.map((product) => {
           const cartItem = selectedItems.find(
-            (item) => item._id === product._id
+            (item) => (item._id || item.productId) === product._id
           );
-          return {
+          const result = {
             ...product,
             quantity: cartItem?.quantity || 0,
           };
+
+          return result;
         });
         if (isMounted) setProducts(productsWithQuantity);
       } catch (error) {
@@ -86,11 +99,16 @@ export const useCheckoutData = (selectedItemsParam) => {
           new Set(products.map((product) => product.seller._id))
         );
 
-        const sellerPromises = uniqueSellerIds.map((sellerId) =>
-          AccountContext.getAccount(sellerId)
-        );
-        const sellersData = await Promise.all(sellerPromises);
+        const sellerPromises = uniqueSellerIds.map(async (sellerId) => {
+          const account = await AccountContext.getAccount(sellerId);
+          const seller = await SellerContext.getSellerInfo(sellerId);
+          return {
+            ...seller.data,
+            ...account,
+          };
+        });
 
+        const sellersData = await Promise.all(sellerPromises);
         setSellers(sellersData);
       } catch (err) {
         console.error("Error fetching sellers:", err);

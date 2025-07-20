@@ -1,11 +1,12 @@
 import React, { createContext, useContext } from "react";
 import axios from "axios";
-
+import { useAuth } from "./AuthContext";
 const ProductContext = createContext();
 
 export const useProduct = () => useContext(ProductContext);
 
 export const ProductProvider = ({ children }) => {
+  const { currentUser } = useAuth();
   // Các phương thức API
   const getProduct = async (productID) => {
     try {
@@ -43,7 +44,12 @@ export const ProductProvider = ({ children }) => {
         params: { categoryID, subcategoryID },
       });
       if (response.data) {
-        return response.data.data;
+        return response.data.data.filter((product) => {
+          if (currentUser) {
+            return product.seller._id !== currentUser._id;
+          }
+          return true;
+        });
       } else {
         console.error("Unexpected response format:", response.data);
         return [];
@@ -121,12 +127,12 @@ export const ProductProvider = ({ children }) => {
     }
   };
 
-  const updateProductStatus = async (slug, status) => {
+  const updateProductStatus = async (productId, status) => {
     const token = localStorage.getItem("token");
     const response = await axios.patch(
       "/products/update-status",
       {
-        slug,
+        productId,
         status,
       },
       {

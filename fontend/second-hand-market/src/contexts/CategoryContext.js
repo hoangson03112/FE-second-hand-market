@@ -10,6 +10,8 @@ export const CategoryProvider = ({ children }) => {
   const getCategories = async () => {
     try {
       const response = await axios.get("/categories");
+      console.log(response.data.data);
+
       const categories = response.data.data;
       return categories;
     } catch (error) {

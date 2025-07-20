@@ -28,6 +28,7 @@ import {
   Snackbar,
   Alert,
   Paper,
+  Tooltip, // Thêm Tooltip
 } from "@mui/material";
 import {
   Search,
@@ -38,6 +39,7 @@ import {
   Visibility,
   Delete,
   Close,
+  Info,
 } from "@mui/icons-material";
 
 import { useProduct } from "../../../contexts/ProductContext";
@@ -46,6 +48,10 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination as PagSwiper } from "swiper/modules"; // Import Navigation và Pagination
 import AccountContext from "../../../contexts/AccountContext";
+import { formatDate } from "./../../../utils/helpers";
+
+// Utility function để format ngày
+
 const ProductManagement = () => {
   const { getProducts, updateProductStatus, deleteProduct } = useProduct();
   const { getCategories } = useCategory();
@@ -66,6 +72,7 @@ const ProductManagement = () => {
     message: "",
     severity: "success",
   });
+  console.log(selectedProduct);
 
   const locations = [
     ...new Set(products.map((product) => product.location || "")),
@@ -77,7 +84,7 @@ const ProductManagement = () => {
       .includes(searchQuery.toLowerCase());
     const matchesTab =
       currentTab === 0 ||
-      (currentTab === 1 && (product.status === "pending" || product.status === "active")) ||
+      (currentTab === 1 && product.status === "pending") ||
       (currentTab === 2 && product.status === "approved") ||
       (currentTab === 3 && product.status === "rejected");
     const matchesCategory =
@@ -132,8 +139,8 @@ const ProductManagement = () => {
   );
 
   // Xử lý duyệt và hủy
-  const handleApproveProduct = async (slug) => {
-    await updateProductStatus(slug, "approved");
+  const handleApproveProduct = async (productId) => {
+    await updateProductStatus(productId, "approved");
     fetchProducts();
     setSnackbar({
       open: true,
@@ -142,8 +149,8 @@ const ProductManagement = () => {
     });
   };
 
-  const handleRejectProduct = async (slug) => {
-    await updateProductStatus(slug, "rejected");
+  const handleRejectProduct = async (productId) => {
+    await updateProductStatus(productId, "rejected");
     fetchProducts();
     setSnackbar({
       open: true,
@@ -192,7 +199,7 @@ const ProductManagement = () => {
     },
     {
       label: "Chờ duyệt",
-      value: products.filter((p) =>  ["pending", "active"].includes(p.status)).length,
+      value: products.filter((p) => ["pending"].includes(p.status)).length,
       icon: HourglassEmpty,
       color: "warning",
     },
@@ -209,6 +216,7 @@ const ProductManagement = () => {
       color: "error",
     },
   ];
+  console.log(products);
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -290,180 +298,204 @@ const ProductManagement = () => {
 
       {/* Danh sách sản phẩm */}
       <Grid container spacing={3}>
-        {displayedProducts.map((product) => (
-          <Grid item xs={12} sm={6} md={3} key={product.id}>
-            <Card
-              sx={{
-                height: "100%",
-                position: "relative",
-                display: "flex",
-                flexDirection: "column",
-                boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
-                },
-                borderRadius: 2,
-                overflow: "hidden",
-              }}
-            >
-              <Box sx={{ position: "relative" }}>
-                <CardMedia
-                  component="img"
-                  height="180"
-                  image={product.avatar}
-                  alt={product.name}
-                  sx={{
-                    objectFit: "cover",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleViewDetail(product)}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 10,
-                    right: 10,
-                    bgcolor:
-                      ["pending", "active"].includes(product.status)
-                        ? "warning.main"
-                        : product.status === "approved"
-                        ? "success.main"
-                        : "error.main",
-                    color: "white",
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                 {["pending", "active"].includes(product.status)
-                    ? "Chờ duyệt"
-                    : product.status === "approved"
-                    ? "Đã duyệt"
-                    : "Đã hủy"}
-                </Box>
-              </Box>
+        {displayedProducts.map((product) => {
+          console.log(product);
 
-              <CardContent sx={{ flexGrow: 1, pb: 1, px: 2, pt: 2 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    mb: 1,
-                    minHeight: "2.5rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    lineHeight: "1.2",
-                    maxHeight: "3.6rem",
-                    "&:hover": {
-                      textDecoration: "underline",
+          return (
+            <Grid item xs={12} sm={6} md={3} key={product.id}>
+              <Card
+                sx={{
+                  height: "100%",
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+                  },
+                  borderRadius: 2,
+                  overflow: "hidden",
+                }}
+              >
+                <Box sx={{ position: "relative" }}>
+                  <CardMedia
+                    component="img"
+                    height="180"
+                    image={product.avatar.url}
+                    alt={product.name}
+                    sx={{
+                      objectFit: "cover",
                       cursor: "pointer",
-                    },
-                  }}
-                  title={product.name}
-                  onClick={() => handleViewDetail(product)}
-                >
-                  {product.name}
-                </Typography>
-
-                <Typography
-                  color="red"
-                  fontWeight="bold"
-                  variant="h6"
-                  sx={{ mb: 1 }}
-                >
-                  {new Intl.NumberFormat("vi-VN").format(product.price)}₫
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    minHeight: "3rem",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    lineHeight: "1.5",
-                  }}
-                  title={product.description}
-                >
-                  {product.description}
-                </Typography>
-              </CardContent>
-
-              <Divider />
-
-              <Box sx={{ p: 2 }}>
-              {["pending", "active"].includes(product.status) ? (
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ justifyContent: "space-between" }}
+                    }}
+                    onClick={() => handleViewDetail(product)}
+                  />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 10,
+                      right: 10,
+                      bgcolor:
+                        product.status === "pending" ||
+                        product.status === "pending_review"
+                          ? "warning.main"
+                          : product.status === "approved"
+                          ? "success.main"
+                          : "error.main",
+                      color: "white",
+                      px: 1,
+                      py: 0.5,
+                      borderRadius: 1,
+                      fontSize: "0.75rem",
+                      fontWeight: "bold",
+                    }}
                   >
-                    <Button
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      startIcon={<CheckCircle />}
-                      onClick={() => handleApproveProduct(product.slug)}
-                      sx={{ flex: 1 }}
-                    >
-                      Duyệt
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      size="small"
-                      startIcon={<Cancel />}
-                      onClick={() => handleRejectProduct(product.slug)}
-                      sx={{ flex: 1 }}
-                    >
-                      Hủy
-                    </Button>
-                  </Stack>
-                ) : (
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{ justifyContent: "center" }}
+                    {product.status === "pending" ||
+                    product.status === "pending_review"
+                      ? "Chờ duyệt"
+                      : product.status === "approved"
+                      ? "Đã duyệt"
+                      : "Đã hủy"}
+                  </Box>
+                </Box>
+
+                <CardContent sx={{ flexGrow: 1, pb: 1, px: 2, pt: 2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: "bold",
+                      fontSize: "1rem",
+                      mb: 1,
+                      minHeight: "2.5rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      lineHeight: "1.2",
+                      maxHeight: "3.6rem",
+                      "&:hover": {
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      },
+                    }}
+                    title={product.name}
+                    onClick={() => handleViewDetail(product)}
                   >
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleViewDetail(product)}
-                      fullWidth
-                      startIcon={<Visibility />}
+                    {product.name}
+                  </Typography>
+
+                  <Typography
+                    color="red"
+                    fontWeight="bold"
+                    variant="h6"
+                    sx={{ mb: 1 }}
+                  >
+                    {new Intl.NumberFormat("vi-VN").format(product.price)}₫
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      minHeight: "3rem",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      lineHeight: "1.5",
+                    }}
+                    title={product.description}
+                  >
+                    {product.description}
+                  </Typography>
+                </CardContent>
+
+                <Divider />
+
+                <Box sx={{ p: 2 }}>
+                  {["pending", "pending_review"].includes(product.status) ? (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ justifyContent: "space-between" }}
                     >
-                      Xem chi tiết
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => {
-                        setDeleteDialogOpen(true);
-                        setProductDelete(product);
-                      }}
-                      fullWidth
-                      startIcon={<Delete />}
-                      style={{ color: "red", borderColor: "red" }}
+                      <Tooltip title="Duyệt sản phẩm">
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          onClick={() => handleApproveProduct(product._id)}
+                          sx={{ flex: 1 }}
+                        >
+                          <CheckCircle />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Xem chi tiết">
+                        <Button
+                          variant="outlined"
+                          color="success"
+                          size="small"
+                          onClick={() => handleViewDetail(product)}
+                          sx={{ flex: 1 }}
+                        >
+                          <Visibility />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Từ chối sản phẩm">
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          style={{ color: "red", borderColor: "red" }}
+                          size="small"
+                          onClick={() => handleRejectProduct(product._id)}
+                          sx={{ flex: 1 }}
+                        >
+                          <Cancel sx={{ color: "red" }} />
+                        </Button>
+                      </Tooltip>
+                    </Stack>
+                  ) : (
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ justifyContent: "center" }}
                     >
-                      Xóa sản phẩm
-                    </Button>
-                  </Stack>
-                )}
-              </Box>
-            </Card>
-          </Grid>
-        ))}
+                      <Tooltip title="Xem chi tiết">
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleViewDetail(product)}
+                          sx={{ flex: 1 }}
+                        >
+                          <Visibility />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Xóa sản phẩm">
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          style={{ color: "red", borderColor: "red" }}
+                          size="small"
+                          onClick={() => {
+                            setDeleteDialogOpen(true);
+                            setProductDelete(product);
+                          }}
+                          sx={{ flex: 1 }}
+                        >
+                          <Delete sx={{ color: "red" }} />
+                        </Button>
+                      </Tooltip>
+                    </Stack>
+                  )}
+                </Box>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Phân trang */}
@@ -662,7 +694,8 @@ const ProductManagement = () => {
                     left: 16,
                     zIndex: 10,
                     bgcolor:
-                       ["pending", "active"].includes(selectedProduct.status)
+                      selectedProduct.status === "pending" ||
+                      selectedProduct.status === "active"
                         ? "warning.main"
                         : selectedProduct.status === "approved"
                         ? "success.main"
@@ -676,7 +709,8 @@ const ProductManagement = () => {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                   }}
                 >
-               {["pending", "active"].includes(selectedProduct.status)
+                  {selectedProduct.status === "pending" ||
+                  selectedProduct.status === "active"
                     ? "Chờ duyệt"
                     : selectedProduct.status === "approved"
                     ? "Đã duyệt"
@@ -706,7 +740,7 @@ const ProductManagement = () => {
                           }}
                         >
                           <img
-                            src={image}
+                            src={image.url}
                             alt={`Hình ảnh ${index + 1}`}
                             style={{
                               width: "100%",
@@ -782,9 +816,7 @@ const ProductManagement = () => {
                           Danh mục
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {categories.find(
-                            (cate) => cate._id === selectedProduct.categoryId
-                          )?.name || "Không xác định"}
+                          {selectedProduct.category.name || "Không xác định"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -795,12 +827,7 @@ const ProductManagement = () => {
                           Danh mục con
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {categories
-                            .flatMap((cate) => cate.subcategories || [])
-                            .find(
-                              (subCate) =>
-                                subCate._id === selectedProduct.subcategoryId
-                            )?.name || "Không xác định"}
+                          {selectedProduct.subcategory.name || "Không xác định"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -811,7 +838,7 @@ const ProductManagement = () => {
                           Vị trí
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedProduct.location || "Không xác định"}
+                          {selectedProduct.seller.province || "Không xác định"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -822,7 +849,7 @@ const ProductManagement = () => {
                           Ngày đăng
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedProduct.createdAt || "Không xác định"}
+                          {formatDate(selectedProduct.createdAt)}
                         </Typography>
                       </Box>
                     </Grid>
@@ -843,10 +870,13 @@ const ProductManagement = () => {
                             src={selectedProduct.user?.avatar || ""}
                             sx={{ width: 32, height: 32 }}
                           >
-                            {seller?.fullName?.charAt(0) || "X"}
+                            {selectedProduct?.seller?.account?.fullName?.charAt(
+                              0
+                            ) || "X"}
                           </Avatar>
                           <Typography variant="body1" fontWeight={500}>
-                            {seller?.fullName || "Không xác định"}
+                            {selectedProduct?.seller?.account?.fullName ||
+                              "Không xác định"}
                           </Typography>
                         </Box>
                       </Box>
@@ -894,7 +924,7 @@ const ProductManagement = () => {
                       gap: 2,
                     }}
                   >
-                  {["pending", "active"].includes(selectedProduct.status) ? (
+                    {["pending", "active"].includes(selectedProduct.status) ? (
                       <>
                         <Button
                           variant="contained"

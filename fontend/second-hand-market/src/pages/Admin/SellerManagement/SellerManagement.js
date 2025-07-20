@@ -81,19 +81,7 @@ export default function SellerManagement() {
         search: searchQuery,
         status: status,
       });
-      console.log("🔍 SellerManagement - API Response:", response);
-      console.log("🔍 SellerManagement - Sellers data:", response.data);
-      // Log detailed structure of first seller
-      if (response.data && response.data.length > 0) {
-        console.log(
-          "🔍 SellerManagement - First seller structure:",
-          response.data[0]
-        );
-        console.log(
-          "🖼️ SellerManagement - First seller idCardImages:",
-          response.data[0].idCardImages
-        );
-      }
+
       setSellers(response.data);
       setPagination((prev) => ({
         ...prev,

@@ -118,7 +118,7 @@ class AccountContext {
   }
   async getAccounts() {
     try {
-      const response = await axios.get("  /accounts/admin/list");
+      const response = await axios.get("/accounts/admin/list");
       return response.data;
     } catch (error) {
       console.error("Error fetching account list:", error);

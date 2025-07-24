@@ -71,8 +71,8 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
         price: product.price || "",
         stock: product.stock || "",
         description: product.description || "",
-        categoryId: product.categoryId._id || "",
-        subcategoryId: product.subcategoryId._id || "",
+        categoryId: product.categoryId?._id || "",
+        subcategoryId: product.subcategoryId?._id || "",
         status: product.status || "pending",
       });
 
@@ -401,44 +401,34 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
               </Grid>
 
               {/* Status */}
-              <FormControl fullWidth>
-                <InputLabel>Trạng thái</InputLabel>
-                <Select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange("status", e.target.value)}
-                  label="Trạng thái"
-                  renderValue={(value) => (
-                    <Chip
-                      label={
-                        statusOptions.find((opt) => opt.value === value)?.label
-                      }
-                      color={
-                        statusOptions.find((opt) => opt.value === value)?.color
-                      }
-                      size="small"
-                    />
-                  )}
-                >
-                  {getAvailableStatusOptions().map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+              {(product?.status === "active" || product?.status === "approved") && (
+                <FormControl fullWidth>
+                  <InputLabel>Trạng thái</InputLabel>
+                  <Select
+                    value={formData.status}
+                    onChange={(e) => handleInputChange("status", e.target.value)}
+                    label="Trạng thái"
+                    renderValue={(value) => (
                       <Chip
-                        label={option.label}
-                        color={option.color}
+                        label={statusOptions.find((opt) => opt.value === value)?.label}
+                        color={statusOptions.find((opt) => opt.value === value)?.color}
                         size="small"
                       />
-                    </MenuItem>
-                  ))}
-                </Select>
-                {product?.status === "approved" && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ mt: 1 }}
+                    )}
                   >
-                    Sản phẩm đã được duyệt, không thể thay đổi trạng thái này
-                  </Typography>
-                )}
-              </FormControl>
+                    {getAvailableStatusOptions().map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        <Chip label={option.label} color={option.color} size="small" />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {!(product?.status === "active" || product?.status === "approved") && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  Chỉ sản phẩm đang bán mới được phép thay đổi trạng thái.
+                </Typography>
+              )}
 
               {/* Description */}
               <TextField

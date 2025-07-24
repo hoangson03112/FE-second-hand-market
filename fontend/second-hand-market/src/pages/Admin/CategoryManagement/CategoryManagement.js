@@ -171,7 +171,7 @@ const CategoryManagement = () => {
     }
 
     return category.subcategories.map((subcat) => (
-      <ListItem key={subcat._id.$oid || subcat._id} sx={{ pl: 4 }}>
+      <ListItem key={subcat._id} sx={{ pl: 4 }}>
         <ListItemText primary={subcat.name} />
         <Chip
           label={subcat.status === "active" ? "Active" : "Inactive"}
@@ -199,6 +199,7 @@ const CategoryManagement = () => {
   const fetchCategories = async () => {
     try {
       const fetchedCategories = await getCategories();
+      console.log(fetchedCategories);
       setCategories(fetchedCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -263,16 +264,8 @@ const CategoryManagement = () => {
         subcategory,
         parentCategoryId
       );
-      if (!response) {
-        throw new Error("Cập nhật lỗi");
-      }
-      const updatedCategories = categories.map((cat) => {
-        if (cat._id === parentCategoryId) {
-          return response.category;
-        }
-        return cat;
-      });
-      setCategories(updatedCategories);
+
+      setCategories(response.category);
       showSnackbar("Cập nhật danh mục phụ thành công");
     } catch (error) {
       console.error("Error updating subcategory:", error);
@@ -329,7 +322,7 @@ const CategoryManagement = () => {
         <List>
           {categories.length > 0 ? (
             categories.map((category) => (
-              <React.Fragment key={category._id.$oid || category._id}>
+              <React.Fragment key={category._id}>
                 <ListItem>
                   <IconButton onClick={() => toggleExpand(category._id)}>
                     {expandedCategories[category._id] ? (

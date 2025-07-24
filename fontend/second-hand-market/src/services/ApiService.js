@@ -19,9 +19,7 @@ const ApiService = {
   // Các phương thức chung
   get: async (endpoint) => {
     try {
-      const response = await axios.get(
-        `${endpoint}`
-      );
+      const response = await axios.get(`${endpoint}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching data from ${endpoint}:`, error);
@@ -48,7 +46,15 @@ const ApiService = {
       throw error;
     }
   },
-
+  patch: async (endpoint, data) => {
+    try {
+      const response = await axios.patch(`${endpoint}`, data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error patching data at ${endpoint}:`, error);
+      throw error;
+    }
+  },
   delete: async (endpoint) => {
     try {
       const response = await axios.delete(`${endpoint}`);

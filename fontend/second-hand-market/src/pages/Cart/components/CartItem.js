@@ -75,7 +75,18 @@ const OptimizedImage = memo(({ src, alt, onError, style, ...props }) => {
 
 OptimizedImage.displayName = "OptimizedImage";
 
-const CartItem = memo(
+// Đảm bảo CartItem chỉ re-render khi các props thực sự thay đổi
+const areEqual = (prevProps, nextProps) => {
+  // So sánh shallow cho các props chính
+  return (
+    prevProps.products === nextProps.products &&
+    prevProps.sellers === nextProps.sellers &&
+    prevProps.checkedItems === nextProps.checkedItems &&
+    prevProps.isItemUpdating === nextProps.isItemUpdating
+  );
+};
+
+const CartItem = React.memo(
   ({
     products,
     sellers,
@@ -320,7 +331,8 @@ const CartItem = memo(
         `}</style>
       </tbody>
     );
-  }
+  },
+  areEqual
 );
 
 CartItem.displayName = "CartItem";

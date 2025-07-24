@@ -24,6 +24,7 @@ const AddressList = ({
     onSelectAddress(address);
     onHide(); // Đóng modal sau khi chọn địa chỉ
   };
+  console.log(addresses);
 
   return (
     <div className="address-list">
@@ -41,9 +42,9 @@ const AddressList = ({
           <div className="d-flex justify-content-between align-items-start">
             <div className="address-info">
               <div className="d-flex align-items-center mb-2">
-                <h6 className="mb-0 me-2 fw-bold">{currentUser?.fullName}</h6>
+                <h6 className="mb-0 me-2 fw-bold">{address?.fullName}</h6>
                 <span className="text-muted">|</span>
-                <span className="ms-2">{currentUser?.phoneNumber}</span>
+                <span className="ms-2">{address?.phoneNumber}</span>
                 {address.isDefault && (
                   <span className="badge bg-secondary ms-2">Mặc định</span>
                 )}

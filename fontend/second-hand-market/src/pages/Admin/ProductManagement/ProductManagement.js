@@ -40,6 +40,7 @@ import {
   Delete,
   Close,
   Info,
+  DoneAll,
 } from "@mui/icons-material";
 
 import { useProduct } from "../../../contexts/ProductContext";
@@ -72,21 +73,44 @@ const ProductManagement = () => {
     message: "",
     severity: "success",
   });
-  console.log(selectedProduct);
 
   const locations = [
     ...new Set(products.map((product) => product.location || "")),
+  ];
+
+  // Danh sách trạng thái gộp
+  const productStatusList = [
+    { key: "all", label: "Tất cả", icon: ShoppingCart, color: "default" },
+    {
+      key: "pending_group",
+      label: "Chờ duyệt",
+      icon: HourglassEmpty,
+      color: "warning",
+    },
+    {
+      key: "selling_group",
+      label: "Đang bán",
+      icon: CheckCircle,
+      color: "success",
+    },
+    { key: "inactive", label: "Ngừng bán", icon: Cancel, color: "secondary" },
+    { key: "sold", label: "Đã hết hàng", icon: DoneAll, color: "secondary" },
+    { key: "rejected", label: "Đã hủy", icon: Cancel, color: "error" },
   ];
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesTab =
-      currentTab === 0 ||
-      (currentTab === 1 && product.status === "pending") ||
-      (currentTab === 2 && product.status === "approved") ||
-      (currentTab === 3 && product.status === "rejected");
+    let matchesTab = false;
+    if (currentTab === 0) matchesTab = true;
+    else if (currentTab === 1)
+      matchesTab = ["pending", "under_review"].includes(product.status);
+    else if (currentTab === 2)
+      matchesTab = ["active", "approved"].includes(product.status);
+    else if (currentTab === 3) matchesTab = product.status === "inactive";
+    else if (currentTab === 4) matchesTab = product.status === "sold";
+    else if (currentTab === 5) matchesTab = product.status === "rejected";
     const matchesCategory =
       categoryFilter === "all" || product.categoryId === categoryFilter;
     const matchesLocation =
@@ -192,22 +216,37 @@ const ProductManagement = () => {
   // Thống kê
   const stats = [
     {
-      label: "Tổng sản phẩm",
+      label: "Tất cả",
       value: products.length,
       icon: ShoppingCart,
-      color: "primary",
+      color: "default",
     },
     {
       label: "Chờ duyệt",
-      value: products.filter((p) => ["pending"].includes(p.status)).length,
+      value: products.filter((p) =>
+        ["pending", "under_review"].includes(p.status)
+      ).length,
       icon: HourglassEmpty,
       color: "warning",
     },
     {
-      label: "Đã duyệt",
-      value: products.filter((p) => p.status === "approved").length,
+      label: "Đang bán",
+      value: products.filter((p) => ["active", "approved"].includes(p.status))
+        .length,
       icon: CheckCircle,
       color: "success",
+    },
+    {
+      label: "Ngừng bán",
+      value: products.filter((p) => p.status === "inactive").length,
+      icon: Cancel,
+      color: "secondary",
+    },
+    {
+      label: "Đã hết hàng",
+      value: products.filter((p) => p.status === "sold").length,
+      icon: DoneAll,
+      color: "secondary",
     },
     {
       label: "Đã hủy",
@@ -216,7 +255,6 @@ const ProductManagement = () => {
       color: "error",
     },
   ];
-  console.log(products);
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -275,11 +313,12 @@ const ProductManagement = () => {
           value={currentTab}
           onChange={(e, newValue) => setCurrentTab(newValue)}
           sx={{ mt: 2 }}
+          variant="scrollable"
+          scrollButtons="auto"
         >
-          <Tab label="Tất cả" icon={<ShoppingCart />} />
-          <Tab label="Chờ duyệt" icon={<HourglassEmpty />} />
-          <Tab label="Đã duyệt" icon={<CheckCircle />} />
-          <Tab label="Đã hủy" icon={<Cancel />} />
+          {productStatusList.map((status, idx) => (
+            <Tab key={status.key} label={status.label} icon={<status.icon />} />
+          ))}
         </Tabs>
       </Box>
 
@@ -299,8 +338,6 @@ const ProductManagement = () => {
       {/* Danh sách sản phẩm */}
       <Grid container spacing={3}>
         {displayedProducts.map((product) => {
-          console.log(product);
-
           return (
             <Grid item xs={12} sm={6} md={3} key={product.id}>
               <Card
@@ -336,13 +373,19 @@ const ProductManagement = () => {
                       position: "absolute",
                       top: 10,
                       right: 10,
-                      bgcolor:
-                        product.status === "pending" ||
-                        product.status === "pending_review"
-                          ? "warning.main"
-                          : product.status === "approved"
-                          ? "success.main"
-                          : "error.main",
+                      bgcolor: ["pending", "under_review"].includes(
+                        product.status
+                      )
+                        ? "warning.main"
+                        : ["active", "approved"].includes(product.status)
+                        ? "success.main"
+                        : product.status === "inactive"
+                        ? "secondary.main"
+                        : product.status === "sold"
+                        ? "secondary.dark"
+                        : product.status === "rejected"
+                        ? "error.main"
+                        : "grey.500",
                       color: "white",
                       px: 1,
                       py: 0.5,
@@ -351,12 +394,13 @@ const ProductManagement = () => {
                       fontWeight: "bold",
                     }}
                   >
-                    {product.status === "pending" ||
-                    product.status === "pending_review"
-                      ? "Chờ duyệt"
-                      : product.status === "approved"
-                      ? "Đã duyệt"
-                      : "Đã hủy"}
+                    {["pending", "under_review"].includes(product.status) &&
+                      "Chờ duyệt"}
+                    {["active", "approved"].includes(product.status) &&
+                      "Đang bán"}
+                    {product.status === "inactive" && "Ngừng bán"}
+                    {product.status === "sold" && "Đã hết hàng"}
+                    {product.status === "rejected" && "Đã hủy"}
                   </Box>
                 </Box>
 
@@ -416,7 +460,7 @@ const ProductManagement = () => {
                 <Divider />
 
                 <Box sx={{ p: 2 }}>
-                  {["pending", "pending_review"].includes(product.status) ? (
+                  {["pending", "under_review"].includes(product.status) ? (
                     <Stack
                       direction="row"
                       spacing={1}
@@ -709,12 +753,14 @@ const ProductManagement = () => {
                     boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                   }}
                 >
-                  {selectedProduct.status === "pending" ||
-                  selectedProduct.status === "active"
-                    ? "Chờ duyệt"
-                    : selectedProduct.status === "approved"
-                    ? "Đã duyệt"
-                    : "Đã hủy"}
+                  {["pending", "under_review"].includes(
+                    selectedProduct.status
+                  ) && "Chờ duyệt"}
+                  {["active", "approved"].includes(selectedProduct.status) &&
+                    "Đang bán"}
+                  {selectedProduct.status === "inactive" && "Ngừng bán"}
+                  {selectedProduct.status === "sold" && "Đã hết hàng"}
+                  {selectedProduct.status === "rejected" && "Đã hủy"}
                 </Box>
                 <Swiper
                   modules={[Navigation, PagSwiper]}
@@ -816,7 +862,7 @@ const ProductManagement = () => {
                           Danh mục
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedProduct.category.name || "Không xác định"}
+                          {selectedProduct?.category?.name || "Không xác định"}
                         </Typography>
                       </Box>
                     </Grid>
@@ -827,7 +873,8 @@ const ProductManagement = () => {
                           Danh mục con
                         </Typography>
                         <Typography variant="body1" fontWeight={500}>
-                          {selectedProduct.subcategory.name || "Không xác định"}
+                          {selectedProduct?.subcategory?.name ||
+                            "Không xác định"}
                         </Typography>
                       </Box>
                     </Grid>

@@ -15,50 +15,14 @@ import axios from "axios";
 const ProductMessage = ({ product }) => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [fullProductData, setFullProductData] = useState(null);
-
-  // Nếu product chỉ có id mà không có thông tin khác, có thể fetch thêm thông tin
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      // Chỉ fetch thông tin khi product có id nhưng thiếu thông tin cơ bản
-      if ((product.id || product._id) && !product.name) {
-        setIsLoading(true);
-        try {
-          const productId = product._id || product.id;
-          const response = await axios.get(
-            `  /products/${productId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
-
-          if (response.data && response.data.success) {
-            setFullProductData(response.data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching product details:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchProductDetails();
-  }, [product]);
-
-  // Ưu tiên sử dụng dữ liệu đầy đủ nếu có
-  const displayProduct = fullProductData || product;
 
   const handleViewProduct = () => {
-    // Sử dụng product._id nếu có, nếu không thì dùng product.id
-    const productId = displayProduct._id || displayProduct.id;
+    const productId = product._id;
 
     if (productId) {
-      navigate(` /product?productID=${productId}`);
+      navigate(`/product?productID=${productId}`);
     } else {
-      console.error("Product ID not found in product object:", displayProduct);
+      console.error("Product ID not found in product object:", product);
     }
   };
 
@@ -109,20 +73,12 @@ const ProductMessage = ({ product }) => {
         },
       }}
     >
-      {displayProduct.image ? (
+      {product.image ? (
         <CardMedia
           component="img"
           height="140"
-          image={displayProduct.image}
-          alt={displayProduct.name || "Sản phẩm"}
-          sx={{ objectFit: "cover" }}
-        />
-      ) : displayProduct.images && displayProduct.images.length > 0 ? (
-        <CardMedia
-          component="img"
-          height="140"
-          image={displayProduct.images[0]}
-          alt={displayProduct.name || "Sản phẩm"}
+          image={product.image.url}
+          alt={product.name || "Sản phẩm"}
           sx={{ objectFit: "cover" }}
         />
       ) : (
@@ -141,8 +97,8 @@ const ProductMessage = ({ product }) => {
         </Box>
       )}
       <CardContent sx={{ p: 2 }}>
-        <Typography 
-          variant="subtitle1" 
+        <Typography
+          variant="subtitle1"
           sx={{
             fontWeight: 600,
             color: "#324155",
@@ -150,36 +106,36 @@ const ProductMessage = ({ product }) => {
             mb: 0.5,
           }}
         >
-          {displayProduct.name || "Sản phẩm được chia sẻ"}
+          {product.name || "Sản phẩm được chia sẻ"}
         </Typography>
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           sx={{
             color: "#324155",
             fontWeight: 500,
             mb: 1.5,
           }}
         >
-          {typeof displayProduct.price === "number"
-            ? displayProduct.price.toLocaleString("vi-VN", {
+          {typeof product.price === "number"
+            ? product.price.toLocaleString("vi-VN", {
                 style: "currency",
                 currency: "VND",
               })
-            : displayProduct.price || "Liên hệ"}
+            : product.price || "Liên hệ"}
         </Typography>
         <Button
           variant="contained"
           size="small"
           fullWidth
           onClick={handleViewProduct}
-          sx={{ 
+          sx={{
             bgcolor: "#324155",
             color: "#fff",
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
             "&:hover": {
               bgcolor: "#455a74",
               boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
-            }
+            },
           }}
           startIcon={<ShoppingCart fontSize="small" />}
         >

@@ -32,6 +32,12 @@ const orderService = {
   getTotalAmountOfOrder: async (id) => {
     return await ApiService.get(`/orders/${id}/totalAmount`);
   },
+  getAllOrderRefund: async () => {
+    return await ApiService.get(`/orders/order-refund`);
+  },
+  confirmRefund: async (orderId) => {
+    return await ApiService.patch(`/orders/confirm-refund/${orderId}`);
+  },
 };
 
 export default orderService;

@@ -18,7 +18,9 @@ class SellerContext {
       formData.append("accountHolder", sellerInfo.accountHolder || "");
       formData.append("agreeTerms", sellerInfo.agreeTerms || false);
       formData.append("agreePolicy", sellerInfo.agreePolicy || false);
-
+      formData.append("province_id", sellerInfo.province_id || "");
+      formData.append("from_district_id", sellerInfo.from_district_id || "");
+      formData.append("from_ward_code", sellerInfo.from_ward_code || "");
       // Thêm các file ảnh
       if (sellerInfo.avatar) {
         formData.append("avatar", sellerInfo.avatar);
@@ -30,7 +32,7 @@ class SellerContext {
         formData.append("idCardBack", sellerInfo.idCardBack);
       }
 
-      const response = await axios.post("  /sellers/register", formData, {
+      const response = await axios.post("/sellers/register", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

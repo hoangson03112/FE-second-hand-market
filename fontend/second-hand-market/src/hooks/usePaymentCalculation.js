@@ -9,12 +9,11 @@ import {
 export const usePaymentCalculation = ({
   products = [],
   selectedVoucher = null,
-  useCoins = false,
   shippingMethod = SHIPPING_METHODS.EXPRESS,
   paymentMethod = PAYMENT_METHODS.COD,
   selectedShippingMethods = {},
 }) => {
-  const { balance } = useCoin();
+  // Xóa mọi logic liên quan đến coin/xu trong hook này
 
   const calculations = useMemo(() => {
     const productTotals = calculateTotalWithDiscounts(products);
@@ -33,11 +32,6 @@ export const usePaymentCalculation = ({
         voucherDiscount = Math.min(selectedVoucher.discountValue, totalAmount);
       }
     }
-
-    // Calculate coin discount (30% of coins used)
-    const coinDiscount = useCoins
-      ? Math.min(balance * 0.3, totalAmount - voucherDiscount)
-      : 0;
 
     // Calculate multi-shop shipping fee
     let shippingFee = 0;
@@ -74,7 +68,7 @@ export const usePaymentCalculation = ({
     // Calculate final amount
     const finalAmount = Math.max(
       0,
-      totalAmount - voucherDiscount - coinDiscount + shippingFee
+      totalAmount - voucherDiscount + shippingFee
     );
     // Calculate deposit amount based on payment method
     let depositAmount = 0;
@@ -94,7 +88,6 @@ export const usePaymentCalculation = ({
       originalTotalAmount,
       totalProductSavings,
       voucherDiscount,
-      coinDiscount,
       shippingFee,
       finalAmount,
       depositAmount,
@@ -103,13 +96,11 @@ export const usePaymentCalculation = ({
         new Set(products.map((p) => p.seller._id)).size,
       shippingBreakdown: selectedShippingMethods,
 
-      totalSavings: totalProductSavings + voucherDiscount + coinDiscount,
+      totalSavings: totalProductSavings + voucherDiscount,
     };
   }, [
     products,
     selectedVoucher,
-    useCoins,
-    balance,
     shippingMethod,
     paymentMethod,
     selectedShippingMethods,

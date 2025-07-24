@@ -75,8 +75,11 @@ export const CartProvider = ({ children }) => {
       }
       return response.data;
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      throw error;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi thêm vào giỏ hàng";
+      throw new Error(message);
     }
   };
   const deleteItem = async (productIds) => {
@@ -100,12 +103,14 @@ export const CartProvider = ({ children }) => {
 
       return response.data;
     } catch (error) {
-      console.error("Error deleting item:", error);
-      throw error;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi xóa sản phẩm";
+      throw new Error(message);
     }
   };
   const updateQuantity = async (productId, quantity) => {
-    // Add to updating items
     setUpdatingItems((prev) => new Set([...prev, productId]));
 
     try {
@@ -120,7 +125,6 @@ export const CartProvider = ({ children }) => {
         }
       );
 
-      // Sync state with server response
       if (response.data?.cart) {
         setCart((prevCart) => ({
           ...prevCart,
@@ -131,10 +135,12 @@ export const CartProvider = ({ children }) => {
 
       return response.data;
     } catch (error) {
-      console.error("Error updating quantity:", error);
-      throw error;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi cập nhật số lượng";
+      throw new Error(message);
     } finally {
-      // Remove from updating items
       setUpdatingItems((prev) => {
         const newSet = new Set(prev);
         newSet.delete(productId);
@@ -143,9 +149,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Optimistic update for immediate UI response
   const updateQuantityOptimistic = (productId, newQuantity) => {
-    // Use startTransition for smooth, non-blocking updates
     startTransition(() => {
       setCart((prevCart) => {
         const newItems = prevCart.items.map((item) =>
@@ -154,7 +158,6 @@ export const CartProvider = ({ children }) => {
             : item
         );
 
-        // Calculate totalItems more efficiently
         const totalItems = newItems.reduce(
           (total, item) => total + item.quantity,
           0
@@ -216,8 +219,11 @@ export const CartProvider = ({ children }) => {
 
       return response.data;
     } catch (error) {
-      console.error("Error clearing cart:", error);
-      throw error;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi xóa giỏ hàng";
+      throw new Error(message);
     }
   };
 
@@ -240,8 +246,11 @@ export const CartProvider = ({ children }) => {
 
       return response.data;
     } catch (error) {
-      console.error("Error syncing cart from server:", error);
-      throw error;
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Có lỗi xảy ra khi đồng bộ giỏ hàng";
+      throw new Error(message);
     }
   };
 

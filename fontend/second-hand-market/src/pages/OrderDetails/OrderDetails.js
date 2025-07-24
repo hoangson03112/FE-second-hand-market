@@ -99,6 +99,7 @@ function ColorlibStepIcon(props) {
     3: <LocalShipping />,
     4: <LocalShipping />,
     5: <CheckCircle />,
+    6: <CheckCircle />,
   };
 
   return (
@@ -132,8 +133,17 @@ export default function OrderDetails() {
       setLoading(false);
     }
   };
-  const handleCancelOrder = async (orderId, reason, status) => {
+  const handleCancelOrder = async (orderId, reason, status, bankInfo) => {
     try {
+      // Nếu có bankInfo thì gửi lên API lưu thông tin hoàn tiền
+      if (bankInfo) {
+        await axios.post(`/bank-info`, {
+          orderId,
+          bankName: bankInfo.bankName,
+          accountNumber: bankInfo.accountNumber,
+          accountHolder: bankInfo.accountHolder,
+        });
+      }
       await updateOrder(orderId, reason, status);
       fetchOrder();
       setShowCancelModal(false);
@@ -181,6 +191,15 @@ export default function OrderDetails() {
     };
     return new Date(dateString).toLocaleDateString("vi-VN", options);
   };
+  // Chỉ lấy ngày/tháng/năm
+  const formatDateOnly = (dateString) => {
+    const options = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return new Date(dateString).toLocaleDateString("vi-VN", options);
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -190,7 +209,19 @@ export default function OrderDetails() {
     }).format(amount);
   };
 
-  const getStatusText = (status) => {
+  const getStatusText = (status, refundDecision) => {
+    if (status === "refund") {
+      if (refundDecision === "pending") return "Chờ duyệt hoàn tiền";
+      if (refundDecision === "approved") return "Đã duyệt hoàn tiền";
+      if (refundDecision === "rejected") return "Từ chối hoàn tiền";
+      return "Trả hàng/Hoàn tiền";
+    }
+    if (status === "refunded" && refundDecision === "approved") {
+      return "Đã hoàn tiền";
+    }
+    if (status === "delivered") {
+      return "Đã giao hàng";
+    }
     switch (status) {
       case "pending":
         return "Chờ xác nhận";
@@ -201,15 +232,29 @@ export default function OrderDetails() {
       case "shipping":
         return "Đang giao hàng";
       case "completed":
-        return "Đã giao hàng";
+        return "Đã nhận hàng";
       case "cancelled":
         return "Đã hủy";
+      case "refunded":
+        return "Đã hoàn tiền";
       default:
         return "Không xác định";
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, refundDecision) => {
+    if (status === "refund") {
+      if (refundDecision === "pending") return "warning";
+      if (refundDecision === "approved") return "success";
+      if (refundDecision === "rejected") return "error";
+      return "info";
+    }
+    if (status === "refunded" && refundDecision === "approved") {
+      return "success";
+    }
+    if (status === "delivered") {
+      return "info";
+    }
     switch (status) {
       case "pending":
         return "warning";
@@ -223,12 +268,26 @@ export default function OrderDetails() {
         return "success";
       case "cancelled":
         return "error";
+      case "refunded":
+        return "success";
       default:
         return "default";
     }
   };
 
-  const getStatusStep = (status) => {
+  const getStatusStep = (status, refundDecision) => {
+    if (status === "refund") {
+      if (refundDecision === "pending") return 5;
+      if (refundDecision === "approved") return 6;
+      if (refundDecision === "rejected") return 7;
+      return 5;
+    }
+    if (status === "refunded" && refundDecision === "approved") {
+      return 8;
+    }
+    if (status === "delivered") {
+      return 5;
+    }
     switch (status) {
       case "pending":
         return 0;
@@ -242,6 +301,52 @@ export default function OrderDetails() {
         return 4;
       case "cancelled":
         return -1;
+      case "refunded":
+        return 8;
+      default:
+        return 0;
+    }
+  };
+
+  const handleConfirmReceived = async (orderId) => {
+    try {
+      await updateOrder(orderId, "", "completed");
+      fetchOrder();
+    } catch (error) {
+      showError("Có lỗi khi xác nhận đã nhận hàng");
+    }
+  };
+
+  // Helper: xác định step active cho stepper
+  const getActiveStep = (status, refundDecision) => {
+    if (status === "refund") {
+      if (refundDecision === "pending") return 5;
+      if (refundDecision === "approved") return 6;
+      if (refundDecision === "rejected") return 7;
+      return 5;
+    }
+    if (status === "refunded" && refundDecision === "approved") {
+      return 8;
+    }
+    if (status === "delivered") {
+      return 4; // chỉ sáng đến "Đã giao hàng"
+    }
+    if (status === "completed") {
+      return 5; // sáng luôn cả "Đã nhận hàng"
+    }
+    switch (status) {
+      case "pending":
+        return 0;
+      case "confirmed":
+        return 1;
+      case "shipped":
+        return 2;
+      case "shipping":
+        return 3;
+      case "cancelled":
+        return -1;
+      case "refunded":
+        return 8;
       default:
         return 0;
     }
@@ -294,73 +399,204 @@ export default function OrderDetails() {
             Trạng thái đơn hàng
           </Typography>
           <Chip
-            label={getStatusText(order.status)}
-            color={getStatusColor(order.status)}
+            label={getStatusText(order.status, order.refundDecision)}
+            color={getStatusColor(order.status, order.refundDecision)}
             className="status-chip"
             sx={{
               background:
                 order.status === "shipping"
                   ? "linear-(136deg, #ff6f43 0%, #ee4d2d 50%, #ff4d4d 100%)"
+                  : order.status === "refund" &&
+                    order.refundDecision === "approved"
+                  ? "linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%)"
+                  : order.status === "refund" &&
+                    order.refundDecision === "rejected"
+                  ? "linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)"
+                  : order.status === "refund" &&
+                    order.refundDecision === "pending"
+                  ? "linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%)"
+                  : order.status === "refunded" &&
+                    order.refundDecision === "approved"
+                  ? "linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%)"
+                  : order.status === "delivered"
+                  ? "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)"
                   : "",
               boxShadow:
                 order.status === "shipping"
                   ? "0 4px 10px rgba(238, 77, 45, 0.3)"
                   : "",
               fontWeight: "bold",
-              color: order.status === "shipping" ? "white" : "",
+              color:
+                order.status === "shipping"
+                  ? "white"
+                  : order.status === "refund" &&
+                    order.refundDecision === "approved"
+                  ? "#2e7d32"
+                  : order.status === "refund" &&
+                    order.refundDecision === "rejected"
+                  ? "#d32f2f"
+                  : order.status === "refund" &&
+                    order.refundDecision === "pending"
+                  ? "#fbc02d"
+                  : order.status === "refunded" &&
+                    order.refundDecision === "approved"
+                  ? "#2e7d32"
+                  : order.status === "delivered"
+                  ? "#1976d2"
+                  : "",
             }}
           />
         </div>
 
+        {/* Alert cho trạng thái đã hoàn tiền */}
+        {order.status === "refunded" && order.refundDecision === "approved" && (
+          <Alert severity="success" sx={{ mb: 2, fontWeight: 600 }}>
+            Đã hoàn tiền thành công vào tài khoản ngân hàng.
+            {order.refundCompletedAt && (
+              <>
+                <br />
+                <b>Thời gian hoàn tiền:</b>{" "}
+                {new Date(order.refundCompletedAt).toLocaleString("vi-VN")}
+              </>
+            )}
+          </Alert>
+        )}
+        {/* Alert cho các trạng thái refund */}
+        {order.status === "refund" && order.refundDecision === "pending" && (
+          <Alert severity="warning" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đang chờ duyệt bởi người bán
+          </Alert>
+        )}
+        {order.status === "refund" && order.refundDecision === "rejected" && (
+          <Alert severity="error" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đã bị từ chối. Lý do:{" "}
+            {order.refundDecisionReason || "Không có lý do"}
+          </Alert>
+        )}
+        {order.status === "refund" && order.refundDecision === "approved" && (
+          <Alert severity="info" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đã được chấp nhận. Vui lòng chờ tiền hoàn về tài
+            khoản ngân hàng.
+          </Alert>
+        )}
+        {order.status === "cancelled" &&
+          order.shippingMethod === "ship-cod" &&
+          order.statusPayment === true &&
+          order.refundDecision === "pending" && (
+            <Alert severity="info" sx={{ mb: 2, fontWeight: 600 }}>
+              Đơn hàng đang được hoàn tiền
+            </Alert>
+          )}
+        {/* Alert nhỏ gọn, không chứa nút xác nhận */}
+        {order.status === "delivered" && (
+          <Alert severity="info" sx={{ mb: 2, fontWeight: 500 }}>
+            Đơn hàng đã được giao thành công. Vui lòng xác nhận nếu bạn đã nhận
+            được hàng.
+          </Alert>
+        )}
+
         {order.status !== "cancelled" ? (
           <Box sx={{ width: "100%", mt: 4 }} className="order-status-stepper">
-            <Stepper
-              alternativeLabel
-              activeStep={getStatusStep(order.status)}
-              connector={<ColorlibConnector />}
-            >
-              <Step>
-                <StepLabel StepIconComponent={ColorlibStepIcon}>
-                  <div className="step-label">Đơn hàng đã đặt</div>
-                  <small className="text-muted step-date">
-                    {order.status === "pending"
-                      ? "Đang chờ xác nhận"
-                      : formatDate(order.createdAt)}
-                  </small>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel StepIconComponent={ColorlibStepIcon}>
-                  <div className="step-label">Đã xác nhận</div>
-                  <small className="text-muted step-date">
-                    {order.status === "confirmed" && "Đang chuẩn bị hàng"}
-                  </small>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel StepIconComponent={ColorlibStepIcon}>
-                  <div className="step-label">Đã gửi cho vận chuyển</div>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel StepIconComponent={ColorlibStepIcon}>
-                  <div className="step-label">Đang giao hàng</div>
-                  <small className="text-muted step-date">
-                    {order.status === "shipping" &&
-                      "Dự kiến giao hàng: " +
-                        formatDate(order.expectedDeliveryTime)}
-                  </small>
-                </StepLabel>
-              </Step>
-              <Step>
-                <StepLabel StepIconComponent={ColorlibStepIcon}>
-                  <div className="step-label">Đã nhận hàng</div>
-                  <small className="text-muted step-date">
-                    {order.status === "completed" && "Đã nhận hàng"}
-                  </small>
-                </StepLabel>
-              </Step>
-            </Stepper>
+            {order.shippingMethod === "direct-meeting" ? (
+              <Stepper
+                alternativeLabel
+                activeStep={
+                  order.status === "pending"
+                    ? 0
+                    : order.status === "confirmed"
+                    ? 1
+                    : order.status === "completed"
+                    ? 2
+                    : 0
+                }
+                connector={<ColorlibConnector />}
+              >
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đơn hàng đã đặt</div>
+                    <small className="text-muted step-date">
+                      {formatDate(order.createdAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đã xác nhận</div>
+                    <small className="text-muted step-date">
+                      {order.status === "confirmed" &&
+                        formatDate(order.updatedAt || order.confirmedAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Hoàn thành</div>
+                    <small className="text-muted step-date">
+                      {order.status === "completed" &&
+                        formatDate(order.completedAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+              </Stepper>
+            ) : (
+              <Stepper
+                alternativeLabel
+                activeStep={getActiveStep(order.status, order.refundDecision)}
+                connector={<ColorlibConnector />}
+              >
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đơn hàng đã đặt</div>
+                    <small className="text-muted step-date">
+                      {order.status === "pending"
+                        ? "Đang chờ xác nhận"
+                        : formatDate(order.createdAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đã xác nhận</div>
+                    <small className="text-muted step-date">
+                      {order.status === "confirmed" && "Đang chuẩn bị hàng"}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đã gửi cho vận chuyển</div>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đang giao hàng</div>
+                    <small className="text-muted step-date">
+                      {order.status === "shipping" &&
+                        "Dự kiến: " +
+                          formatDateOnly(order.expectedDeliveryTime)}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đã giao hàng</div>
+                    <small className="text-muted step-date">
+                      {order.status === "delivered" &&
+                        "Đã giao lúc " + formatDate(order.deliveredAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+                <Step>
+                  <StepLabel StepIconComponent={ColorlibStepIcon}>
+                    <div className="step-label">Đã nhận hàng</div>
+                    <small className="text-muted step-date">
+                      {order.status === "completed" &&
+                        "Đã nhận lúc " + formatDate(order.completedAt)}
+                    </small>
+                  </StepLabel>
+                </Step>
+              </Stepper>
+            )}
           </Box>
         ) : (
           <div className="text-center py-3 cancelled-order mt-3">
@@ -371,17 +607,8 @@ export default function OrderDetails() {
               Đơn hàng đã bị hủy
             </Typography>
             <Typography variant="body2" className="text-muted mt-2">
-              Đơn hàng đã bị hủy vào{" "}
-              {formatDate(order.updatedAt || order.createdAt)}
+              Đơn hàng đã bị hủy vào {formatDate(order.updatedAt)}
             </Typography>
-            <Button
-              variant="outlined"
-              color="primary"
-              className="mt-3"
-              size="small"
-            >
-              Đặt hàng lại
-            </Button>
           </div>
         )}
       </Paper>
@@ -396,42 +623,57 @@ export default function OrderDetails() {
                 Thông tin đơn hàng
               </Typography>
             </div>
-            <div className="row">
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <Typography variant="body2" className="text-muted">
+            {/* Sử dụng Grid để chia đều 2 cột */}
+            <Box sx={{ px: 1 }}>
+              <Box component={Divider} sx={{ mb: 2 }} />
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                <Box sx={{ flex: 1, minWidth: 220 }}>
+                  <Typography variant="body2" color="text.secondary">
                     Mã đơn hàng
                   </Typography>
-                  <Typography variant="body1" className="fw-bold">
+                  <Typography variant="body1" fontWeight={700} sx={{ mb: 2 }}>
                     #{order.ghnOrderCode || order._id}
                   </Typography>
-                </div>
-                <div className="mb-3">
-                  <Typography variant="body2" className="text-muted">
+                  <Typography variant="body2" color="text.secondary">
                     Ngày đặt hàng
                   </Typography>
-                  <Typography variant="body1">
-                    {formatDate(order.createdAt)}
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    lúc {formatDate(order.createdAt)}
                   </Typography>
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <Typography variant="body2" className="text-muted">
+                  {order.shippingMethod === "ship-cod" && (
+                    <>
+                      <Typography variant="body2" color="text.secondary">
+                        Thời gian giao hàng dự kiến
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {formatDateOnly(order.expectedDeliveryTime)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Phương thức thanh toán
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        <CreditCard fontSize="small" className="me-1" />
+                        {order.paymentMethod === "bank_transfer"
+                          ? "Chuyển khoản"
+                          : "Thanh toán khi nhận hàng"}
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 220 }}>
+                  <Typography variant="body2" color="text.secondary">
                     Phương thức vận chuyển
                   </Typography>
                   <Typography
                     variant="body1"
-                    className="d-flex align-items-center"
+                    sx={{ display: "flex", alignItems: "center", mb: 2 }}
                   >
                     <LocalShipping fontSize="small" className="me-1" />
                     {order.shippingMethod === "ship-cod"
                       ? "Giao hàng tận nơi"
                       : "Giao dịch trực tiếp"}
                   </Typography>
-                </div>
-                <div className="mb-3">
-                  <Typography variant="body2" className="text-muted">
+                  <Typography variant="body2" color="text.secondary">
                     Trạng thái thanh toán
                   </Typography>
                   <Chip
@@ -441,26 +683,11 @@ export default function OrderDetails() {
                     }
                     color={order.statusPayment ? "success" : "warning"}
                     variant="outlined"
+                    sx={{ mt: 1, mb: 2 }}
                   />
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className="mb-3">
-                  <Typography variant="body2" className="text-muted">
-                    Phương thức thanh toán
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    className="d-flex align-items-center"
-                  >
-                    <CreditCard fontSize="small" className="me-1" />
-                    {order.paymentMethod === "bank_transfer"
-                      ? "Chuyển khoản"
-                      : "Thanh toán khi nhận hàng"}
-                  </Typography>
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
           </Paper>
 
           {/* Shipping Information */}
@@ -567,7 +794,7 @@ export default function OrderDetails() {
             <div className="d-flex justify-content-between mb-2">
               <Typography variant="body1">Tổng tiền hàng</Typography>
               <Typography variant="body1">
-                {formatCurrency(order.totalAmount)}
+                {formatCurrency(order.totalAmount - order.shippingFee)}
               </Typography>
             </div>
             <div className="d-flex justify-content-between mb-2">
@@ -591,7 +818,7 @@ export default function OrderDetails() {
                 Thành tiền
               </Typography>
               <Typography variant="h6" className="text-danger fw-bold">
-                {formatCurrency(order.totalAmount + order.shippingFee)}
+                {formatCurrency(order.totalAmount)}
               </Typography>
             </div>
 
@@ -606,21 +833,53 @@ export default function OrderDetails() {
                   Đánh giá người bán
                 </Button>
               )}
-
-              {order.status === "shipping" && (
-                <Button
-                  variant="contained"
-                  color="success"
-                  fullWidth
-                  startIcon={<CheckCircle />}
-                >
-                  Đã nhận được hàng
-                </Button>
+              {order.shippingMethod === "direct-meeting" &&
+                order.status === "confirmed" && (
+                  <Button
+                    onClick={() => handleConfirmReceived(order._id)}
+                    variant="contained"
+                    color="success"
+                    fullWidth
+                    startIcon={<CheckCircle />}
+                  >
+                    Hoàn thành
+                  </Button>
+                )}
+              {order.shippingMethod === "direct-meeting" &&
+                order.status === "completed" && (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    fullWidth
+                    startIcon={<CheckCircle />}
+                  >
+                    Đánh giá
+                  </Button>
+                )}
+              {order.status === "delivered" && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="large"
+                    onClick={() => handleConfirmReceived(order._id)}
+                    startIcon={<CheckCircle />}
+                    sx={{ px: 4, fontWeight: 700 }}
+                  >
+                    Tôi đã nhận được hàng
+                  </Button>
+                </Box>
               )}
 
               {order.status === "pending" && (
                 <Button
-                  onClick={() => setShowCancelModal(true)}
+                  onClick={() => {
+                    if (order.shippingMethod === "direct-meeting") {
+                      handleCancelOrder(order?._id, "", "cancelled");
+                    } else {
+                      setShowCancelModal(true);
+                    }
+                  }}
                   variant="outlined"
                   color="error"
                   fullWidth
@@ -633,6 +892,10 @@ export default function OrderDetails() {
                   orderId={order?._id}
                   onConfirm={handleCancelOrder}
                   onClose={() => setShowCancelModal(false)}
+                  requireBankInfo={
+                    order.statusPayment === true &&
+                    order.shippingMethod === "ship-cod"
+                  }
                 />
               )}
               <Button

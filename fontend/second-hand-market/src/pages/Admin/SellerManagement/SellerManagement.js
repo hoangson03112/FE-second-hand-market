@@ -19,6 +19,7 @@ import {
   Divider,
   TablePagination,
   Fade,
+  Paper,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -62,10 +63,12 @@ export default function SellerManagement() {
     pending: 0,
     approved: 0,
     rejected: 0,
+    banned: 0,
   });
+  const [confirmBanOpen, setConfirmBanOpen] = useState(false);
 
   const { showNotification } = useNotification();
-  const statusFilters = ["", "pending", "approved", "rejected"];
+  const statusFilters = ["", "pending", "approved", "rejected", "banned"];
 
   useEffect(() => {
     fetchSellers();
@@ -178,6 +181,7 @@ export default function SellerManagement() {
       pending: { label: "Chờ duyệt", color: "warning", icon: <ScheduleIcon /> },
       approved: { label: "Đã duyệt", color: "success", icon: <CheckIcon /> },
       rejected: { label: "Đã từ chối", color: "error", icon: <CancelIcon /> },
+      banned: { label: "Bị Ban", color: "error", icon: <BlockIcon /> },
     };
 
     const config = statusConfig[status] || {
@@ -196,6 +200,25 @@ export default function SellerManagement() {
         sx={{ fontWeight: 600 }}
       />
     );
+  };
+
+  // Lọc seller theo tab
+  const filteredSellers = sellers.filter((seller) => {
+    if (currentTab === 0) return true;
+    if (currentTab === 1) return seller.verificationStatus === "pending";
+    if (currentTab === 2) return seller.verificationStatus === "approved";
+    if (currentTab === 3) return seller.verificationStatus === "rejected";
+    if (currentTab === 4) return seller.verificationStatus === "banned";
+    return true;
+  });
+
+  // Hàm ban seller
+  const handleBanSeller = async () => {
+    if (!selectedSeller) return;
+    await sellerService.updateSellerStatus(selectedSeller._id, "banned");
+    setConfirmBanOpen(false);
+    setSelectedSeller(null);
+    fetchSellers();
   };
 
   return (
@@ -268,92 +291,43 @@ export default function SellerManagement() {
         }}
       >
         {/* Statistics Cards */}
-        <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 4 }}>
-          {[
-            {
-              label: "Tổng số",
-              value: statistics.total,
-              icon: <PeopleIcon />,
-              color: "#2a3b4c",
-            },
-            {
-              label: "Chờ duyệt",
-              value: statistics.pending,
-              icon: <ScheduleIcon />,
-              color: "#E67E22",
-            },
-            {
-              label: "Đã duyệt",
-              value: statistics.approved,
-              icon: <DoneIcon />,
-              color: "#27AE60",
-            },
-            {
-              label: "Đã từ chối",
-              value: statistics.rejected,
-              icon: <BlockIcon />,
-              color: "#E74C3C",
-            },
-          ].map((stat, index) => (
-            <Grid item xs={6} md={3} key={index}>
-              <Card
-                sx={{
-                  p: { xs: 2, sm: 3 },
-                  borderRadius: "16px",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 8px 25px rgba(0,0,0,0.12)",
-                  },
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Box
-                    sx={{
-                      width: { xs: 40, sm: 50 },
-                      height: { xs: 40, sm: 50 },
-                      borderRadius: "12px",
-                      backgroundColor: `${stat.color}15`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mr: 2,
-                    }}
-                  >
-                    {React.cloneElement(stat.icon, {
-                      sx: {
-                        color: stat.color,
-                        fontSize: { xs: 20, sm: 24 },
-                      },
-                    })}
-                  </Box>
-                  <Box>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 700,
-                        color: stat.color,
-                        fontSize: { xs: "1.5rem", sm: "2rem" },
-                      }}
-                    >
-                      {stat.value}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#6c757d",
-                        fontWeight: 500,
-                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                      }}
-                    >
-                      {stat.label}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Paper elevation={2} sx={{ p: 2, textAlign: "center" }}>
+              <PeopleIcon color="primary" sx={{ fontSize: 32 }} />
+              <Typography variant="h6">Tổng số: {statistics.total}</Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Paper elevation={2} sx={{ p: 2, textAlign: "center" }}>
+              <ScheduleIcon color="warning" sx={{ fontSize: 32 }} />
+              <Typography variant="h6">
+                Chờ duyệt: {statistics.pending}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Paper elevation={2} sx={{ p: 2, textAlign: "center" }}>
+              <CheckIcon color="success" sx={{ fontSize: 32 }} />
+              <Typography variant="h6">
+                Đã duyệt: {statistics.approved}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Paper elevation={2} sx={{ p: 2, textAlign: "center" }}>
+              <CancelIcon color="error" sx={{ fontSize: 32 }} />
+              <Typography variant="h6">
+                Đã từ chối: {statistics.rejected}
+              </Typography>
+            </Paper>
+          </Grid>
+          <Grid item xs={12} sm={6} md={2.4}>
+            <Paper elevation={2} sx={{ p: 2, textAlign: "center" }}>
+              <BlockIcon color="error" sx={{ fontSize: 32 }} />
+              <Typography variant="h6">Bị Ban: {statistics.banned}</Typography>
+            </Paper>
+          </Grid>
         </Grid>
 
         {/* Search Section */}
@@ -454,15 +428,22 @@ export default function SellerManagement() {
                   label: "Đã từ chối",
                   value: statistics.rejected,
                   color: "#E74C3C",
+                  icon: <CancelIcon />,
+                },
+                {
+                  label: "Bị Ban",
+                  value: statistics.banned,
+                  color: "#E74C3C",
                   icon: <BlockIcon />,
                 },
               ].map((tab, index) => (
-                <Grid item xs={6} md={3} key={index}>
+                <Grid item xs={6} md={2.4} key={index}>
                   <Button
                     fullWidth
                     variant={currentTab === index ? "contained" : "outlined"}
                     onClick={() => handleTabChange(null, index)}
                     sx={{
+                      height: "100%",
                       py: { xs: 1.5, sm: 2 },
                       borderRadius: "12px",
                       textTransform: "none",
@@ -555,7 +536,7 @@ export default function SellerManagement() {
             </Typography>
 
             <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 4 }}>
-              {sellers.map((seller, index) => (
+              {filteredSellers.map((seller) => (
                 <Grid item xs={12} sm={6} lg={4} key={seller._id}>
                   <Card
                     sx={{
@@ -643,7 +624,7 @@ export default function SellerManagement() {
                             }}
                           />
                           <Typography variant="body2" sx={{ color: "#495057" }}>
-                            {seller.phoneNumber || "Chưa cập nhật"}
+                            {seller.accountId?.phoneNumber || "Chưa cập nhật"}
                           </Typography>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -664,7 +645,11 @@ export default function SellerManagement() {
                               flex: 1,
                             }}
                           >
-                            {seller.shopName || "Chưa cập nhật"}
+                            {seller.ward +
+                              "," +
+                              seller.district +
+                              "," +
+                              seller.province}
                           </Typography>
                         </Box>
                       </Stack>
@@ -695,6 +680,28 @@ export default function SellerManagement() {
                         >
                           Chi tiết
                         </Button>
+                        {/* Banded */}
+                        {seller.verificationStatus === "approved" && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => {
+                              setSelectedSeller(seller);
+                              setConfirmBanOpen(true);
+                            }}
+                            sx={{
+                              minWidth: 40,
+                              borderRadius: "8px",
+                              backgroundColor: "#e53935 !important",
+                              color: "white",
+                              "&:hover": {
+                                backgroundColor: "#b71c1c !important",
+                              },
+                            }}
+                          >
+                            <BlockIcon sx={{ fontSize: 18 }} />
+                          </Button>
+                        )}
                         {seller.verificationStatus === "pending" && (
                           <Box sx={{ display: "flex", gap: 1 }}>
                             <Button
@@ -744,7 +751,7 @@ export default function SellerManagement() {
               ))}
             </Grid>
 
-            {sellers.length === 0 && (
+            {filteredSellers.length === 0 && (
               <Card
                 sx={{
                   p: { xs: 4, sm: 6, md: 8 },
@@ -775,7 +782,7 @@ export default function SellerManagement() {
               </Card>
             )}
 
-            {sellers.length > 0 && (
+            {filteredSellers.length > 0 && (
               <Card
                 sx={{
                   borderRadius: "16px",
@@ -823,6 +830,20 @@ export default function SellerManagement() {
           handleApproveSeller={handleApproveSeller}
           handleRejectSeller={handleRejectSeller}
         />
+
+        {/* Confirm Ban Dialog */}
+        <Dialog open={confirmBanOpen} onClose={() => setConfirmBanOpen(false)}>
+          <DialogTitle>Xác nhận Ban Seller</DialogTitle>
+          <DialogContent>
+            <Typography>Bạn có chắc chắn muốn ban seller này không?</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmBanOpen(false)}>Hủy</Button>
+            <Button onClick={handleBanSeller} color="error" variant="contained">
+              Xác nhận Ban
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

@@ -54,7 +54,7 @@ const OrderManagement = () => {
     const fetchOrders = async () => {
       try {
         const response = await orderService.getAllOrders();
-        console.log("📦 Orders data from API:", response.orders);
+
         setOrders(response.orders);
       } catch (error) {
         console.error("Error fetching orders:", error);
@@ -334,7 +334,7 @@ const OrderManagement = () => {
               Xem Đơn hàng (Admin)
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Chỉ xem - Không thao tác
+             
             </Typography>
           </Toolbar>
         </Container>

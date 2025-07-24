@@ -58,6 +58,8 @@ import SellerManagement from "./pages/Admin/SellerManagement/SellerManagement";
 // import QRPaymentPage from "./pages/PaymentResult/QRPaymentPage";
 import PaymentCancelPage from "./pages/PaymentResult/PaymentCancelPage";
 import PaymentSuccessPage from "./pages/PaymentResult/PaymentSuccessPage";
+import ReturnedOrders from "./pages/Admin/ReturnedOrders/ReturnedOrders";
+import ReportManagement from "./pages/Admin/ReportManagement/ReportManagement";
 
 // Khởi tạo token từ localStorage nếu đã đăng nhập
 const token = authService.getToken();
@@ -150,6 +152,22 @@ function App() {
                               }
                             />
 
+                            <Route
+                              path="/eco-market/admin/orders/refund"
+                              element={
+                                <LayoutAdmin>
+                                  <ReturnedOrders />
+                                  </LayoutAdmin>
+                                }
+                            />
+                            <Route
+                              path="/eco-market/admin/reports"
+                              element={
+                                <LayoutAdmin>
+                                  <ReportManagement />
+                                </LayoutAdmin>
+                              }
+                            />
                             <Route
                               path="/"
                               element={<Navigate to="/eco-market/home" />}

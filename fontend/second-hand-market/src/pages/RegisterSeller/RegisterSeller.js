@@ -136,19 +136,35 @@ export default function RegisterSeller() {
   ];
 
   const handleInputChange = (field, value) => {
-    console.log(value);
-    console.log(field);
     if (field === "province") {
-      setFormData((prev) => ({ ...prev, [field]: value.ProvinceName }));
-      setFormData((prev) => ({ ...prev, province_id: value.ProvinceID }));
+      setFormData((prev) => ({
+        ...prev,
+        province: value.ProvinceName,
+        province_id: value.ProvinceID,
+        district: "",
+        ward: "",
+        from_district_id: "",
+        from_ward_code: "",
+      }));
+      return;
     }
     if (field === "district") {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      setFormData((prev) => ({ ...prev, from_district_id: value.DistrictID }));
+      setFormData((prev) => ({
+        ...prev,
+        district: value.DistrictName,
+        from_district_id: value.DistrictID,
+        ward: "",
+        from_ward_code: "",
+      }));
+      return;
     }
     if (field === "ward") {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      setFormData((prev) => ({ ...prev, from_ward_code: value.WardCode }));
+      setFormData((prev) => ({
+        ...prev,
+        ward: value.WardName,
+        from_ward_code: value.WardCode,
+      }));
+      return;
     }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -243,6 +259,9 @@ export default function RegisterSeller() {
             province: "",
             district: "",
             ward: "",
+            province_id: "",
+            from_district_id: "",
+            from_ward_code: "",
             idCardFront: null,
             idCardBack: null,
             bankName: "",

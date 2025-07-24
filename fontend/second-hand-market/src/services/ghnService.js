@@ -7,18 +7,23 @@ class GHNService {
     this.shopId = 196531;
   }
   async createOrder(ghnOrderData) {
-    const response = await axios.post(
-      `${this.baseURL}/v2/shipping-order/create`,
-      ghnOrderData,
-      {
-        headers: {
-          Token: this.token,
-          ShopId: this.shopId,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return response.data;
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/v2/shipping-order/create`,
+        ghnOrderData,
+        {
+          headers: {
+            Token: this.token,
+            ShopId: this.shopId,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("GHN API Error:", error);
+      throw error;
+    }
   }
 
   async calculateShippingFee({

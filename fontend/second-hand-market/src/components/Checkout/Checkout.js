@@ -53,7 +53,6 @@ const Checkout = () => {
     SHIPPING_METHODS.EXPRESS
   );
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS.COD);
-  const [useCoins, setUseCoins] = useState(false);
 
   // Custom hooks
   const {
@@ -80,14 +79,12 @@ const Checkout = () => {
     totalAmount,
     originalTotalAmount,
     totalProductSavings,
-    coinDiscount,
     platformFee,
     finalAmount,
     depositAmount,
     totalSavings,
   } = usePaymentCalculation({
     products,
-    useCoins,
     shippingMethod,
     paymentMethod,
     selectedShippingMethods: getSelectedShippingMethods(),
@@ -146,18 +143,12 @@ const Checkout = () => {
 
   // Wrapper function for place order
   const handlePlaceOrder = async () => {
-    const calculatedCoinDiscount = useCoins
-      ? Math.min(finalAmount * 0.3, 100000)
-      : 0;
-
     await originalHandlePlaceOrder({
       products,
       finalAmount,
       shippingMethod,
       selectedAddress,
       selectedVoucher: null,
-      useCoins,
-      coinDiscount: calculatedCoinDiscount,
       selectedShippingMethods: getSelectedShippingMethods(),
       paymentMethod,
     });
@@ -183,10 +174,6 @@ const Checkout = () => {
 
   const handleAddressChange = (e) => {
     handleNewAddressChange(e);
-  };
-
-  const handleCoinUsageToggle = (useCoin) => {
-    setUseCoins(useCoin);
   };
 
   if (loading) {
@@ -369,9 +356,6 @@ const Checkout = () => {
               originalTotalAmount={originalTotalAmount}
               totalProductSavings={totalProductSavings}
               totalSavings={totalSavings}
-              useCoins={useCoins}
-              onCoinUsageToggle={handleCoinUsageToggle}
-              coinDiscount={coinDiscount}
               shippingMethod={shippingMethod}
               shippingFee={
                 hasMixedOrders ? getCodShippingFee() : getTotalShippingFee()

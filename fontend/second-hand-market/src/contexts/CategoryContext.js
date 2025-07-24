@@ -10,9 +10,8 @@ export const CategoryProvider = ({ children }) => {
   const getCategories = async () => {
     try {
       const response = await axios.get("/categories");
-      console.log(response.data.data);
 
-      const categories = response.data.data;
+      const categories = response.data;
       return categories;
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -22,11 +21,11 @@ export const CategoryProvider = ({ children }) => {
 
   const getCategory = async (categoryID) => {
     try {
-      const response = await axios.get(" /categories/details", {
+      const response = await axios.get("/categories/details", {
         params: { categoryID },
       });
 
-      const category = response.data.data;
+      const category = response.data;
       return category;
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -37,7 +36,7 @@ export const CategoryProvider = ({ children }) => {
   const updateCategory = async (categoryID, data) => {
     try {
       const response = await axios.put(
-        ` /eco-market/categories/update?categoryID=${categoryID}`,
+        `/categories/update?categoryID=${categoryID}`,
         {
           data,
         }

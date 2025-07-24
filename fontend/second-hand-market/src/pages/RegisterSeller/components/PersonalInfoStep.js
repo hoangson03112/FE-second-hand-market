@@ -249,7 +249,6 @@ const PersonalInfoStep = ({
                 <Select
                   value={formData.province}
                   label="Thành phố/ Tỉnh"
-                  onChange={handleProvinceChange}
                   sx={{ borderRadius: 3 }}
                   MenuProps={{
                     PaperProps: {
@@ -288,7 +287,8 @@ const PersonalInfoStep = ({
                     filteredProvinces.map((province) => (
                       <MenuItem
                         key={province.ProvinceID}
-                        value={province}
+                        value={province.ProvinceName}
+                        onClick={() => onInputChange("province", province)}
                         sx={{
                           fontSize: "0.875rem",
                           py: 0.5,
@@ -315,7 +315,6 @@ const PersonalInfoStep = ({
                 <Select
                   value={formData.district}
                   label="Quận/Huyện"
-                  onChange={handleDistrictChange}
                   sx={{ borderRadius: 3 }}
                   MenuProps={{
                     PaperProps: {
@@ -354,7 +353,8 @@ const PersonalInfoStep = ({
                     filteredDistricts.map((district) => (
                       <MenuItem
                         key={district.DistrictID}
-                        value={district}
+                        value={district.DistrictName}
+                        onClick={() => onInputChange("district", district)}
                         sx={{
                           fontSize: "0.875rem",
                           py: 0.5,
@@ -381,7 +381,6 @@ const PersonalInfoStep = ({
                 <Select
                   value={formData.ward}
                   label="Phường/Xã"
-                  onChange={handleWardChange}
                   sx={{ borderRadius: 3 }}
                   MenuProps={{
                     PaperProps: {
@@ -420,7 +419,8 @@ const PersonalInfoStep = ({
                     filteredWards.map((ward) => (
                       <MenuItem
                         key={ward.WardCode}
-                        value={ward}
+                        value={ward.WardName}
+                        onClick={() => onInputChange("ward", ward)}
                         sx={{
                           fontSize: "0.875rem",
                           py: 0.5,

@@ -412,27 +412,34 @@ const SellerProducts = () => {
                           <ViewIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Chỉnh sửa">
+                      {/* Ẩn nút sửa nếu đã bán hết */}
+                      {product.status !== "sold" && (
+                        <Tooltip title="Chỉnh sửa">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              setUpdateDialog({ open: true, product })
+                            }
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </ButtonGroup>
+                    {/* Ẩn nút xóa nếu đã bán hết */}
+                    {product.status !== "sold" && (
+                      <Tooltip title="Xóa sản phẩm">
                         <IconButton
                           size="small"
+                          color="error"
                           onClick={() =>
-                            setUpdateDialog({ open: true, product })
+                            setDeleteDialog({ open: true, product })
                           }
                         >
-                          <EditIcon fontSize="small" />
+                          <DeleteIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                    </ButtonGroup>
-
-                    <Tooltip title="Xóa sản phẩm">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteDialog({ open: true, product })}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    )}
                   </Box>
                 </CardContent>
               </Card>

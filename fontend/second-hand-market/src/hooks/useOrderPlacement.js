@@ -178,10 +178,9 @@ export const useOrderPlacement = (selectedItems) => {
     token
   ) => {
     const orderPayload = {
-      totalAmount: order.products.reduce(
-        (sum, p) => sum + p.price * p.quantity,
-        0
-      ),
+      totalAmount:
+        order.products.reduce((sum, p) => sum + p.price * p.quantity, 0) +
+        selectedShipping?.fee,
       shippingMethod: "ship-cod",
       paymentMethod: paymentMethod,
       shippingAddress: selectedAddress?._id,
@@ -189,7 +188,7 @@ export const useOrderPlacement = (selectedItems) => {
       products: order.products,
     };
     let ghnResponse;
-    // Create order in database
+
     const orderResponse = await axios.post("/orders", orderPayload, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -229,6 +228,8 @@ export const useOrderPlacement = (selectedItems) => {
             from_name: product.seller.fullName,
             from_ward_code: product.seller.from_ward_code,
             from_district_id: product.seller.from_district_id,
+            from_address: product.seller.businessAddress,
+            from_phone: product.seller.phoneNumber,
             weight: products.reduce(
               (a, b) =>
                 a + b.estimatedWeight.value * b.quantity || 600 * b.quantity,
@@ -250,9 +251,8 @@ export const useOrderPlacement = (selectedItems) => {
           };
 
           ghnResponse = await ghnService.createOrder(ghnOrderData);
-
+          console.log(ghnResponse);
           if (ghnResponse.code === 200) {
-            // Update order with GHN order code
             await axios.put(
               `/orders/${createdOrder.order?._id}/ghn-order`,
               {
@@ -435,25 +435,22 @@ export const useOrderPlacement = (selectedItems) => {
               products,
               token
             );
+
             const response = await axios.post("/payments/create-payment-link", {
               orderId: createdOrder.order._id,
-              amount:
-                createdOrder.order.totalAmount +
-                createdOrder.selectedShipping.fee,
-              items: products,
+              amount: createdOrder.order.totalAmount,
+              items: products.map((product) => ({
+                name: product.name,
+                quantity: product.quantity,
+                price: product.price,
+              })),
             });
 
             const { checkoutUrl } = response.data;
 
             if (checkoutUrl) {
-              window.location.href = checkoutUrl; // ✅ Tự động chuyển hướng người dùng
-            } else {
-              alert("Không lấy được link thanh toán");
+              window.location.href = checkoutUrl;
             }
-            // Thêm log và alert để debug
-
-            // Điều hướng sang trang QR Payment
-            // navigate(`/payment/${createdOrder.order?._id || createdOrder._id}`);
           }
 
           if (createdOrder) {

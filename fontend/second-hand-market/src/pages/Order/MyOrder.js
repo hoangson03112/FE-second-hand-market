@@ -8,7 +8,6 @@ import {
   Tabs,
   Tab,
   Paper,
-  Divider,
   CircularProgress,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
@@ -67,7 +66,7 @@ const MyOrder = () => {
     { label: "Đã giao hàng", value: "delivered" },
     { label: "Hoàn thành", value: "completed" },
     { label: "Đã hủy", value: "cancelled" },
-    { label: "Trả hàng/Hoàn tiền", value: "REFUND" },
+    { label: "Trả hàng/Hoàn tiền", value: "refund" },
   ];
 
   const fetchOrders = async () => {

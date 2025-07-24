@@ -43,7 +43,6 @@ export const useCheckoutData = (selectedItemsParam) => {
               return product;
             } catch (error) {
               console.error("Error fetching product:", error);
-
               return item;
             }
           })
@@ -59,6 +58,7 @@ export const useCheckoutData = (selectedItemsParam) => {
 
           return result;
         });
+        console.log(productsWithQuantity);
         if (isMounted) setProducts(productsWithQuantity);
       } catch (error) {
         console.error("Error fetching products:", error);

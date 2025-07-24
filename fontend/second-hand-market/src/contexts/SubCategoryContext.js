@@ -3,12 +3,9 @@ import axios from "axios";
 class SubCategoryContext {
   async getSubCategory(SubcategoryID) {
     try {
-      const response = await axios.get(
-        "  /categories/sub",
-        {
-          params: { SubcategoryID },
-        }
-      );
+      const response = await axios.get("/categories/sub", {
+        params: { SubcategoryID },
+      });
 
       return response.data;
     } catch (error) {
@@ -18,13 +15,10 @@ class SubCategoryContext {
   }
   async addSubcategory(subcategory, parentCategoryId) {
     try {
-      const response = await axios.post(
-        `  /categories/sub/${parentCategoryId}`,
-        {
-          name: subcategory.name,
-          status: subcategory.status,
-        }
-      );
+      const response = await axios.post(`/categories/sub/${parentCategoryId}`, {
+        name: subcategory.name,
+        status: subcategory.status,
+      });
       return response.data;
     } catch (error) {
       console.error("Error adding data:", error);
@@ -33,13 +27,10 @@ class SubCategoryContext {
   }
   async updateSubcategory(subcategory, parentCategoryId) {
     try {
-      const response = await axios.put(
-        " es/sub/update",
-        {
-          subcategory,
-          parentCategoryId,
-        }
-      );
+      const response = await axios.put("/categories/sub/update", {
+        subcategory,
+        parentCategoryId,
+      });
       return response.data;
     } catch (error) {
       console.error("Error updating data:", error);
@@ -49,7 +40,7 @@ class SubCategoryContext {
   async deleteSubcategory(subcategoryID, categoryId) {
     try {
       const response = await axios.delete(
-        ` es/${categoryId}/sub/${subcategoryID}`
+        `/categories/${categoryId}/sub/${subcategoryID}`
       );
       return response.data;
     } catch (error) {

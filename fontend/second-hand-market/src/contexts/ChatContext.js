@@ -20,7 +20,7 @@ export const ChatProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${BASE_URL}/chat/conversations/findOrCreateWithProduct`,
+        `/chat/conversations/findOrCreateWithProduct`,
         {
           productId,
           sellerId,
@@ -54,7 +54,7 @@ export const ChatProvider = ({ children }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${BASE_URL}/chat/conversations/findOrCreateWithOrder`,
+        `/chat/conversations/findOrCreateWithOrder`,
         {
           orderId,
           sellerId,

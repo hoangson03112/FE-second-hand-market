@@ -11,6 +11,7 @@ import {
   Card,
   CardContent,
   Stack,
+  Alert,
 } from "@mui/material";
 import {
   Visibility,
@@ -20,6 +21,7 @@ import {
   CheckCircle,
   Refresh,
   Star,
+  ReportProblem,
 } from "@mui/icons-material";
 import { formatPrice } from "../../../utils/function";
 import { useProduct } from "../../../contexts/ProductContext";
@@ -28,6 +30,10 @@ import AccountContext from "../../../contexts/AccountContext";
 import { useChat } from "../../../contexts/ChatContext";
 import CancelOrderModal from "./CancelOrderModal";
 import { ghnService } from "../../../services/ghnService";
+import ReturnOrderModal from "./ReturnOrderModal";
+import axios from "axios";
+import ReportOrderModal from "./ReportOrderModal";
+import reportApi from "../../../services/reportService";
 
 const OrderItem = ({ order, setOrders }) => {
   const { findOrCreateWithOrder } = useChat();
@@ -37,6 +43,11 @@ const OrderItem = ({ order, setOrders }) => {
   const [sellers, setSellers] = useState({});
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportError, setReportError] = useState("");
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,13 +97,20 @@ const OrderItem = ({ order, setOrders }) => {
     }
   }, [products]);
 
-  const handleCancelOrder = async (orderId, reason, status) => {
+  const handleCancelOrder = async (orderId, reason, status, bankInfo) => {
     try {
+      if (bankInfo) {
+        await axios.post(`/bank-info`, {
+          orderId,
+          bankName: bankInfo.bankName,
+          accountNumber: bankInfo.accountNumber,
+          accountHolder: bankInfo.accountHolder,
+        });
+      }
       const data = await updateOrder(orderId, reason, status);
-      if (order.ghnOrderCode) {
+      if (order.ghnOrderCode && order.shippingMethod === "ship-cod") {
         await ghnService.cancelOrderGHN(order.ghnOrderCode);
       }
-
       setOrders(data.orders);
       setShowCancelModal(false);
     } catch (error) {
@@ -123,7 +141,53 @@ const OrderItem = ({ order, setOrders }) => {
     navigate(`/eco-market/order-details/${order._id}`);
   };
 
-  const getStatusConfig = (status) => {
+  const getStatusConfig = (status, refundDecision) => {
+    if (status === "refund") {
+      if (refundDecision === "pending") {
+        return {
+          label: "Chờ duyệt hoàn tiền",
+          color: "warning",
+          icon: <Refresh fontSize="small" />,
+          bgColor: "#fffde7",
+          textColor: "#fbc02d",
+        };
+      }
+      if (refundDecision === "approved") {
+        return {
+          label: "Đã duyệt hoàn tiền",
+          color: "success",
+          icon: <CheckCircle fontSize="small" />,
+          bgColor: "#e8f5e8",
+          textColor: "#2e7d32",
+        };
+      }
+      if (refundDecision === "rejected") {
+        return {
+          label: "Từ chối hoàn tiền",
+          color: "error",
+          icon: <Cancel fontSize="small" />,
+          bgColor: "#ffebee",
+          textColor: "#d32f2f",
+        };
+      }
+      // fallback
+      return {
+        label: "Trả hàng/Hoàn tiền",
+        color: "info",
+        icon: <Refresh fontSize="small" />,
+        bgColor: "#e3f2fd",
+        textColor: "#1976d2",
+      };
+    }
+    if (status === "refunded" && refundDecision === "approved") {
+      return {
+        label: "Đã hoàn tiền",
+        color: "success",
+        icon: <CheckCircle fontSize="small" />,
+        bgColor: "#e8f5e8",
+        textColor: "#2e7d32",
+      };
+    }
     const configs = {
       pending: {
         label: "Chờ xác nhận",
@@ -174,12 +238,12 @@ const OrderItem = ({ order, setOrders }) => {
         bgColor: "#ffebee",
         textColor: "#d32f2f",
       },
-      refund: {
-        label: "Trả hàng",
-        color: "error",
-        icon: <Refresh fontSize="small" />,
-        bgColor: "#ffebee",
-        textColor: "#d32f2f",
+      refunded: {
+        label: "Đã hoàn tiền",
+        color: "success",
+        icon: <CheckCircle fontSize="small" />,
+        bgColor: "#e8f5e8",
+        textColor: "#2e7d32",
       },
     };
     return (
@@ -198,7 +262,48 @@ const OrderItem = ({ order, setOrders }) => {
       console.error("Error completing order:", error);
     }
   };
+  const handleReturnOrder = async (order, reason) => {
+    try {
+      await axios.post(`/bank-info`, {
+        orderId: order._id,
+        bankName: reason.bankName,
+        accountNumber: reason.accountNumber,
+        accountHolder: reason.accountHolder,
+      });
+      const data = await updateOrder(order._id, reason.reason, "refund");
+      setOrders(data.orders);
+      setShowReturnModal(false);
+    } catch (error) {
+      console.error("Error returning order:", error);
+    }
+  };
 
+  const canReturn = (order) => {
+    if (order.status === "delivered") return true;
+    if (order.status === "completed" && order.completedAt) {
+      const completedDate = new Date(order.completedAt);
+      const completedTimeUTC = completedDate.getTime();
+      const completedTimeVN = completedTimeUTC + 7 * 60 * 60 * 1000;
+      const nowVN = Date.now() + 7 * 60 * 60 * 1000;
+      return nowVN - completedTimeVN < 3 * 24 * 60 * 60 * 1000;
+    }
+    return false;
+  };
+
+  const handleSubmitReport = async (formData) => {
+    try {
+      formData.append("type", "order");
+      formData.append("targetId", order._id);
+
+      await reportApi.createReport(formData);
+      setReportSuccess(true);
+      setShowReportModal(false);
+      setTimeout(() => setReportSuccess(false), 3000);
+    } catch (err) {
+      setReportError("Gửi báo cáo thất bại. Vui lòng thử lại.");
+      setTimeout(() => setReportError(""), 3000);
+    }
+  };
   const renderStatusButtons = () => {
     const buttonStyles = {
       borderRadius: 2,
@@ -208,6 +313,48 @@ const OrderItem = ({ order, setOrders }) => {
       py: 1,
     };
 
+    if (order.status === "refunded" && order.refundDecision === "approved") {
+      return (
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          justifyContent="flex-end"
+        >
+          <Button
+            variant="contained"
+            size="small"
+            onClick={handleViewDetails}
+            startIcon={<Visibility />}
+            sx={{
+              ...buttonStyles,
+              bgcolor: "#1976d2",
+              "&:hover": { bgcolor: "#1565c0" },
+            }}
+          >
+            Xem chi tiết
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleContactSeller(order)}
+            startIcon={<ContactSupport />}
+            sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
+          >
+            Liên hệ người bán
+          </Button>
+          <Button
+            variant="outlined"
+            color="warning"
+            size="small"
+            startIcon={<Star />}
+            sx={buttonStyles}
+          >
+            Đánh giá
+          </Button>
+        </Stack>
+      );
+    }
     switch (order.status) {
       case "pending":
         return (
@@ -272,6 +419,16 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Liên hệ người bán
             </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => setShowCancelModal(true)}
+              startIcon={<Cancel />}
+              sx={buttonStyles}
+            >
+              Hủy đơn hàng
+            </Button>
           </Stack>
         );
       case "shipping":
@@ -290,15 +447,7 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Xem chi tiết
             </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="small"
-              startIcon={<Refresh />}
-              sx={buttonStyles}
-            >
-              Yêu cầu trả hàng
-            </Button>
+
             <Button
               variant="outlined"
               size="small"
@@ -307,15 +456,6 @@ const OrderItem = ({ order, setOrders }) => {
               sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
             >
               Liên hệ người bán
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              size="small"
-              startIcon={<CheckCircle />}
-              sx={buttonStyles}
-            >
-              Đã nhận được hàng
             </Button>
           </Stack>
         );
@@ -344,6 +484,18 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Đã nhận hàng
             </Button>
+            {canReturn(order) && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => setShowReturnModal(true)}
+                startIcon={<Refresh />}
+                sx={buttonStyles}
+              >
+                Hoàn hàng/Hoàn tiền
+              </Button>
+            )}
           </Stack>
         );
       case "shipped":
@@ -374,8 +526,14 @@ const OrderItem = ({ order, setOrders }) => {
           </Stack>
         );
       case "completed":
+        const canReturnCompleted = canReturn(order);
         return (
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            justifyContent="flex-end"
+          >
             <Button
               variant="contained"
               size="small"
@@ -389,14 +547,19 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Xem chi tiết
             </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Refresh />}
-              sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
-            >
-              Mua lại
-            </Button>
+            {/* Nút trả hàng nếu còn trong 3 ngày */}
+            {canReturnCompleted && (
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => setShowReturnModal(true)}
+                startIcon={<Refresh />}
+                sx={buttonStyles}
+              >
+                Trả hàng
+              </Button>
+            )}
             <Button
               variant="outlined"
               size="small"
@@ -415,12 +578,37 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Đánh giá
             </Button>
+            {/* Thông báo quyền trả hàng */}
+            {canReturnCompleted && (
+              <Typography
+                variant="caption"
+                color="warning.main"
+                sx={{ mt: 1, width: "100%" }}
+              >
+                Bạn có thể trả hàng trong vòng 3 ngày kể từ khi nhận hàng.
+              </Typography>
+            )}
           </Stack>
         );
       case "cancelled":
       case "refund":
         return (
           <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={() => setShowReportModal(true)}
+              startIcon={<ReportProblem />}
+              sx={{
+                ...buttonStyles,
+                "&:hover": {
+                  bgcolor: "#b71c1c",
+                },
+              }}
+            >
+              Báo cáo
+            </Button>
             <Button
               variant="contained"
               size="small"
@@ -437,14 +625,6 @@ const OrderItem = ({ order, setOrders }) => {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<Refresh />}
-              sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
-            >
-              Mua lại
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
               onClick={() => handleContactSeller(order)}
               startIcon={<ContactSupport />}
               sx={{ ...buttonStyles, borderColor: "#757575", color: "#757575" }}
@@ -453,12 +633,27 @@ const OrderItem = ({ order, setOrders }) => {
             </Button>
           </Stack>
         );
+      case "refunded":
+        return (
+          <Stack direction="row" spacing={1} flexWrap="wrap">
+            {/* Nút xem chi tiết */}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={handleViewDetails}
+              startIcon={<Visibility />}
+              sx={buttonStyles}
+            >
+              Xem chi tiết
+            </Button>
+          </Stack>
+        );
       default:
         return null;
     }
   };
 
-  const statusConfig = getStatusConfig(order.status);
+  const statusConfig = getStatusConfig(order.status, order.refundDecision);
 
   return (
     <Card
@@ -475,6 +670,58 @@ const OrderItem = ({ order, setOrders }) => {
       }}
     >
       <CardContent sx={{ p: 3 }}>
+        {/* Alert hoàn tiền cho đơn hủy đã thanh toán ship-cod */}
+        {order.status === "cancelled" &&
+          order.shippingMethod === "ship-cod" &&
+          order.statusPayment === true &&
+          order.refundDecision === "pending" && (
+            <Alert severity="info" sx={{ mb: 2, fontWeight: 600 }}>
+              Đơn hàng đang được hoàn tiền
+            </Alert>
+          )}
+        {/* Hiển thị thông báo chờ duyệt hoàn tiền */}
+        {order.status === "refund" && order.refundDecision === "pending" && (
+          <Alert severity="warning" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đang chờ duyệt bởi người bán
+          </Alert>
+        )}
+        {/* Hiển thị thông báo bị từ chối hoàn tiền */}
+        {order.status === "refund" && order.refundDecision === "rejected" && (
+          <Alert severity="error" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đã bị từ chối. Lý do:{" "}
+            {order.refundDecisionReason || "Không có lý do"}
+          </Alert>
+        )}
+        {/* Hiển thị thông báo đã được chấp nhận hoàn tiền */}
+        {order.status === "refund" && order.refundDecision === "approved" && (
+          <Alert severity="info" sx={{ mb: 2, fontWeight: 600 }}>
+            Yêu cầu hoàn tiền đã được chấp nhận. Vui lòng chờ tiền hoàn về tài
+            khoản ngân hàng.
+          </Alert>
+        )}
+        {/* Hiển thị thông báo đã hoàn tiền thành công */}
+        {order.status === "refunded" && order.refundDecision === "approved" && (
+          <Alert severity="success" sx={{ mb: 2, fontWeight: 600 }}>
+            Đã hoàn tiền thành công vào tài khoản ngân hàng.
+            {order.refundCompletedAt && (
+              <>
+                <br />
+                <b>Thời gian hoàn tiền:</b>{" "}
+                {new Date(order.refundCompletedAt).toLocaleString("vi-VN")}
+              </>
+            )}
+          </Alert>
+        )}
+        {reportSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Gửi báo cáo thành công!
+          </Alert>
+        )}
+        {reportError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {reportError}
+          </Alert>
+        )}
         {/* Header with Seller Info and Status */}
         <Box
           sx={{
@@ -687,7 +934,7 @@ const OrderItem = ({ order, setOrders }) => {
             >
               <Typography color="text.secondary">Tổng tiền hàng:</Typography>
               <Typography fontWeight="600">
-                {formatPrice(order.totalAmount)}
+                {formatPrice(order.totalAmount - order.shippingFee)}
               </Typography>
             </Box>
             <Box
@@ -733,7 +980,7 @@ const OrderItem = ({ order, setOrders }) => {
                 Thành tiền:
               </Typography>
               <Typography fontSize="20px" color="error" fontWeight="700">
-                {formatPrice(order.totalAmount + order.shippingFee)}
+                {formatPrice(order.totalAmount)}
               </Typography>
             </Box>
           </Stack>
@@ -750,8 +997,25 @@ const OrderItem = ({ order, setOrders }) => {
             orderId={order?._id}
             onConfirm={handleCancelOrder}
             onClose={() => setShowCancelModal(false)}
+            requireBankInfo={
+              order.statusPayment === true &&
+              order.shippingMethod === "ship-cod"
+            }
           />
         )}
+        {/* Modal hoàn hàng */}
+        {showReturnModal && (
+          <ReturnOrderModal
+            open={showReturnModal}
+            onClose={() => setShowReturnModal(false)}
+            onConfirm={(reason) => handleReturnOrder(order, reason)}
+          />
+        )}
+        <ReportOrderModal
+          open={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          onSubmit={handleSubmitReport}
+        />
       </CardContent>
     </Card>
   );

@@ -34,9 +34,9 @@ import {
   Pending as PendingIcon,
   Error as ErrorIcon,
   ZoomIn as ZoomInIcon,
+  Block as BlockIcon,
 } from "@mui/icons-material";
 
-// Component để hiển thị ảnh CCCD với khả năng zoom
 const IDCardImage = ({ src, alt, title }) => {
   const [imageDialog, setImageDialog] = useState(false);
 
@@ -186,6 +186,13 @@ export default function DialogDetails({
           icon: <ErrorIcon />,
           color: "error",
           label: "Từ chối",
+          bgColor: alpha(theme.palette.error.main, 0.1),
+        };
+      case "banned":
+        return {
+          icon: <BlockIcon />,
+          color: "error",
+          label: "Bị Ban",
           bgColor: alpha(theme.palette.error.main, 0.1),
         };
       default:
@@ -398,7 +405,9 @@ export default function DialogDetails({
                             color: "#424242",
                           }}
                         >
-                          {selectedSeller.district +
+                          {selectedSeller.businessAddress +
+                            ", " +
+                            selectedSeller.district +
                             ", " +
                             selectedSeller.ward +
                             ", " +

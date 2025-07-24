@@ -252,8 +252,10 @@ const ConfirmationStep = ({ formData, onInputChange }) => {
                     Địa chỉ lấy hàng
                   </Typography>
                   <Typography variant="body1" fontWeight="500" color="#2a3b4c">
-                    {formData.address}, {formData.ward}, {formData.district},{" "}
-                    {formData.province}
+                    {formData.address}
+                    {formData.ward ? `, ${typeof formData.ward === 'object' ? formData.ward.WardName : formData.ward}` : ""}
+                    {formData.district ? `, ${typeof formData.district === 'object' ? formData.district.DistrictName : formData.district}` : ""}
+                    {formData.province ? `, ${typeof formData.province === 'object' ? formData.province.ProvinceName : formData.province}` : ""}
                   </Typography>
                 </Box>
               </CardContent>
@@ -262,7 +264,7 @@ const ConfirmationStep = ({ formData, onInputChange }) => {
 
           {/* Payment Info Card */}
           <Grid item xs={12} md={6}>
-            <StyledCard elevation={0}>
+            <StyledCard elevation={0} sx={{ height: "100%" }}>
               <CardContent sx={{ p: 4 }}>
                 <Box display="flex" alignItems="center" mb={4}>
                   <Box

@@ -8,9 +8,9 @@ import CartItem from "./components/CartItem";
 import Breadcrumb from "./components/Breadcrumb.js";
 import CartHeader from "./components/CartHeader.js";
 import CartSummary from "./components/CartSummary.js";
-import LoadingSpinner from "./components/LoadingSpinner.js";
 import EmptyCart from "./components/EmptyCart.js";
 import { CartSkeleton } from "./components/SkeletonLoader.js";
+import NotificationSnackbar from "../../components/common/NotificationSnackbar";
 
 // Custom Hooks
 import { useCartData } from "./hooks/useCartData";
@@ -43,14 +43,13 @@ const Cart = () => {
   const {
     handleDeleteItems,
     handleUpdateQuantity,
-    handleSetQuantity,
     handleCheckout,
     handleContinueShopping,
     isItemUpdating,
-    isPending,
+    notification,
+    setNotification,
   } = useCartActions(clearSelections);
 
-  // Event handlers
   const handleDeleteSelected = () => {
     if (selectedProductIds.length > 0) {
       handleDeleteItems(selectedProductIds);
@@ -95,7 +94,6 @@ const Cart = () => {
     );
   }
 
-  // Empty cart state
   if (products.length === 0) {
     return (
       <div className="cart-page">
@@ -114,6 +112,14 @@ const Cart = () => {
     <div className="cart-page">
       <div className="container">
         <Breadcrumb />
+
+        {/* Notification Snackbar */}
+        <NotificationSnackbar
+          open={notification.open}
+          message={notification.message}
+          severity={notification.severity}
+          onClose={() => setNotification({ ...notification, open: false })}
+        />
 
         <div className="mx-3">
           <h2 className="cart-title">Giỏ hàng của bạn</h2>

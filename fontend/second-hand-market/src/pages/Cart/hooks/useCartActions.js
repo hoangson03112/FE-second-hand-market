@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../contexts/CartContext";
 import { useDebouncedCallback } from "../../../hooks/useDebounce";
+import { useState } from "react";
 
 export const useCartActions = (clearSelections) => {
   const navigate = useNavigate();
@@ -14,6 +15,12 @@ export const useCartActions = (clearSelections) => {
     isPending,
     deleteItem,
   } = useCart();
+
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    severity: "error",
+  });
 
   const handleDeleteItems = useCallback(
     async (productIds) => {
@@ -45,13 +52,15 @@ export const useCartActions = (clearSelections) => {
     async (productId, newQuantity, originalQuantity) => {
       try {
         await updateQuantity(productId, newQuantity);
+        setNotification({ open: false, message: "", severity: "success" });
       } catch (error) {
-        console.error("Error updating quantity:", error);
-
-        // Rollback optimistic update on error
         rollbackQuantityUpdate(productId, originalQuantity);
-
-        alert("Có lỗi xảy ra khi cập nhật số lượng");
+        console.log("error:", error);
+        setNotification({
+          open: true,
+          message: error.message || "Có lỗi xảy ra khi cập nhật số lượng",
+          severity: "error",
+        });
       }
     },
     200, // Reduced debounce time for better UX
@@ -147,5 +156,7 @@ export const useCartActions = (clearSelections) => {
     handleContinueShopping,
     isItemUpdating,
     isPending,
+    notification,
+    setNotification,
   };
 };

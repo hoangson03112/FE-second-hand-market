@@ -46,30 +46,6 @@ import OrderMessage from "./MessageTypes/OrderMessage";
 import DeleteConfirm from "./DeleteConfirm/DeleteConfirm";
 import ProductMessage from "./MessageTypes/ProductMessage";
 
-// Socket connection với cấu hình tối ưu
-let socket = null;
-
-const initializeSocket = () => {
-  if (socket && socket.connected) {
-    return socket;
-  }
-
-  socket = io("https://localhost:2000", {
-    reconnectionAttempts: 5,
-    reconnectionDelay: 1000,
-    timeout: 20000,
-    transports: ["websocket", "polling"],
-    auth: { token: localStorage.getItem("token") },
-    query: { clientTime: Date.now() },
-    forceNew: true,
-  });
-
-  return socket;
-};
-
-// Khởi tạo socket
-socket = initializeSocket();
-
 // Thêm các keyframes cho các animations
 const slideUp = keyframes`
   from {
@@ -192,24 +168,6 @@ const ChatBoxBox = styled(Box)(({ theme }) => ({
     height: "70vh",
     minWidth: 0,
     minHeight: 0,
-  },
-}));
-
-const StyledBadge = styled(Badge)(({ theme }) => ({
-  "& .MuiBadge-badge": {
-    backgroundColor: "#4a9f82",
-    color: "#4a9f82",
-    boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
-    "&::after": {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      borderRadius: "50%",
-      animation: `${pulse} 2s infinite`,
-      content: '""',
-    },
   },
 }));
 
@@ -603,6 +561,8 @@ export const ChatBox = () => {
     useChat();
   const [hasScroll, setHasScroll] = useState(false);
 
+  const [aiTyping, setAiTyping] = useState(false);
+
   const chatRef = useRef(null);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
@@ -625,15 +585,13 @@ export const ChatBox = () => {
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  const [aiTyping, setAiTyping] = useState(false);
-
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [pagination, setPagination] = useState({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [messageToDelete, setMessageToDelete] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("connecting");
+
+  const socketRef = useRef();
 
   // Function to handle zoom in
   const handleZoomIn = (e) => {
@@ -755,7 +713,6 @@ export const ChatBox = () => {
       setIsLoading(true);
       const userMessage = message.trim();
 
-      // Thêm tin nhắn của người dùng vào danh sách tin nhắn ngay lập tức
       const userMsgId = `user-${Date.now()}`;
       const userMsg = {
         _id: userMsgId,
@@ -855,10 +812,7 @@ export const ChatBox = () => {
       setTimeout(scrollToBottom, 100);
 
       setMessage("");
-      console.log(
-        "🚀 Sending via Socket with conversationId:",
-        currentConversationId
-      );
+
       if (attachments.length > 0) {
         const formData = new FormData();
 
@@ -873,7 +827,7 @@ export const ChatBox = () => {
         formData.append("tempMsgId", tempMsgId);
         formData.append("text", message.trim());
 
-        await axios.post("  /chat/upload-and-send", formData, {
+        await axios.post("/chat/upload-and-send", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -891,22 +845,7 @@ export const ChatBox = () => {
             type: "text",
             tempMsgId: tempMsgId,
           };
-          console.log("🚀 Sending via Socket with conversationId:", newMsg);
-          await socket.emit("send-message", newMsg);
-          await axios.post(
-            "  /chat/optimized/send",
-            {
-              conversationId: currentConversationId,
-              text: message.trim(),
-              type: "text",
-              tempMsgId: tempMsgId,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
+          socketRef.current.emit("send-message", newMsg);
         }
       }
 
@@ -924,7 +863,7 @@ export const ChatBox = () => {
     setSelectedUserToShow(user);
     setIsLoading(true);
     setCurrentConversationId(user.conversationId);
-    setMessages([]); // Xóa tin nhắn cũ trước khi tải tin nhắn mới
+    setMessages([]);
 
     if (user?._id) {
       fetchChatHistory(user?._id).then(() => {
@@ -934,22 +873,24 @@ export const ChatBox = () => {
   };
 
   useEffect(() => {
-    if (!socket) {
-      socket = initializeSocket();
-    }
+    socketRef.current = io("https://localhost:2000", {
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      transports: ["websocket", "polling"],
+      auth: { token: localStorage.getItem("token") },
+      query: { clientTime: Date.now() },
+      forceNew: true,
+    });
 
-    if (!socket.connected) {
-      socket.connect();
-    }
+    const socket = socketRef.current;
 
     const handleConnect = () => {
       setConnectionStatus("connected");
-      // Emit join-room ngay sau khi connected nếu có account
       if (account?.accountID) {
         socket.emit("join-room", account.accountID);
       }
     };
-
     const handleDisconnect = (reason) => {
       setConnectionStatus("disconnected");
       if (reason !== "io client disconnect") {
@@ -961,21 +902,17 @@ export const ChatBox = () => {
         }, 1000);
       }
     };
-
     const handleError = (error) => {
       console.error("[SOCKET] Connection error:", error);
     };
-
     const handleReconnect = (attemptNumber) => {
       setConnectionStatus("connected");
       if (account?.accountID) {
         socket.emit("join-room", account.accountID);
       }
     };
-
     const handleMessageError = (error) => {
       console.error("[SOCKET] Message error:", error);
-
       // Identify and handle specific error types
       if (error.error === "Invalid message ID format" && error.messageId) {
         // Check for different message ID formats
@@ -1019,15 +956,20 @@ export const ChatBox = () => {
       socket.off("connect_error", handleError);
       socket.off("reconnect", handleReconnect);
       socket.off("message-error", handleMessageError);
+      socket.disconnect();
     };
   }, [account?.accountID]);
 
   useEffect(() => {
-    if (account?.accountID && socket.connected) {
+    if (
+      account?.accountID &&
+      socketRef.current &&
+      socketRef.current.connected
+    ) {
       console.log("[SOCKET] Joining room with ID:", account.accountID);
-      socket.emit("join-room", account.accountID);
+      socketRef.current.emit("join-room", account.accountID);
     }
-  }, [account?.accountID, socket.connected]);
+  }, [account?.accountID, socketRef.current && socketRef.current.connected]);
 
   useEffect(() => {
     if (!account?.accountID) return;
@@ -1073,7 +1015,7 @@ export const ChatBox = () => {
             !msg._id.startsWith("ai-") &&
             msg.senderId !== "ai-assistant"
           ) {
-            socket.emit("mark-as-read", {
+            socketRef.current.emit("mark-as-read", {
               messageId: msg._id,
               userId: account.accountID,
             });
@@ -1086,12 +1028,12 @@ export const ChatBox = () => {
       updateChatPartnerLastMessage(msg);
     };
 
-    socket.on("message-sent", handleMessageSent);
-    socket.on("receive-message", handleReceiveMessage);
+    socketRef.current.on("message-sent", handleMessageSent);
+    socketRef.current.on("receive-message", handleReceiveMessage);
 
     return () => {
-      socket.off("message-sent", handleMessageSent);
-      socket.off("receive-message", handleReceiveMessage);
+      socketRef.current.off("message-sent", handleMessageSent);
+      socketRef.current.off("receive-message", handleReceiveMessage);
     };
   }, [
     account?.accountID,
@@ -1102,7 +1044,7 @@ export const ChatBox = () => {
 
   const fetchChatHistoryAI = async () => {
     try {
-      const response = await axios.get(`  /chat/ai/messages`, {
+      const response = await axios.get(`/chat/ai/messages`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -1255,7 +1197,7 @@ export const ChatBox = () => {
 
   useEffect(() => {
     if (selectedUserToShow && account?.accountID) {
-      socket.emit("stop-typing", {
+      socketRef.current.emit("stop-typing", {
         senderId: account.accountID,
         receiverId: selectedUserToShow.id,
       });
@@ -1263,30 +1205,30 @@ export const ChatBox = () => {
   }, [selectedUserToShow, account]);
 
   useEffect(() => {
-    socket.on("online-users", (users) => {
+    socketRef.current.on("online-users", (users) => {
       console.log("[SOCKET] Online users:", users);
       setOnlineUsers(users);
     });
 
-    socket.on("user-connected", (userId) => {
+    socketRef.current.on("user-connected", (userId) => {
       console.log("[SOCKET] User connected:", userId);
       setOnlineUsers((prev) => [...prev, userId]);
     });
 
-    socket.on("user-disconnected", (userId) => {
+    socketRef.current.on("user-disconnected", (userId) => {
       console.log("[SOCKET] User disconnected:", userId);
       setOnlineUsers((prev) => prev.filter((id) => id !== userId));
     });
 
     return () => {
-      socket.off("online-users");
-      socket.off("user-connected");
-      socket.off("user-disconnected");
+      socketRef.current.off("online-users");
+      socketRef.current.off("user-connected");
+      socketRef.current.off("user-disconnected");
     };
   }, []);
 
   useEffect(() => {
-    socket.on("user-typing", (data) => {
+    socketRef.current.on("user-typing", (data) => {
       if (
         selectedUserToShow &&
         data.senderId === selectedUserToShow.id &&
@@ -1298,7 +1240,7 @@ export const ChatBox = () => {
     });
 
     return () => {
-      socket.off("user-typing");
+      socketRef.current.off("user-typing");
     };
   }, [selectedUserToShow, account?.accountID]);
 
@@ -1315,7 +1257,7 @@ export const ChatBox = () => {
             msg.senderId !== "ai-assistant"
           ) {
             console.log(`[SOCKET] Marking message as read: ${msg._id}`);
-            socket.emit("mark-as-read", {
+            socketRef.current.emit("mark-as-read", {
               messageId: msg._id,
               userId: account?.accountID,
             });
@@ -1328,7 +1270,7 @@ export const ChatBox = () => {
   }, [messages, selectedUserToShow, openChat, account?.accountID]);
 
   useEffect(() => {
-    socket.on("new-message-notification", (data) => {
+    socketRef.current.on("new-message-notification", (data) => {
       setChatPartners((prev) => {
         return prev.map((partner) => {
           if (partner._id === data.senderId) {
@@ -1345,12 +1287,12 @@ export const ChatBox = () => {
     });
 
     return () => {
-      socket.off("new-message-notification");
+      socketRef.current.off("new-message-notification");
     };
   }, []);
 
   useEffect(() => {
-    socket.on("message-read", (data) => {
+    socketRef.current.on("message-read", (data) => {
       setMessages((prev) => {
         return prev.map((msg) => {
           if (msg._id === data.messageId) {
@@ -1361,15 +1303,15 @@ export const ChatBox = () => {
       });
     });
 
-    socket.on("message-deleted", (data) => {
+    socketRef.current.on("message-deleted", (data) => {
       setMessages((prev) => {
         return prev.filter((msg) => msg._id !== data.messageId);
       });
     });
 
     return () => {
-      socket.off("message-read");
-      socket.off("message-deleted");
+      socketRef.current.off("message-read");
+      socketRef.current.off("message-deleted");
     };
   }, []);
 
@@ -1409,13 +1351,13 @@ export const ChatBox = () => {
     if (selectedUserToShow && account?.accountID) {
       if (typingTimeout) clearTimeout(typingTimeout);
 
-      socket.emit("typing", {
+      socketRef.current.emit("typing", {
         senderId: account.accountID,
         receiverId: selectedUserToShow.id,
       });
 
       const timeout = setTimeout(() => {
-        socket.emit("stop-typing", {
+        socketRef.current.emit("stop-typing", {
           senderId: account.accountID,
           receiverId: selectedUserToShow.id,
         });
@@ -1516,10 +1458,10 @@ export const ChatBox = () => {
   // Định kỳ kiểm tra kết nối socket
   useEffect(() => {
     const checkConnection = () => {
-      if (socket && !socket.connected) {
+      if (socketRef.current && !socketRef.current.connected) {
         console.log("[SOCKET] Connection lost, attempting to reconnect...");
         setConnectionStatus("reconnecting");
-        socket.connect();
+        socketRef.current.connect();
       }
     };
 
@@ -1527,50 +1469,6 @@ export const ChatBox = () => {
 
     return () => clearInterval(intervalId);
   }, []);
-
-  // Handle message deletion
-  const handleDeleteMessage = (messageId) => {
-    setMessageToDelete(messageId);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDeleteMessage = async () => {
-    if (!messageToDelete) return;
-
-    try {
-      const response = await axios.delete(
-        `  /chat/messages/${messageToDelete}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        // Remove message from UI
-        setMessages((prev) =>
-          prev.filter((msg) => msg._id !== messageToDelete)
-        );
-
-        // Emit delete event to socket
-        socket.emit("delete-message", {
-          messageId: messageToDelete,
-          conversationId: currentConversationId,
-        });
-      }
-    } catch (error) {
-      console.error("Error deleting message:", error);
-    } finally {
-      setShowDeleteConfirm(false);
-      setMessageToDelete(null);
-    }
-  };
-
-  const cancelDeleteMessage = () => {
-    setShowDeleteConfirm(false);
-    setMessageToDelete(null);
-  };
 
   // Thêm trạng thái cho mobile view
   const [showSidebar, setShowSidebar] = useState(true);
@@ -1598,8 +1496,6 @@ export const ChatBox = () => {
   // Khôi phục lại function MessageContent
   const MessageContent = ({ message, setFullscreenImage }) => {
     if (message.senderId === "ai-assistant") {
-      // Nếu là tin nhắn từ AI, có thể dùng AIMessage hoặc render đặc biệt
-      // (Nếu bạn có AIMessage thì dùng, nếu không thì render text bình thường)
       return (
         <Typography
           variant="body2"
@@ -2006,7 +1902,8 @@ export const ChatBox = () => {
                             }
 
                             const isMe =
-                              message.senderId === account?.accountID;
+                              String(message.senderId) ===
+                              String(account?.accountID);
                             const isAI = message.senderId === "ai-assistant";
 
                             result.push(
@@ -2021,24 +1918,6 @@ export const ChatBox = () => {
                                       : "flex-start",
                                   }}
                                 >
-                                  {!isMe && (
-                                    <StyledAvatar
-                                      src={
-                                        isAI
-                                          ? "https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
-                                          : message.senderAvatar ||
-                                            "https://i.pravatar.cc/150?img=3"
-                                      }
-                                      sx={{ mr: 1 }}
-                                      isonline={
-                                        isAI ||
-                                        onlineUsers.includes(message.senderId)
-                                          ? "true"
-                                          : "false"
-                                      }
-                                    />
-                                  )}
-
                                   <MessageBubble
                                     sender={isMe ? "me" : "other"}
                                     isAI={isAI}
@@ -2075,43 +1954,8 @@ export const ChatBox = () => {
                                       >
                                         {formatMessageTime(message.createdAt)}
                                       </Typography>
-
-                                      {isMe && !message.isPending && (
-                                        <Tooltip title="Xóa tin nhắn">
-                                          <IconButton
-                                            size="small"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeleteMessage(message._id);
-                                            }}
-                                            sx={{
-                                              opacity: 0.7,
-                                              "&:hover": { opacity: 1 },
-                                              color: "inherit",
-                                              p: 0.3,
-                                            }}
-                                          >
-                                            <Delete fontSize="small" />
-                                          </IconButton>
-                                        </Tooltip>
-                                      )}
                                     </Box>
                                   </MessageBubble>
-
-                                  {isMe && (
-                                    <StyledAvatar
-                                      src={
-                                        message.senderAvatar ||
-                                        "https://i.pravatar.cc/150?img=1"
-                                      }
-                                      sx={{ ml: 1 }}
-                                      isonline={
-                                        onlineUsers.includes(message.senderId)
-                                          ? "true"
-                                          : "false"
-                                      }
-                                    />
-                                  )}
                                 </Box>
                               </Fade>
                             );
@@ -2490,11 +2334,6 @@ export const ChatBox = () => {
           </div>
         </FullscreenModalBox>
       )}
-      <DeleteConfirm
-        showDeleteConfirm={showDeleteConfirm}
-        cancelDeleteMessage={cancelDeleteMessage}
-        confirmDeleteMessage={confirmDeleteMessage}
-      />
     </>
   );
 };

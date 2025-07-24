@@ -8,7 +8,6 @@ import {
   Divider,
 } from "@mui/material";
 import { AccountBalanceWallet, CreditCard, Savings } from "@mui/icons-material";
-import { useCoin } from "../../contexts/CoinProvider";
 import { SHIPPING_METHODS, PAYMENT_METHODS } from "../../constants/checkout";
 import { formatPrice } from "../../utils/checkoutUtils";
 
@@ -41,38 +40,6 @@ const SummaryRow = ({
       <Typography variant="body2" color={color} fontWeight={fontWeight}>
         {formatPrice(amount)}₫
       </Typography>
-    </Box>
-  );
-};
-
-const CoinUsageSection = ({
-  useCoins,
-  onCoinUsageToggle,
-  coinDiscount,
-  balance,
-}) => {
-  if (balance <= 0) return null;
-
-  return (
-    <Box sx={{ my: 2 }}>
-      <FormControlLabel
-        control={
-          <Switch
-            checked={useCoins}
-            onChange={(e) => onCoinUsageToggle(e.target.checked)}
-          />
-        }
-        label={`Sử dụng ${formatPrice(balance)} xu có sẵn (tiết kiệm 30%)`}
-      />
-      {useCoins && coinDiscount > 0 && (
-        <Box sx={{ mt: 1, pl: 4 }}>
-          <SummaryRow
-            label="Tiết kiệm từ xu"
-            amount={-coinDiscount}
-            isPositive={true}
-          />
-        </Box>
-      )}
     </Box>
   );
 };
@@ -167,9 +134,6 @@ const PaymentSummary = ({
   totalProductSavings,
   totalSavings,
   voucherDiscount,
-  useCoins,
-  onCoinUsageToggle,
-  coinDiscount,
   shippingMethod,
   shippingFee,
   finalAmount,
@@ -190,7 +154,6 @@ const PaymentSummary = ({
   bankTransferSavings,
   codShippingFee,
 }) => {
-  const { balance } = useCoin();
 
   return (
     <Paper
@@ -232,13 +195,6 @@ const PaymentSummary = ({
             isPositive={true}
           />
         )}
-
-        <CoinUsageSection
-          useCoins={useCoins}
-          onCoinUsageToggle={onCoinUsageToggle}
-          coinDiscount={coinDiscount}
-          balance={balance}
-        />
 
         {shippingMethod !== SHIPPING_METHODS.DIRECT && (
           <SummaryRow label="Phí vận chuyển" amount={shippingFee} />

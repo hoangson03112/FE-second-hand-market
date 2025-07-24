@@ -16,21 +16,13 @@ import {
   IconButton,
   Alert,
   CircularProgress,
-  Divider,
   Avatar,
   Stack,
   Paper,
-  Badge,
-  CardActions,
   Container,
   Fade,
-  Zoom,
   Tooltip,
-  LinearProgress,
   Skeleton,
-  SpeedDial,
-  SpeedDialIcon,
-  SpeedDialAction,
   useTheme,
   alpha,
   Stepper,
@@ -61,6 +53,8 @@ import {
 import { keyframes } from "@mui/system";
 import axios from "axios";
 import { ghnService } from "../../services/ghnService";
+import orderService from "./../../services/orderService";
+import { useOrder } from "../../contexts/OrderContext";
 
 // Animations
 const float = keyframes`
@@ -81,7 +75,7 @@ const SellerOrders = () => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [expandedOrders, setExpandedOrders] = useState({});
+  const { updateOrder } = useOrder();
   const [updateDialog, setUpdateDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [updateData, setUpdateData] = useState({
@@ -90,6 +84,8 @@ const SellerOrders = () => {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [rejectRefundDialog, setRejectRefundDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   // Mock data
   useEffect(() => {
@@ -173,6 +169,16 @@ const SellerOrders = () => {
       stepIndex: 4,
     },
     {
+      value: "completed",
+      label: "Hoàn thành",
+      color: "primary",
+      gradient: "linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)",
+      textColor: "#1976D2",
+      icon: <CheckCircleIcon />,
+      bgColor: "#E3F2FD",
+      stepIndex: 5,
+    },
+    {
       value: "cancelled",
       label: "Đã hủy",
       color: "error",
@@ -182,20 +188,30 @@ const SellerOrders = () => {
       bgColor: "#FFEBEE",
       stepIndex: -1,
     },
+    {
+      value: "refund",
+      label: "Hoàn hàng",
+      color: "warning",
+      gradient: "linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)",
+      textColor: "#FFA000",
+      icon: <RefreshIcon />,
+      bgColor: "#FFF3E0",
+      stepIndex: 7,
+    },
   ];
 
-  const canUpdateOrder = (orderStatus) =>
-    orderStatus !== "completed" && orderStatus !== "cancelled";
+  // const canUpdateOrder = (orderStatus) =>
+  //   orderStatus !== "completed" && orderStatus !== "cancelled";
 
-  const getAvailableStatusOptions = (currentStatus) => {
-    if (currentStatus === "completed") {
-      return [];
-    }
-    if (currentStatus === "cancelled") {
-      return [];
-    }
-    return statusOptions;
-  };
+  // const getAvailableStatusOptions = (currentStatus) => {
+  //   if (currentStatus === "completed") {
+  //     return [];
+  //   }
+  //   if (currentStatus === "cancelled") {
+  //     return [];
+  //   }
+  //   return statusOptions;
+  // };
 
   const handleUpdateOrder = (order) => {
     setSelectedOrder(order);
@@ -250,13 +266,52 @@ const SellerOrders = () => {
     }
   };
 
-  const handleCancelOrder = (orderId) => {
-    setSelectedOrder(orders.find((order) => order._id === orderId));
-    setUpdateData({
-      status: "cancelled",
-      reason: "",
-    });
-    setUpdateDialog(true);
+  const handleCancelOrder = async (orderId) => {
+    const data = await updateOrder(orderId, updateData.reason, "cancelled");
+    setOrders(data.orders);
+  };
+
+  const handleAcceptRefund = async (orderId) => {
+    setLoading(true);
+    try {
+      const response = await axios.patch(`/orders/refund/update/${orderId}`, {
+        refundDecision: "approved",
+        refundDecisionReason: "",
+      });
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? response.data.order : order
+        )
+      );
+    } catch (error) {
+      setError("Có lỗi xảy ra khi chấp nhận hoàn tiền");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectRefund = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.patch(
+        `/orders/refund/update/${selectedOrder._id}`,
+        {
+          refundDecision: "rejected",
+          refundDecisionReason: rejectReason,
+        }
+      );
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === selectedOrder._id ? response.data.order : order
+        )
+      );
+    } catch (error) {
+      setError("Có lỗi xảy ra khi chấp nhận hoàn tiền");
+    } finally {
+      setLoading(false);
+      setRejectReason("");
+      setRejectRefundDialog(false);
+    }
   };
 
   const getStatusChip = (status) => {
@@ -274,7 +329,11 @@ const SellerOrders = () => {
           animation: status === "pending" ? `${pulse} 2s infinite` : "none",
           "&:hover": {
             transform: "scale(1.05)",
-            boxShadow: `0 4px 10px ${alpha(statusOption?.textColor, 0.3)}`,
+            boxShadow: `0 4px 10px ${
+              statusOption?.textColor
+                ? alpha(statusOption.textColor, 0.3)
+                : "#ccc"
+            }`,
           },
           "& .MuiChip-icon": {
             color: statusOption?.textColor,
@@ -302,10 +361,25 @@ const SellerOrders = () => {
   const getOrderStatusStep = (status) =>
     statusOptions.find((opt) => opt.value === status)?.stepIndex || 0;
 
-  const OrderProgressStepper = ({ currentStatus }) => {
-    const currentStep = getOrderStatusStep(currentStatus);
-    const steps = statusOptions.filter((opt) => opt.stepIndex >= 0);
+  const directMeetingSteps = [
+    statusOptions.find((opt) => opt.value === "pending"),
+    statusOptions.find((opt) => opt.value === "confirmed"),
+    statusOptions.find((opt) => opt.value === "completed"),
+    statusOptions.find((opt) => opt.value === "cancelled"),
+  ];
 
+  const OrderProgressStepper = ({ currentStatus, shippingMethod }) => {
+    let steps, currentStep;
+    if (shippingMethod === "direct-meeting") {
+      steps = directMeetingSteps;
+      // Tìm index của status hiện tại trong directMeetingSteps
+      currentStep = steps.findIndex((step) => step.value === currentStatus);
+      // Nếu là cancelled thì activeStep là cuối cùng
+      if (currentStatus === "cancelled") currentStep = steps.length - 1;
+    } else {
+      steps = statusOptions.filter((opt) => opt.stepIndex >= 0);
+      currentStep = steps.findIndex((step) => step.value === currentStatus);
+    }
     return (
       <Box sx={{ width: "100%", mt: 2 }}>
         <Stepper activeStep={currentStep} alternativeLabel>
@@ -316,13 +390,15 @@ const SellerOrders = () => {
                   <Avatar
                     sx={{
                       bgcolor:
-                        currentStep >= step.stepIndex
+                        currentStep >=
+                        steps.findIndex((s) => s.value === step.value)
                           ? step.textColor
                           : "grey.300",
                       width: 32,
                       height: 32,
                       animation:
-                        currentStep === step.stepIndex
+                        currentStep ===
+                        steps.findIndex((s) => s.value === step.value)
                           ? `${pulse} 1.5s infinite`
                           : "none",
                     }}
@@ -335,10 +411,15 @@ const SellerOrders = () => {
                   variant="caption"
                   sx={{
                     color:
-                      currentStep >= step.stepIndex
+                      currentStep >=
+                      steps.findIndex((s) => s.value === step.value)
                         ? step.textColor
                         : "text.secondary",
-                    fontWeight: currentStep >= step.stepIndex ? 600 : 400,
+                    fontWeight:
+                      currentStep >=
+                      steps.findIndex((s) => s.value === step.value)
+                        ? 600
+                        : 400,
                   }}
                 >
                   {step.label}
@@ -435,6 +516,12 @@ const SellerOrders = () => {
       icon: <CheckCircleIcon />,
       color: theme.palette.success.main,
     },
+    {
+      title: "Hoàn hàng",
+      value: orders.filter((o) => o.status === "refund").length,
+      icon: <RefreshIcon />,
+      color: theme.palette.warning.main,
+    },
   ];
 
   // Map shipping/payment method to friendly name
@@ -442,14 +529,9 @@ const SellerOrders = () => {
     if (!method) return "N/A";
     switch (method) {
       case "ship-cod":
-      case "COD":
         return "Giao hàng COD";
-      case "Giao hàng nhanh":
-        return "Giao hàng nhanh";
-      case "Giao hàng tiêu chuẩn":
-        return "Giao hàng tiêu chuẩn";
-      case "Giao hàng express":
-        return "Giao hàng express";
+      case "direct-meeting":
+        return "Giao dịch trực tiếp";
       default:
         return method;
     }
@@ -457,10 +539,11 @@ const SellerOrders = () => {
   const getPaymentMethodLabel = (method) => {
     if (!method) return "N/A";
     switch (method) {
+      case "direct-meeting":
+        return "Giao dịch trực tiếp";
       case "bank_transfer":
-      case "Bank Transfer":
         return "Chuyển khoản ngân hàng";
-      case "COD":
+      case "cod":
         return "Thanh toán khi nhận hàng";
       default:
         return method;
@@ -619,9 +702,9 @@ const SellerOrders = () => {
                       <Box
                         sx={{
                           display: "flex",
+                          flexDirection: "row",
                           gap: 1.5,
                           alignItems: "center",
-                          flexWrap: "wrap",
                         }}
                       >
                         {getStatusChip(order.status)}
@@ -672,32 +755,32 @@ const SellerOrders = () => {
                             </Button>
                           </Box>
                         )}
-                        {canUpdateOrder(order.status) && (
-                          <Tooltip title="Cập nhật trạng thái">
-                            <IconButton
-                              onClick={() => handleUpdateOrder(order)}
-                              sx={{
-                                color: theme.palette.primary.main,
-                                borderRadius: 1.5,
-                                "&:hover": {
-                                  bgcolor: alpha(
-                                    theme.palette.primary.main,
-                                    0.08
-                                  ),
-                                  transform: "scale(1.05)",
-                                },
-                                transition: "all 0.2s ease",
-                              }}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                        )}
+
+                        <Tooltip title="Cập nhật trạng thái">
+                          <IconButton
+                            onClick={() => handleUpdateOrder(order)}
+                            sx={{
+                              color: theme.palette.primary.main,
+                              borderRadius: 1.5,
+                              "&:hover": {
+                                bgcolor: alpha(
+                                  theme.palette.primary.main,
+                                  0.08
+                                ),
+                                transform: "scale(1.05)",
+                              },
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </Box>
                     <OrderProgressStepper
                       sx={{ mt: 4 }}
                       currentStatus={order.status}
+                      shippingMethod={order.shippingMethod}
                     />
                     <CardContent>
                       <Grid container spacing={2}>
@@ -756,21 +839,25 @@ const SellerOrders = () => {
                                 />
                                 {getPaymentMethodLabel(order.paymentMethod)}
                               </Typography>
-                              <Typography>
-                                <Chip
-                                  size="small"
-                                  label={
-                                    order.statusPayment
-                                      ? "Đã thanh toán"
-                                      : "Chưa thanh toán"
-                                  }
-                                  color={
-                                    order.statusPayment ? "success" : "warning"
-                                  }
-                                  variant="outlined"
-                                  sx={{ ml: 1 }}
-                                />
-                              </Typography>
+                              {order.shippingMethod === "bank_transfer" && (
+                                <Typography>
+                                  <Chip
+                                    size="small"
+                                    label={
+                                      order.statusPayment
+                                        ? "Đã thanh toán"
+                                        : "Chưa thanh toán"
+                                    }
+                                    color={
+                                      order.statusPayment
+                                        ? "success"
+                                        : "warning"
+                                    }
+                                    variant="outlined"
+                                    sx={{ ml: 1 }}
+                                  />
+                                </Typography>
+                              )}
                               {/* Note section in order info */}
                               {order.note && (
                                 <Alert
@@ -852,8 +939,7 @@ const SellerOrders = () => {
                                 fontWeight={700}
                               >
                                 {formatCurrency(
-                                  (order.totalAmount || 0) +
-                                    (order.shippingFee || 0)
+                                  order.totalAmount || 0
                                 )}
                               </Typography>
                             </Stack>
@@ -875,6 +961,137 @@ const SellerOrders = () => {
                             </Stack>
                           </Paper>
                         </Grid>
+                        {/* Yêu cầu hoàn tiền - chuyển xuống dưới tổng tiền */}
+                        {order.status === "refund" && (
+                          <Grid item xs={12}>
+                            {order.refundDecision === "pending" && (
+                              <Box sx={{ my: 0.5 }}>
+                                <Alert
+                                  icon={false}
+                                  sx={{
+                                    p: 1,
+                                    width: "100%",
+                                    borderRadius: 1.5,
+                                    fontSize: 13,
+                                    display: "block",
+                                    alignItems: "center",
+                                    boxShadow: "0 1px 4px rgba(255,193,7,0.06)",
+                                    background:
+                                      "linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%)",
+                                    border: "1px solid #FFD600",
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      justifyContent: "space-between",
+                                      width: "100%",
+                                      gap: 2,
+                                    }}
+                                  >
+                                    <Box
+                                      sx={{
+                                        fontSize: 13,
+                                        textAlign: "left",
+                                        flex: 1,
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                      }}
+                                    >
+                                      <RefreshIcon fontSize="small" />
+                                      <b>Lý do:</b>{" "}
+                                      {order.refundReason ||
+                                        order.reason ||
+                                        "Không có"}
+                                    </Box>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        flexDirection: "row",
+                                        gap: 0.5,
+                                      }}
+                                    >
+                                      <Button
+                                        variant="contained"
+                                        color="success"
+                                        size="small"
+                                        onClick={() =>
+                                          handleAcceptRefund(order._id)
+                                        }
+                                        sx={{
+                                          minWidth: 80,
+                                          fontWeight: 600,
+                                          fontSize: 11,
+                                          py: 0.2,
+                                          borderRadius: 1,
+                                        }}
+                                      >
+                                        Chấp nhận
+                                      </Button>
+                                      <Button
+                                        variant="outlined"
+                                        color="error"
+                                        size="small"
+                                        onClick={() => {
+                                          setSelectedOrder(order);
+                                          setRejectReason("");
+                                          setRejectRefundDialog(true);
+                                        }}
+                                        sx={{
+                                          minWidth: 80,
+                                          fontWeight: 600,
+                                          fontSize: 11,
+                                          py: 0.2,
+                                          borderRadius: 1,
+                                        }}
+                                      >
+                                        Từ chối
+                                      </Button>
+                                    </Box>
+                                  </Box>
+                                </Alert>
+                              </Box>
+                            )}
+                            {order.refundDecision === "approved" && (
+                              <Alert
+                                icon={<CheckCircleIcon />}
+                                severity="success"
+                                sx={{
+                                  background:
+                                    "linear-gradient(135deg, #E8F5E8 0%, #C8E6C9 100%)",
+                                  color: "#2E7D32",
+                                  fontWeight: 500,
+                                  borderRadius: 2,
+                                  mt: 1,
+                                }}
+                              >
+                                <b>Đã duyệt hoàn tiền.</b>
+                              </Alert>
+                            )}
+                            {order.refundDecision === "rejected" && (
+                              <Alert
+                                icon={<CancelIcon />}
+                                severity="error"
+                                sx={{
+                                  background:
+                                    "linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)",
+                                  color: "#D32F2F",
+                                  fontWeight: 500,
+                                  borderRadius: 2,
+                                  mt: 1,
+                                }}
+                              >
+                                <b>Đã từ chối hoàn tiền.</b>
+                                <br />
+                                <b>Lý do:</b>{" "}
+                                {order.refundDecisionReason || "Không có"}
+                              </Alert>
+                            )}
+                          </Grid>
+                        )}
                         {order.status === "cancelled" && (
                           <Grid item xs={12}>
                             <Alert severity="error">
@@ -988,241 +1205,209 @@ const SellerOrders = () => {
             color: updateData.status === "cancelled" ? "#d32f2f" : "#1976d2",
             fontWeight: 700,
             textAlign: "center",
-            borderBottom: `2px solid ${
-              updateData.status === "cancelled" ? "#ffcdd2" : "#bbdefb"
-            }`,
+            borderBottom:
+              updateData.status === "cancelled"
+                ? "2px solid #ffcdd2"
+                : "2px solid #bbdefb",
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 1,
-            }}
-          >
-            {updateData.status === "cancelled" ? (
-              <CancelIcon sx={{ fontSize: 28 }} />
-            ) : (
-              <EditIcon sx={{ fontSize: 28 }} />
-            )}
-            {updateData.status === "cancelled"
-              ? "Hủy đơn hàng"
-              : "Cập nhật trạng thái đơn hàng"}
-          </Box>
+          {updateData.status === "cancelled"
+            ? "Hủy đơn hàng"
+            : "Cập nhật trạng thái"}
         </DialogTitle>
-
-        <DialogContent sx={{ p: 3 }}>
-          {selectedOrder && (
-            <Paper
-              sx={{
-                p: 2,
-                mb: 3,
-                background: "linear-gradient(135deg, #f5f5f5 0%, #eeeeee 100%)",
-                borderRadius: 2,
-                border: "1px solid #e0e0e0",
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                fontWeight={600}
-                color="text.secondary"
-                gutterBottom
-              >
-                Thông tin đơn hàng
+        <DialogContent>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Trạng thái hiện tại:
+              </Typography>
+              <Chip
+                icon={
+                  statusOptions.find((opt) => opt.value === updateData.status)
+                    ?.icon
+                }
+                label={
+                  statusOptions.find((opt) => opt.value === updateData.status)
+                    ?.label || updateData.status
+                }
+                sx={{
+                  background: statusOptions.find(
+                    (opt) => opt.value === updateData.status
+                  )?.gradient,
+                  color: statusOptions.find(
+                    (opt) => opt.value === updateData.status
+                  )?.textColor,
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 1,
+                  animation:
+                    updateData.status === "pending"
+                      ? `${pulse} 2s infinite`
+                      : "none",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                    boxShadow: `0 4px 10px ${
+                      statusOptions.find(
+                        (opt) => opt.value === updateData.status
+                      )?.textColor
+                        ? alpha(
+                            statusOptions.find(
+                              (opt) => opt.value === updateData.status
+                            ).textColor,
+                            0.3
+                          )
+                        : "#ccc"
+                    }`,
+                  },
+                  "& .MuiChip-icon": {
+                    color: statusOptions.find(
+                      (opt) => opt.value === updateData.status
+                    )?.textColor,
+                  },
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Trạng thái mới:
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2">
-                    <strong>Mã đơn:</strong> #
-                    {selectedOrder.ghnOrderCode || selectedOrder._id}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2">
-                    <strong>Khách hàng:</strong>{" "}
-                    {selectedOrder.shippingAddress?.fullName || "N/A"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2">
-                    <strong>Trạng thái hiện tại:</strong>{" "}
-                    {statusOptions.find(
-                      (opt) => opt.value === selectedOrder.status
-                    )?.label || selectedOrder.status}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Paper>
-          )}
-
-          {updateData.status !== "cancelled" && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Chọn trạng thái mới
-              </Typography>
-              <Grid container spacing={2}>
-                {getAvailableStatusOptions(selectedOrder?.status)
-                  .filter((option) => option.stepIndex >= 0)
-                  .map((option) => (
-                    <Grid item xs={12} sm={6} key={option.value}>
-                      <Card
-                        sx={{
-                          cursor: "pointer",
-                          border:
-                            updateData.status === option.value
-                              ? `2px solid ${option.textColor}`
-                              : "1px solid #e0e0e0",
-                          background:
-                            updateData.status === option.value
-                              ? option.gradient
-                              : "white",
-                          transition: "all 0.3s ease",
-                          "&:hover": {
-                            transform: "translateY(-2px)",
-                            boxShadow: `0 4px 12px ${alpha(
-                              option.textColor,
-                              0.2
-                            )}`,
-                          },
-                        }}
-                        onClick={() =>
-                          setUpdateData({ ...updateData, status: option.value })
-                        }
-                      >
-                        <CardContent sx={{ p: 2, textAlign: "center" }}>
-                          <Avatar
+                {statusOptions.map((option) => (
+                  <Grid item xs={12} sm={6} key={option.value}>
+                    <Card
+                      sx={{
+                        cursor: "pointer",
+                        border:
+                          updateData.status === option.value
+                            ? `2px solid ${option.textColor}`
+                            : "1px solid #e0e0e0",
+                        background:
+                          updateData.status === option.value
+                            ? option.gradient
+                            : "white",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: `0 4px 12px ${alpha(
+                            option.textColor,
+                            0.2
+                          )}`,
+                        },
+                      }}
+                      onClick={() =>
+                        setUpdateData({ ...updateData, status: option.value })
+                      }
+                    >
+                      <CardContent sx={{ p: 2, textAlign: "center" }}>
+                        <Avatar
+                          sx={{
+                            bgcolor: option.textColor,
+                            width: 40,
+                            height: 40,
+                            mx: "auto",
+                            mb: 1,
+                          }}
+                        >
+                          {option.icon}
+                        </Avatar>
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color={option.textColor}
+                        >
+                          {option.label}
+                        </Typography>
+                        {updateData.status === option.value && (
+                          <CheckCircleIcon
                             sx={{
-                              bgcolor: option.textColor,
-                              width: 40,
-                              height: 40,
-                              mx: "auto",
-                              mb: 1,
+                              position: "absolute",
+                              top: 8,
+                              right: 8,
+                              color: option.textColor,
+                              fontSize: 20,
                             }}
-                          >
-                            {option.icon}
-                          </Avatar>
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            color={option.textColor}
-                          >
-                            {option.label}
-                          </Typography>
-                          {updateData.status === option.value && (
-                            <CheckCircleIcon
-                              sx={{
-                                position: "absolute",
-                                top: 8,
-                                right: 8,
-                                color: option.textColor,
-                                fontSize: 20,
-                              }}
-                            />
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
-            </Box>
-          )}
-
-          <TextField
-            label={
-              updateData.status === "cancelled"
-                ? "Lý do hủy đơn *"
-                : "Ghi chú (nếu có)"
-            }
-            multiline
-            rows={4}
-            value={updateData.reason}
-            onChange={(e) =>
-              setUpdateData({ ...updateData, reason: e.target.value })
-            }
-            fullWidth
-            margin="normal"
-            required={updateData.status === "cancelled"}
-            InputProps={{
-              sx: {
-                borderRadius: 2,
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor:
-                    updateData.status === "cancelled" ? "#f44336" : "#1976d2",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor:
-                    updateData.status === "cancelled" ? "#d32f2f" : "#1565c0",
-                },
-              },
-            }}
-            helperText={
-              updateData.status === "cancelled"
-                ? "Vui lòng nhập lý do hủy đơn hàng"
-                : "Thêm ghi chú cho khách hàng (tùy chọn)"
-            }
-          />
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600}>
+                Lý do (nếu có):
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                variant="outlined"
+                value={updateData.reason}
+                onChange={(e) =>
+                  setUpdateData({ ...updateData, reason: e.target.value })
+                }
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
-
-        <DialogActions sx={{ p: 3, gap: 2 }}>
-          <Button
-            onClick={() => setUpdateDialog(false)}
-            variant="outlined"
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              fontWeight: 600,
-            }}
-          >
+        <DialogActions>
+          <Button onClick={() => setUpdateDialog(false)} color="primary">
             Hủy
           </Button>
           <Button
             onClick={handleSaveUpdate}
             variant="contained"
-            color={updateData.status === "cancelled" ? "error" : "primary"}
-            disabled={
-              updateData.status === "cancelled" && !updateData.reason.trim()
-            }
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              fontWeight: 600,
-              background:
-                updateData.status === "cancelled"
-                  ? "linear-gradient(135deg, #f44336 0%, #d32f2f 100%)"
-                  : "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-              "&:hover": {
-                background:
-                  updateData.status === "cancelled"
-                    ? "linear-gradient(135deg, #d32f2f 0%, #c62828 100%)"
-                    : "linear-gradient(135deg, #1565c0 0%, #0d47a1 100%)",
-              },
-            }}
+            color="primary"
+            disabled={loading}
           >
-            {updateData.status === "cancelled" ? "Hủy đơn" : "Cập nhật"}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Lưu thay đổi"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* SpeedDial for Quick Actions */}
-      <SpeedDial
-        ariaLabel="Quick Actions"
-        sx={{ position: "fixed", bottom: 16, right: 16 }}
-        icon={<SpeedDialIcon />}
+      {/* Dialog từ chối hoàn tiền */}
+      <Dialog
+        open={rejectRefundDialog}
+        onClose={() => setRejectRefundDialog(false)}
+        maxWidth="sm"
+        fullWidth
       >
-        <SpeedDialAction
-          icon={<RefreshIcon />}
-          tooltipTitle="Làm mới"
-          onClick={() => setLoading(true)}
-        />
-        <SpeedDialAction
-          icon={<FilterListIcon />}
-          tooltipTitle="Lọc"
-          onClick={() => setFilterStatus("all")}
-        />
-      </SpeedDial>
+        <DialogTitle>Từ chối yêu cầu hoàn tiền</DialogTitle>
+        <DialogContent>
+          <Typography>Lý do từ chối:</Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectRefundDialog(false)} color="primary">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleRejectRefund}
+            variant="contained"
+            color="error"
+            disabled={loading || !rejectReason.trim()}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Xác nhận từ chối"
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

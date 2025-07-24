@@ -36,6 +36,8 @@ import {
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
   Person as PersonIcon,
+  Refresh,
+  Report as ReportIcon,
 } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
@@ -118,6 +120,16 @@ const LayoutAdmin = ({ children }) => {
       text: "Seller",
       icon: <PersonIcon />,
       path: "/eco-market/admin/sellers",
+    },
+    {
+      text: "Hoàn Tiền",
+      icon: <Refresh />,
+      path: "/eco-market/admin/orders/refund",
+    },
+    {
+      text: "Báo cáo",
+      icon: <ReportIcon />,
+      path: "/eco-market/admin/reports",
     },
   ];
 

@@ -1,5 +1,7 @@
 import React from "react";
 import ShopSection from "./ShopSection";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
 
 const ProductList = ({
   products,
@@ -10,9 +12,12 @@ const ProductList = ({
   shippingData,
   shippingLoading,
 }) => {
+  const { discounts } = usePersonalDiscount();
+  const productsWithDiscount = applyPersonalDiscountsToProducts(products, discounts);
+
   // Group products by seller
   const productsBySeller = sellers.reduce((acc, seller) => {
-    const sellerProducts = products.filter(
+    const sellerProducts = productsWithDiscount.filter(
       (product) => product.seller._id === seller._id
     );
 

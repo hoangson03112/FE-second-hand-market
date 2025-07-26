@@ -34,6 +34,8 @@ import ReturnOrderModal from "./ReturnOrderModal";
 import axios from "axios";
 import ReportOrderModal from "./ReportOrderModal";
 import reportApi from "../../../services/reportService";
+import { usePersonalDiscount } from "../../../contexts/PersonalDiscountContext";
+import { applyPersonalDiscountsToProducts } from "../../../utils/checkoutUtils";
 
 const OrderItem = ({ order, setOrders }) => {
   const { findOrCreateWithOrder } = useChat();
@@ -47,7 +49,9 @@ const OrderItem = ({ order, setOrders }) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
   const [reportError, setReportError] = useState("");
-
+  const [hasReview, setHasReview] = useState(false);
+  const [reviewId, setReviewId] = useState(null);
+  const { discounts } = usePersonalDiscount();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -58,7 +62,12 @@ const OrderItem = ({ order, setOrders }) => {
             getProduct(item.productId)
           );
           const productsData = await Promise.all(productPromises);
-          setProducts(productsData);
+          const productsWithDiscount = applyPersonalDiscountsToProducts(
+            productsData,
+            discounts
+          );
+
+          setProducts(productsWithDiscount);
         } else {
           setProducts([]);
         }
@@ -96,6 +105,25 @@ const OrderItem = ({ order, setOrders }) => {
       fetchSellers();
     }
   }, [products]);
+
+  useEffect(() => {
+    const fetchReview = async () => {
+      try {
+        const res = await axios.get(`/seller-reviews/by-order/${order._id}`);
+        if (res.data.review) {
+          setHasReview(true);
+          setReviewId(res.data.review._id);
+        } else {
+          setHasReview(false);
+          setReviewId(null);
+        }
+      } catch (e) {
+        setHasReview(false);
+        setReviewId(null);
+      }
+    };
+    fetchReview();
+  }, [order._id]);
 
   const handleCancelOrder = async (orderId, reason, status, bankInfo) => {
     try {
@@ -139,6 +167,32 @@ const OrderItem = ({ order, setOrders }) => {
 
   const handleViewDetails = () => {
     navigate(`/eco-market/order-details/${order._id}`);
+  };
+
+  const handlePayment = async () => {
+    try {
+      const items = products.map((product) => ({
+        name: product.name,
+        quantity:
+          order.products.find((p) => p.productId === product._id)?.quantity ||
+          1,
+        price: product.price,
+      }));
+      const response = await axios.post("/payments/create-payment-link", {
+        orderId: order._id,
+        amount: order.totalAmount,
+        items,
+      });
+      const { checkoutUrl } = response.data;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      }
+    } catch (error) {
+      alert("Không thể tạo link thanh toán. Vui lòng thử lại!");
+    }
+  };
+  const handleViewFeedback = () => {
+    navigate(`/eco-market/feedback-seller/${order._id}#feedback`);
   };
 
   const getStatusConfig = (status, refundDecision) => {
@@ -211,7 +265,7 @@ const OrderItem = ({ order, setOrders }) => {
         textColor: "#1976d2",
       },
       shipping: {
-        label: "Đang vận chuyển",
+        label: "Đang giao hàng",
         color: "info",
         icon: <LocalShipping fontSize="small" />,
         bgColor: "#e3f2fd",
@@ -349,6 +403,11 @@ const OrderItem = ({ order, setOrders }) => {
             size="small"
             startIcon={<Star />}
             sx={buttonStyles}
+            onClick={
+              hasReview
+                ? handleViewFeedback
+                : () => navigate(`/eco-market/feedback-seller/${order._id}`)
+            }
           >
             Đánh giá
           </Button>
@@ -391,6 +450,23 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Hủy đơn hàng
             </Button>
+            {order.statusPayment === false &&
+              order.paymentMethod === "bank_transfer" && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  onClick={handlePayment}
+                  startIcon={<CheckCircle />}
+                  sx={{
+                    ...buttonStyles,
+                    bgcolor: "#43a047",
+                    "&:hover": { bgcolor: "#388e3c" },
+                  }}
+                >
+                  Thanh toán
+                </Button>
+              )}
           </Stack>
         );
       case "confirmed":
@@ -547,8 +623,7 @@ const OrderItem = ({ order, setOrders }) => {
             >
               Xem chi tiết
             </Button>
-            {/* Nút trả hàng nếu còn trong 3 ngày */}
-            {canReturnCompleted && (
+            {canReturnCompleted && order.shippingMethod === "ship-cod" && (
               <Button
                 variant="outlined"
                 color="error"
@@ -575,11 +650,14 @@ const OrderItem = ({ order, setOrders }) => {
               size="small"
               startIcon={<Star />}
               sx={buttonStyles}
+              onClick={() =>
+                navigate(`/eco-market/feedback-seller/${order._id}`)
+              }
             >
               Đánh giá
             </Button>
-            {/* Thông báo quyền trả hàng */}
-            {canReturnCompleted && (
+
+            {canReturnCompleted && order.shippingMethod === "ship-cod" && (
               <Typography
                 variant="caption"
                 color="warning.main"
@@ -636,7 +714,6 @@ const OrderItem = ({ order, setOrders }) => {
       case "refunded":
         return (
           <Stack direction="row" spacing={1} flexWrap="wrap">
-            {/* Nút xem chi tiết */}
             <Button
               variant="contained"
               size="small"
@@ -670,7 +747,6 @@ const OrderItem = ({ order, setOrders }) => {
       }}
     >
       <CardContent sx={{ p: 3 }}>
-        {/* Alert hoàn tiền cho đơn hủy đã thanh toán ship-cod */}
         {order.status === "cancelled" &&
           order.shippingMethod === "ship-cod" &&
           order.statusPayment === true &&
@@ -679,27 +755,23 @@ const OrderItem = ({ order, setOrders }) => {
               Đơn hàng đang được hoàn tiền
             </Alert>
           )}
-        {/* Hiển thị thông báo chờ duyệt hoàn tiền */}
         {order.status === "refund" && order.refundDecision === "pending" && (
           <Alert severity="warning" sx={{ mb: 2, fontWeight: 600 }}>
             Yêu cầu hoàn tiền đang chờ duyệt bởi người bán
           </Alert>
         )}
-        {/* Hiển thị thông báo bị từ chối hoàn tiền */}
         {order.status === "refund" && order.refundDecision === "rejected" && (
           <Alert severity="error" sx={{ mb: 2, fontWeight: 600 }}>
             Yêu cầu hoàn tiền đã bị từ chối. Lý do:{" "}
             {order.refundDecisionReason || "Không có lý do"}
           </Alert>
         )}
-        {/* Hiển thị thông báo đã được chấp nhận hoàn tiền */}
         {order.status === "refund" && order.refundDecision === "approved" && (
           <Alert severity="info" sx={{ mb: 2, fontWeight: 600 }}>
             Yêu cầu hoàn tiền đã được chấp nhận. Vui lòng chờ tiền hoàn về tài
             khoản ngân hàng.
           </Alert>
         )}
-        {/* Hiển thị thông báo đã hoàn tiền thành công */}
         {order.status === "refunded" && order.refundDecision === "approved" && (
           <Alert severity="success" sx={{ mb: 2, fontWeight: 600 }}>
             Đã hoàn tiền thành công vào tài khoản ngân hàng.
@@ -722,7 +794,6 @@ const OrderItem = ({ order, setOrders }) => {
             {reportError}
           </Alert>
         )}
-        {/* Header with Seller Info and Status */}
         <Box
           sx={{
             position: "relative",
@@ -750,7 +821,6 @@ const OrderItem = ({ order, setOrders }) => {
                   gap: 2,
                 }}
               >
-                {/* Bên trái: Shop */}
                 <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Avatar
                     src={seller?.avatar?.url}
@@ -778,7 +848,6 @@ const OrderItem = ({ order, setOrders }) => {
                     {seller?.fullName}
                   </Typography>
                 </Box>
-                {/* Chip trạng thái sát lề phải */}
                 <Box
                   sx={{
                     position: "absolute",

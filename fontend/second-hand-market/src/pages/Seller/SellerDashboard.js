@@ -14,16 +14,9 @@ import {
   Bar,
   AreaChart,
   Area,
-   RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
+
   ComposedChart,
-  Legend,
-  ScatterChart,
-  Scatter,
-  ZAxis
+
 } from 'recharts';
 import { useOrder } from '../../contexts/OrderContext';
 
@@ -42,7 +35,7 @@ const SellerDashboard = () => {
       setError(null); // Reset error state khi fetch lại data
       try {
         const response = await getMySellerOrders();
-        console.log('API Response:', response);
+   
 
         // Xử lý response theo cấu trúc từ server
         if (response?.status === 401) {

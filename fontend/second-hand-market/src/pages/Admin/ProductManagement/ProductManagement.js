@@ -78,24 +78,23 @@ const ProductManagement = () => {
     ...new Set(products.map((product) => product.location || "")),
   ];
 
-  // Danh sách trạng thái gộp
   const productStatusList = [
     { key: "all", label: "Tất cả", icon: ShoppingCart, color: "default" },
     {
-      key: "pending_group",
+      key: ["pending", "pending_review"],
       label: "Chờ duyệt",
       icon: HourglassEmpty,
       color: "warning",
     },
     {
-      key: "selling_group",
+      key: ["approved", "active"],
       label: "Đang bán",
       icon: CheckCircle,
       color: "success",
     },
-    { key: "inactive", label: "Ngừng bán", icon: Cancel, color: "secondary" },
-    { key: "sold", label: "Đã hết hàng", icon: DoneAll, color: "secondary" },
-    { key: "rejected", label: "Đã hủy", icon: Cancel, color: "error" },
+    { key: ["inactive"], label: "Ngừng bán", icon: Cancel, color: "secondary" },
+    { key: ["sold"], label: "Đã hết hàng", icon: DoneAll, color: "secondary" },
+    { key: ["rejected"], label: "Đã hủy", icon: Cancel, color: "error" },
   ];
 
   const filteredProducts = products.filter((product) => {
@@ -104,13 +103,14 @@ const ProductManagement = () => {
       .includes(searchQuery.toLowerCase());
     let matchesTab = false;
     if (currentTab === 0) matchesTab = true;
-    else if (currentTab === 1)
-      matchesTab = ["pending", "under_review"].includes(product.status);
-    else if (currentTab === 2)
-      matchesTab = ["active", "approved"].includes(product.status);
-    else if (currentTab === 3) matchesTab = product.status === "inactive";
-    else if (currentTab === 4) matchesTab = product.status === "sold";
-    else if (currentTab === 5) matchesTab = product.status === "rejected";
+    else {
+      const statusKeys = productStatusList[currentTab]?.key;
+      if (Array.isArray(statusKeys)) {
+        matchesTab = statusKeys.includes(product.status);
+      } else {
+        matchesTab = product.status === statusKeys;
+      }
+    }
     const matchesCategory =
       categoryFilter === "all" || product.categoryId === categoryFilter;
     const matchesLocation =
@@ -224,7 +224,7 @@ const ProductManagement = () => {
     {
       label: "Chờ duyệt",
       value: products.filter((p) =>
-        ["pending", "under_review"].includes(p.status)
+        ["pending", "pending_review"].includes(p.status)
       ).length,
       icon: HourglassEmpty,
       color: "warning",
@@ -317,7 +317,13 @@ const ProductManagement = () => {
           scrollButtons="auto"
         >
           {productStatusList.map((status, idx) => (
-            <Tab key={status.key} label={status.label} icon={<status.icon />} />
+            <Tab
+              key={
+                Array.isArray(status.key) ? status.key.join("-") : status.key
+              }
+              label={status.label}
+              icon={<status.icon />}
+            />
           ))}
         </Tabs>
       </Box>
@@ -373,7 +379,7 @@ const ProductManagement = () => {
                       position: "absolute",
                       top: 10,
                       right: 10,
-                      bgcolor: ["pending", "under_review"].includes(
+                      bgcolor: ["pending", "pending_review"].includes(
                         product.status
                       )
                         ? "warning.main"
@@ -394,7 +400,7 @@ const ProductManagement = () => {
                       fontWeight: "bold",
                     }}
                   >
-                    {["pending", "under_review"].includes(product.status) &&
+                    {["pending", "pending_review"].includes(product.status) &&
                       "Chờ duyệt"}
                     {["active", "approved"].includes(product.status) &&
                       "Đang bán"}
@@ -460,7 +466,7 @@ const ProductManagement = () => {
                 <Divider />
 
                 <Box sx={{ p: 2 }}>
-                  {["pending", "under_review"].includes(product.status) ? (
+                  {["pending", "pending_review"].includes(product.status) ? (
                     <Stack
                       direction="row"
                       spacing={1}

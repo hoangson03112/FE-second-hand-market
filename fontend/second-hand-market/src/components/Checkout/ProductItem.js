@@ -1,29 +1,29 @@
-import React from 'react';
-import { formatPrice, renderCategory, calculateProductDiscount } from '../../utils/checkoutUtils';
+import React from "react";
+import {
+  formatPrice,
+  renderCategory,
+  calculateProductDiscount,
+} from "../../utils/checkoutUtils";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
 
 const ProductItem = ({ product, showBorder = true }) => {
   // Calculate all discount information using utility function
   const discount = calculateProductDiscount(product);
-  const {
-    originalPrice,
-    currentPrice,
-    finalPrice,
-    discountAmount,
-    discountPercentage,
-    additionalDiscount,
-    userDiscount,
-    totalDiscount,
-    totalDiscountPercentage,
-    hasDiscount,
-    hasAnyDiscount,
-    isPercentageDiscount
-  } = discount;
+
+  const { discounts } = usePersonalDiscount();
+  const personalDiscount = discounts.find(
+    (d) => d.productId === product._id || d.productId?._id === product._id
+  );
+  const finalPriceDisplay = personalDiscount
+    ? personalDiscount.price
+    : product.currentPrice || product.price;
+
   return (
-    <tr className={showBorder ? 'border-bottom' : ''}>
+    <tr className={showBorder ? "border-bottom" : ""}>
       <td className="text-start py-3">
         <div className="d-flex align-items-center">
           <img
-            src={product?.avatar?.url || '/default-product.png'}
+            src={product?.avatar?.url || "/default-product.png"}
             alt={product.name}
             className="img-fluid rounded me-3"
             style={{
@@ -45,72 +45,30 @@ const ProductItem = ({ product, showBorder = true }) => {
                   Tình trạng: {product.condition}%
                 </span>
               )}
-              {hasAnyDiscount && (
-                <span className="badge bg-secondary text-white me-2">
-                  -{totalDiscountPercentage}%
-                </span>
-              )}
             </div>
-            
-            {/* Discount Information */}
-            {hasAnyDiscount && (
-              <div className="discount-info mt-2">
-                <div className="row g-1">
-                  {hasDiscount && (
-                    <div className="col-12">
-                      <small className="text-muted">
-                        <i className="bi bi-tag me-1"></i>
-                        Giảm giá sản phẩm: -{discountPercentage}% 
-                        ({formatPrice(discountAmount)}₫)
-                      </small>
-                    </div>
-                  )}
-                  {additionalDiscount > 0 && (
-                    <div className="col-12">
-                      <small className="text-muted">
-                        <i className="bi bi-percent me-1"></i>
-                        Giảm giá đặc biệt: {isPercentageDiscount ? `-${additionalDiscount}%` : `-${formatPrice(additionalDiscount)}₫`}
-                      </small>
-                    </div>
-                  )}
-                  {userDiscount > 0 && (
-                    <div className="col-12">
-                      <small className="text-muted">
-                        <i className="bi bi-person-check me-1"></i>
-                        Ưu đãi cá nhân: -{formatPrice(userDiscount)}₫
-                      </small>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
+
             {product.description && (
-              <div className="text-muted small mt-1" style={{ fontSize: '0.8rem' }}>
-                {product.description.length > 100 
-                  ? `${product.description.substring(0, 100)}...` 
-                  : product.description
-                }
+              <div
+                className="text-muted small mt-1"
+                style={{ fontSize: "0.8rem" }}
+              >
+                {product.description.length > 100
+                  ? `${product.description.substring(0, 100)}...`
+                  : product.description}
               </div>
             )}
           </div>
         </div>
       </td>
       <td className="text-center">
-        {hasAnyDiscount ? (
+        {personalDiscount ? (
           <div>
-            <div className="text-muted small text-decoration-line-through">
-              {formatPrice(originalPrice)}₫
-            </div>
             <div className="fw-bold text-primary">
-              {formatPrice(finalPrice)}₫
-            </div>
-            <div className="small fw-bold text-muted">
-              Tiết kiệm: {formatPrice(totalDiscount)}₫
+              {formatPrice(finalPriceDisplay)}₫
             </div>
           </div>
         ) : (
-          <div className="fw-bold">{formatPrice(currentPrice)}₫</div>
+          <div className="fw-bold">{formatPrice(finalPriceDisplay)}₫</div>
         )}
       </td>
       <td className="text-center">
@@ -119,21 +77,21 @@ const ProductItem = ({ product, showBorder = true }) => {
         </div>
       </td>
       <td className="text-center">
-        {hasAnyDiscount ? (
+        {personalDiscount ? (
           <div>
             <div className="text-muted small text-decoration-line-through">
-              {formatPrice(product.quantity * originalPrice)}₫
+              {formatPrice(
+                product.quantity * (product.originalPrice || product.price)
+              )}
+              ₫
             </div>
             <div className="fw-bold text-primary fs-6">
-              {formatPrice(product.quantity * finalPrice)}₫
-            </div>
-            <div className="small fw-bold text-muted">
-              Tiết kiệm: {formatPrice(product.quantity * totalDiscount)}₫
+              {formatPrice(product.quantity * finalPriceDisplay)}₫
             </div>
           </div>
         ) : (
           <div className="fw-bold text-primary fs-6">
-            {formatPrice(product.quantity * currentPrice)}₫
+            {formatPrice(product.quantity * finalPriceDisplay)}₫
           </div>
         )}
       </td>
@@ -141,4 +99,4 @@ const ProductItem = ({ product, showBorder = true }) => {
   );
 };
 
-export default ProductItem; 
+export default ProductItem;

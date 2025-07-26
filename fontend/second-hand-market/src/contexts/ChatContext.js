@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
-const API_URL = process.env.REACT_APP_API_URL || " ";
-const BASE_URL = `${API_URL}/eco-market`;
 const ChatContext = createContext();
 
 export const useChat = () => useContext(ChatContext);

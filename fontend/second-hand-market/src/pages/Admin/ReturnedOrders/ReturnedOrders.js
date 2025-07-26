@@ -194,66 +194,12 @@ export default function ReturnedOrders() {
             >
               Quản lý Đơn hoàn tiền đã xác nhận (Admin)
             </Typography>
-   
           </Toolbar>
         </Container>
       </AppBar>
 
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={4} lg={2.4}>
-            <Paper
-              elevation={2}
-              sx={{ p: 2.5, display: "flex", alignItems: "center" }}
-            >
-              <Avatar
-                sx={{
-                  bgcolor: "success.main",
-                  color: "white",
-                  width: 48,
-                  height: 48,
-                  mr: 2,
-                }}
-              >
-                💰
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight="bold">
-                  {stats.refunded}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Đơn đã xác nhận hoàn tiền
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4} lg={2.4}>
-            <Paper
-              elevation={2}
-              sx={{ p: 2.5, display: "flex", alignItems: "center" }}
-            >
-              <Avatar
-                sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  width: 48,
-                  height: 48,
-                  mr: 2,
-                }}
-              >
-                📝
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight="bold">
-                  {stats.total}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Tổng đơn hoàn tiền
-                </Typography>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+
 
         <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
           <Grid container spacing={3} alignItems="flex-end">
@@ -387,10 +333,9 @@ export default function ReturnedOrders() {
                                   color="error"
                                   fontWeight="bold"
                                 >
-                                  {(
-                                    (order.totalAmount || 0) +
-                                    (order.shippingFee || 0)
-                                  ).toLocaleString("vi-VN")}{" "}
+                                  {(order.totalAmount || 0).toLocaleString(
+                                    "vi-VN"
+                                  )}{" "}
                                   ₫
                                 </Typography>
                                 <Typography variant="caption" display="block">

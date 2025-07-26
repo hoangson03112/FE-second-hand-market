@@ -41,11 +41,8 @@ import {
 } from "@mui/icons-material";
 import SellerApi from "./SellerApi";
 
-import { useProduct } from "../../contexts/ProductContext";
-
-import { useCategory } from "../../contexts/CategoryContext";
-
 import UpdateProductModal from "./UpdateProductModal";
+import axios from "axios";
 
 const SellerProducts = () => {
   const navigate = useNavigate(); // Khởi tạo hook navigate
@@ -64,6 +61,27 @@ const SellerProducts = () => {
     open: false,
     product: null,
   });
+
+  // State for resubmit loading
+  const [resubmitLoadingId, setResubmitLoadingId] = useState(null);
+
+  // Function to request admin re-approval
+  const handleResubmit = async (productId) => {
+    setResubmitLoadingId(productId);
+    setError("");
+    try {
+      await axios.patch("/products/update-status", {
+        productId: productId,
+        status: "pending",
+      });
+
+      await loadProducts();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResubmitLoadingId(null);
+    }
+  };
 
   const statusConfig = {
     pending: {
@@ -117,6 +135,15 @@ const SellerProducts = () => {
       sx: {
         bgcolor: "#e3f2fd",
         color: "#1565c0",
+        fontWeight: 500,
+      },
+    },
+    active: {
+      color: "primary",
+      label: "Đang hoạt động",
+      sx: {
+        bgcolor: "#e3f2fd",
+        color: "#0d47a1",
         fontWeight: 500,
       },
     },
@@ -401,7 +428,11 @@ const SellerProducts = () => {
 
                   {/* Actions */}
                   <Box
-                    sx={{ display: "flex", justifyContent: "space-between" }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
                   >
                     <ButtonGroup size="small" variant="outlined">
                       <Tooltip title="Xem chi tiết">
@@ -426,20 +457,43 @@ const SellerProducts = () => {
                         </Tooltip>
                       )}
                     </ButtonGroup>
-                    {/* Ẩn nút xóa nếu đã bán hết */}
-                    {product.status !== "sold" && (
-                      <Tooltip title="Xóa sản phẩm">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() =>
-                            setDeleteDialog({ open: true, product })
-                          }
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      {/* Ẩn nút xóa nếu đã bán hết */}
+                      {product.status !== "sold" && (
+                        <Tooltip title="Xóa sản phẩm">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              setDeleteDialog({ open: true, product })
+                            }
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {/* Nút yêu cầu duyệt lại cho sản phẩm bị từ chối */}
+                      {product.status === "rejected" && (
+                        <Tooltip title="Yêu cầu admin duyệt lại">
+                          <span>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="warning"
+                              disabled={!!resubmitLoadingId}
+                              onClick={() => handleResubmit(product._id)}
+                              sx={{ fontWeight: 600, minWidth: 120 }}
+                            >
+                              {resubmitLoadingId === product._id ? (
+                                <CircularProgress size={18} color="inherit" />
+                              ) : (
+                                "Yêu cầu duyệt lại"
+                              )}
+                            </Button>
+                          </span>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </Box>
                 </CardContent>
               </Card>

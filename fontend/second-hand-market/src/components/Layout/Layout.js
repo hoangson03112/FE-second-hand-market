@@ -17,7 +17,6 @@ const Layout = ({ children }) => {
     function updateHeight() {
       if (headerRef.current) {
         setHeaderHeight(headerRef.current.offsetHeight);
-        console.log("Header height:", headerRef.current.offsetHeight);
       }
       count++;
       if (count < 10) {

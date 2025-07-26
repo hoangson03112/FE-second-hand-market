@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
 
 export const useCartSelection = (products) => {
   const [checkedItems, setCheckedItems] = useState({});
@@ -13,16 +13,16 @@ export const useCartSelection = (products) => {
   }, [products.length, selectedCount]);
 
   const selectedItems = useMemo(() => {
-    return products.filter(product => checkedItems[product._id]);
+    return products.filter((product) => checkedItems[product._id]);
   }, [products, checkedItems]);
 
   const selectedProductIds = useMemo(() => {
-    return selectedItems.map(item => item._id);
+    return selectedItems.map((item) => item._id);
   }, [selectedItems]);
 
   const totalAmount = useMemo(() => {
     return selectedItems.reduce((total, item) => {
-      return total + (item.price * item.quantity);
+      return total + item.price * item.quantity;
     }, 0);
   }, [selectedItems]);
 
@@ -36,9 +36,9 @@ export const useCartSelection = (products) => {
   }, [products.length]);
 
   const handleItemSelect = (productId, isChecked) => {
-    setCheckedItems(prev => ({
+    setCheckedItems((prev) => ({
       ...prev,
-      [productId]: isChecked
+      [productId]: isChecked,
     }));
   };
 
@@ -49,7 +49,7 @@ export const useCartSelection = (products) => {
     } else {
       // Select all
       const allSelected = {};
-      products.forEach(product => {
+      products.forEach((product) => {
         allSelected[product._id] = true;
       });
       setCheckedItems(allSelected);
@@ -70,6 +70,6 @@ export const useCartSelection = (products) => {
     hasSelectedItems,
     handleItemSelect,
     handleSelectAll,
-    clearSelections
+    clearSelections,
   };
-}; 
+};

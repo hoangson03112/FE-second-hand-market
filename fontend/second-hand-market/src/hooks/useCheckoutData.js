@@ -6,6 +6,7 @@ import AccountContext from "../contexts/AccountContext";
 import { useNotification } from "./useNotification";
 import { FORM_VALIDATION_MESSAGES } from "../constants/checkout";
 import SellerContext from "../contexts/SellerContext";
+import { usePersonalDiscount } from './../contexts/PersonalDiscountContext';
 
 export const useCheckoutData = (selectedItemsParam) => {
   const selectedItems = useMemo(() => {
@@ -15,7 +16,7 @@ export const useCheckoutData = (selectedItemsParam) => {
     const local = localStorage.getItem("checkoutItems");
     return local ? JSON.parse(local) : [];
   }, [selectedItemsParam]);
-
+  const { discounts } = usePersonalDiscount();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
   const [addresses, setAddresses] = useState([]);
@@ -39,8 +40,14 @@ export const useCheckoutData = (selectedItemsParam) => {
           selectedItems.map(async (item) => {
             const productId = item._id || item.productId;
             try {
+              const discount = discounts.find(
+                (discount) => discount.productId === productId
+              );
               const product = await getProduct(productId);
-              return product;
+              return {
+                ...product,
+                price: discount ? discount.price : product.price,
+              };
             } catch (error) {
               console.error("Error fetching product:", error);
               return item;
@@ -58,7 +65,7 @@ export const useCheckoutData = (selectedItemsParam) => {
 
           return result;
         });
-        console.log(productsWithQuantity);
+
         if (isMounted) setProducts(productsWithQuantity);
       } catch (error) {
         console.error("Error fetching products:", error);

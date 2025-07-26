@@ -45,42 +45,36 @@ class SellerApi {
   async createProduct(productData) {
     try {
       const formData = new FormData();
-      
+
       // Add basic product data
-      Object.keys(productData).forEach(key => {
-        if (key !== 'images' && key !== 'attributes') {
+      Object.keys(productData).forEach((key) => {
+        if (key !== "images" && key !== "attributes") {
           formData.append(key, productData[key]);
         }
       });
 
       // Add attributes as JSON string
       if (productData.attributes) {
-        formData.append('attributes', JSON.stringify(productData.attributes));
+        formData.append("attributes", JSON.stringify(productData.attributes));
       }
 
       // Add images
       if (productData.images && productData.images.length > 0) {
-        productData.images.forEach(image => {
-          formData.append('images', image);
+        productData.images.forEach((image) => {
+          formData.append("images", image);
         });
       }
 
-      const response = await axios.post(
-        `${this.baseURL}/create`,
-        formData,
-        {
-          headers: {
-            ...this.getAuthHeader(),
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const response = await axios.post(`${this.baseURL}/create`, formData, {
+        headers: {
+          ...this.getAuthHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating product:", error);
-      throw new Error(
-        error.response?.data?.message || "Lỗi khi tạo sản phẩm"
-      );
+      throw new Error(error.response?.data?.message || "Lỗi khi tạo sản phẩm");
     }
   }
 
@@ -106,18 +100,13 @@ class SellerApi {
   // Delete product
   async deleteProduct(productId) {
     try {
-      const response = await axios.delete(
-        `${this.baseURL}/${productId}`,
-        {
-          headers: this.getAuthHeader(),
-        }
-      );
+      const response = await axios.delete(`${this.baseURL}/${productId}`, {
+        headers: this.getAuthHeader(),
+      });
       return response.data;
     } catch (error) {
       console.error("Error deleting product:", error);
-      throw new Error(
-        error.response?.data?.message || "Lỗi khi xóa sản phẩm"
-      );
+      throw new Error(error.response?.data?.message || "Lỗi khi xóa sản phẩm");
     }
   }
 
@@ -137,25 +126,38 @@ class SellerApi {
   }
 
   async updateProduct(productId, formData) {
-  try {
-    const response = await axios.put(
-      `${this.baseURL}/${productId}`,
-      formData,
-      {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error updating product:", error);
-    throw new Error(
-      error.response?.data?.message || "Lỗi khi cập nhật sản phẩm"
-    );
+    try {
+      const response = await axios.put(
+        `${this.baseURL}/${productId}`,
+        formData,
+        {
+          headers: {
+            ...this.getAuthHeader(),
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error updating product:", error);
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi cập nhật sản phẩm"
+      );
+    }
   }
-}
+  async resubmitProduct(productId) {
+    try {
+      const response = await axios.patch(`${this.baseURL}/${productId}`, {
+        headers: this.getAuthHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product by ID:", error);
+      throw new Error(
+        error.response?.data?.message || "Lỗi khi lấy sản phẩm theo ID"
+      );
+    }
+  }
 }
 
 export default new SellerApi();

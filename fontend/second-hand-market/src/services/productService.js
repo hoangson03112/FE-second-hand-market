@@ -1,4 +1,4 @@
-import ApiService from './ApiService';
+import ApiService from "./ApiService";
 
 const productService = {
   getAllProducts: async (params = {}) => {
@@ -17,12 +17,10 @@ const productService = {
   getProductsBySubCategory: async (subCategoryId) => {
     return await ApiService.get(`/products/subcategory/${subCategoryId}`);
   },
-  
+
   getUserProducts: async (userId) => {
     return await ApiService.get(`/users/${userId}/products`);
   },
-
-
 
   updateProduct: async (id, productData) => {
     return await ApiService.put(`/products/${id}`, productData);
@@ -34,7 +32,7 @@ const productService = {
 
   searchProducts: async (query) => {
     return await ApiService.get(`/products/search?q=${query}`);
-  }
+  },
 };
 
-export default productService; 
+export default productService;

@@ -1,4 +1,10 @@
-import { SHIPPING_FEES, PLATFORM_FEE_RATE, MAX_COIN_DISCOUNT_RATE, SHIPPING_METHODS, PAYMENT_METHODS } from '../constants/checkout';
+import {
+  SHIPPING_FEES,
+  PLATFORM_FEE_RATE,
+  MAX_COIN_DISCOUNT_RATE,
+  SHIPPING_METHODS,
+  PAYMENT_METHODS,
+} from "../constants/checkout";
 
 /**
  * Formats address object to display string
@@ -8,9 +14,7 @@ import { SHIPPING_FEES, PLATFORM_FEE_RATE, MAX_COIN_DISCOUNT_RATE, SHIPPING_METH
 export const formatAddress = (address) => {
   if (!address) return "";
   const { specificAddress, ward, district, province } = address;
-  return [specificAddress, ward, district, province]
-    .filter(Boolean)
-    .join(", ");
+  return [specificAddress, ward, district, province].filter(Boolean).join(", ");
 };
 
 /**
@@ -41,7 +45,7 @@ export const calculateTotalAmount = (products) => {
  */
 export const calculateShippingFee = (method, address) => {
   if (method === SHIPPING_METHODS.DIRECT) return 0;
-  
+
   // In real app, use GHN API with address details
   return SHIPPING_FEES[method] || SHIPPING_FEES[SHIPPING_METHODS.EXPRESS];
 };
@@ -53,7 +57,8 @@ export const calculateShippingFee = (method, address) => {
  * @returns {number} Platform fee
  */
 export const calculatePlatformFee = (paymentType, totalAmount) => {
-  const platformFeeRate = paymentType === PAYMENT_METHODS.DIRECT ? 0 : PLATFORM_FEE_RATE;
+  const platformFeeRate =
+    paymentType === PAYMENT_METHODS.DIRECT ? 0 : PLATFORM_FEE_RATE;
   return totalAmount * platformFeeRate;
 };
 
@@ -77,7 +82,11 @@ export const calculateCoinDiscount = (useCoins, balance, totalAmount) => {
  * @param {number} coinDiscount - Coin discount amount
  * @returns {number} Final amount after discounts
  */
-export const calculateFinalAmount = (totalAmount, voucherDiscount = 0, coinDiscount = 0) => {
+export const calculateFinalAmount = (
+  totalAmount,
+  voucherDiscount = 0,
+  coinDiscount = 0
+) => {
   return Math.max(0, totalAmount - voucherDiscount - coinDiscount);
 };
 
@@ -89,37 +98,39 @@ export const calculateFinalAmount = (totalAmount, voucherDiscount = 0, coinDisco
  * @param {number} platformFee - Platform fee
  * @returns {Object} Payment amounts { depositAmount, codAmount }
  */
-export const calculatePaymentAmounts = (paymentType, totalAmount, shippingFee, platformFee = 0) => {
+export const calculatePaymentAmounts = (
+  paymentType,
+  totalAmount,
+  shippingFee,
+  platformFee = 0
+) => {
   switch (paymentType) {
     case PAYMENT_METHODS.DIRECT:
       return {
         depositAmount: 0,
-        codAmount: 0
+        codAmount: 0,
       };
     case PAYMENT_METHODS.PARTIAL_ESCROW:
       return {
         depositAmount: shippingFee,
-        codAmount: totalAmount
+        codAmount: totalAmount,
       };
     case PAYMENT_METHODS.FULL_ESCROW:
       return {
         depositAmount: totalAmount + shippingFee + platformFee,
-        codAmount: 0
+        codAmount: 0,
       };
     default:
       return {
         depositAmount: 0,
-        codAmount: totalAmount
+        codAmount: totalAmount,
       };
   }
 };
 
-
 export const groupProductsBySeller = (products) => {
   const uniqueSellerIds = Array.from(
-    new Set(
-      products.map((product) => product.seller._id).filter(Boolean)
-    )
+    new Set(products.map((product) => product.seller._id).filter(Boolean))
   );
 
   return uniqueSellerIds
@@ -170,11 +181,9 @@ export const validateAddress = (address) => {
  */
 export const filterLocations = (locations, searchTerm, nameField) => {
   if (!searchTerm) return locations;
-  
+
   return locations.filter((location) =>
-    (location[nameField] || "")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+    (location[nameField] || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 };
 
@@ -190,7 +199,7 @@ export const debounce = (func, delay) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func.apply(null, args), delay);
   };
-}; 
+};
 
 /**
  * Safely render an object property or the object itself if it's a string
@@ -199,11 +208,11 @@ export const debounce = (func, delay) => {
  * @param {string} property - The property to extract if data is object (default: 'name')
  * @returns {string} Safe string to render
  */
-export const safeRender = (data, property = 'name') => {
-  if (!data) return '';
-  if (typeof data === 'string') return data;
-  if (typeof data === 'object' && data[property]) return data[property];
-  return '';
+export const safeRender = (data, property = "name") => {
+  if (!data) return "";
+  if (typeof data === "string") return data;
+  if (typeof data === "object" && data[property]) return data[property];
+  return "";
 };
 
 /**
@@ -211,14 +220,15 @@ export const safeRender = (data, property = 'name') => {
  * @param {any} category - Category data (object with _id, name or just string)
  * @returns {string} Category name
  */
-export const renderCategory = (category) => safeRender(category, 'name');
+export const renderCategory = (category) => safeRender(category, "name");
 
 /**
  * Safe render for seller name
  * @param {any} seller - Seller data (object or string)
  * @returns {string} Seller name
  */
-export const renderSellerName = (seller) => safeRender(seller, 'fullName') || safeRender(seller, 'name');
+export const renderSellerName = (seller) =>
+  safeRender(seller, "fullName") || safeRender(seller, "name");
 
 /**
  * Calculate final price after all discounts for a product
@@ -230,15 +240,17 @@ export const calculateProductDiscount = (product) => {
   const currentPrice = product.price;
   const hasDiscount = originalPrice > currentPrice;
   const discountAmount = hasDiscount ? originalPrice - currentPrice : 0;
-  const discountPercentage = hasDiscount ? Math.round((discountAmount / originalPrice) * 100) : 0;
-  
+  const discountPercentage = hasDiscount
+    ? Math.round((discountAmount / originalPrice) * 100)
+    : 0;
+
   // Handle additional discounts
   const additionalDiscount = product.additionalDiscount || 0;
   const userDiscount = product.userDiscount || 0;
-  const isPercentageDiscount = product.discountType === 'percentage';
-  
+  const isPercentageDiscount = product.discountType === "percentage";
+
   let finalPrice = currentPrice;
-  
+
   // Apply additional discount
   if (additionalDiscount > 0) {
     if (isPercentageDiscount) {
@@ -247,16 +259,17 @@ export const calculateProductDiscount = (product) => {
       finalPrice = Math.max(0, currentPrice - additionalDiscount);
     }
   }
-  
+
   // Apply user-specific discount
   if (userDiscount > 0) {
     finalPrice = Math.max(0, finalPrice - userDiscount);
   }
-  
+
   const totalDiscount = originalPrice - finalPrice;
-  const totalDiscountPercentage = originalPrice > 0 ? Math.round((totalDiscount / originalPrice) * 100) : 0;
+  const totalDiscountPercentage =
+    originalPrice > 0 ? Math.round((totalDiscount / originalPrice) * 100) : 0;
   const hasAnyDiscount = totalDiscount > 0;
-  
+
   return {
     originalPrice,
     currentPrice,
@@ -269,7 +282,7 @@ export const calculateProductDiscount = (product) => {
     totalDiscountPercentage,
     hasDiscount,
     hasAnyDiscount,
-    isPercentageDiscount
+    isPercentageDiscount,
   };
 };
 
@@ -282,18 +295,43 @@ export const calculateTotalWithDiscounts = (products) => {
   let originalTotal = 0;
   let finalTotal = 0;
   let totalSavings = 0;
-  
-  products.forEach(product => {
+
+  products.forEach((product) => {
     const calculation = calculateProductDiscount(product);
     originalTotal += calculation.originalPrice * product.quantity;
     finalTotal += calculation.finalPrice * product.quantity;
     totalSavings += calculation.totalDiscount * product.quantity;
   });
-  
+
   return {
     originalTotal,
     finalTotal,
     totalSavings,
-    totalDiscountPercentage: originalTotal > 0 ? Math.round((totalSavings / originalTotal) * 100) : 0
+    totalDiscountPercentage:
+      originalTotal > 0 ? Math.round((totalSavings / originalTotal) * 100) : 0,
   };
-}; 
+};
+
+/**
+ * Ghi đè giá sản phẩm bằng giá deal riêng nếu có discount
+ * @param {Array} products - Danh sách sản phẩm
+ * @param {Array} discounts - Danh sách discount (deal riêng)
+ * @returns {Array} Danh sách sản phẩm đã áp dụng giá deal riêng
+ */
+export function applyPersonalDiscountsToProducts(products, discounts) {
+  return products.map((product) => {
+    const discount = discounts.find(
+      (d) => d.productId === product._id || d.productId?._id === product._id
+    );
+    if (discount) {
+      return {
+        ...product,
+        originalPrice: product.originalPrice || product.price,
+        price: discount.price,
+        isPersonalDiscount: true,
+        personalDiscountId: discount._id,
+      };
+    }
+    return product;
+  });
+}

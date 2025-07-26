@@ -174,6 +174,23 @@ class AccountContext {
       throw error;
     }
   }
+  async getDiscount(productID) {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `/sellers/personal-discount/check?productId=${productID}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching discount:", error);
+      throw error;
+    }
+  }
 }
 
 // eslint-disable-next-line import/no-anonymous-default-export

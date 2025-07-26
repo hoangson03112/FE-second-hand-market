@@ -76,7 +76,6 @@ export const Product = () => {
       try {
 
         const response = await AccountContext.getAccount(accountId);
-        console.log(response);
 
         setAccount(response);
       } catch (error) {
@@ -129,7 +128,6 @@ export const Product = () => {
   const handleAddToCart = async () => {
     try {
       const data = await AccountContext.Authentication();
-      console.log(data);
       if (data.data.account) {
         const messageAddToCart = await addToCart(
           product._id,

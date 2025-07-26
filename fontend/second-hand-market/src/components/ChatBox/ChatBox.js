@@ -43,7 +43,6 @@ import ImageMessage from "./MessageTypes/ImageMessage";
 import VideoMessage from "./MessageTypes/VideoMessage";
 import FileMessage from "./MessageTypes/FileMessage";
 import OrderMessage from "./MessageTypes/OrderMessage";
-import DeleteConfirm from "./DeleteConfirm/DeleteConfirm";
 import ProductMessage from "./MessageTypes/ProductMessage";
 
 // Thêm các keyframes cho các animations
@@ -456,7 +455,7 @@ const MessageBubble = styled(Box)(({ theme, sender, isAI }) => ({
     : sender === "me"
     ? "#324155"
     : "rgba(255, 255, 255, 0.8)",
-  color: isAI ? "#324155" : sender === "me" ? "#ffffff" : "#324155",
+  color: isAI ? "#324155" : sender === "me" ? "#ffffff" : "#000000", // Đối phương: màu đen
   alignSelf: sender === "me" ? "flex-end" : "flex-start",
   wordBreak: "break-word",
   boxShadow: isAI
@@ -592,6 +591,25 @@ export const ChatBox = () => {
   const [connectionStatus, setConnectionStatus] = useState("connecting");
 
   const socketRef = useRef();
+
+  // Thêm các ref lưu state mới nhất
+  const accountRef = useRef(account);
+  const selectedUserToShowRef = useRef(selectedUserToShow);
+  const openChatRef = useRef(openChat);
+  const currentConversationIdRef = useRef(currentConversationId);
+
+  useEffect(() => {
+    accountRef.current = account;
+  }, [account]);
+  useEffect(() => {
+    selectedUserToShowRef.current = selectedUserToShow;
+  }, [selectedUserToShow]);
+  useEffect(() => {
+    openChatRef.current = openChat;
+  }, [openChat]);
+  useEffect(() => {
+    currentConversationIdRef.current = currentConversationId;
+  }, [currentConversationId]);
 
   // Function to handle zoom in
   const handleZoomIn = (e) => {
@@ -790,66 +808,95 @@ export const ChatBox = () => {
     setIsLoading(true);
 
     try {
-      const tempMsgId = `temp-${Date.now()}`;
-      const tempMsg = {
-        _id: tempMsgId,
-        currentConversationId: currentConversationId,
-        text: message.trim(),
-        media: attachments.map((attachment) => ({
-          id: attachment.id,
-          type: attachment.type,
-          name: attachment.name,
-          url: attachment.preview,
-        })),
-        type: "text",
-        createdAt: new Date().toISOString(),
-        isRead: false,
-        isPending: true,
-      };
-
-      setMessages((prev) => [...prev, tempMsg]);
-
-      setTimeout(scrollToBottom, 100);
-
-      setMessage("");
-
       if (attachments.length > 0) {
+        // Đảm bảo join-room trước khi upload file
+        if (socketRef.current && account?.accountID) {
+          socketRef.current.emit("join-room", account.accountID);
+        }
+        const tempMsgId = `temp-${Date.now()}`;
+        // Tạo message tạm cho media
+        const tempMsg = {
+          _id: tempMsgId,
+          currentConversationId: currentConversationId,
+          senderId: account.accountID,
+          receiverId: selectedUserToShow._id,
+          text: message.trim(),
+          media: attachments.map((attachment) => {
+            const mediaId = attachment.id || tempMsgId + "-" + Math.random();
+            return {
+              id: mediaId,
+              _id: mediaId,
+              type: attachment.type,
+              name: attachment.name,
+              url: attachment.preview,
+            };
+          }),
+          type: attachments[0]?.type?.startsWith("image/") ? "image" : "file",
+          createdAt: new Date().toISOString(),
+          isPending: true,
+          tempMsgId: tempMsgId,
+        };
+        setMessages((prev) => [...prev, tempMsg]);
+        setTimeout(scrollToBottom, 100);
+        setMessage("");
         const formData = new FormData();
-
         attachments.forEach((attachment) => {
           formData.append("files", attachment.file);
           formData.append("fileTypes", attachment.type);
           formData.append("fileNames", attachment.name);
         });
-
-        formData.append("currentConversationId", currentConversationId);
+        if (currentConversationId && currentConversationId !== "null") {
+          formData.append("currentConversationId", currentConversationId);
+        }
         formData.append("receiverId", selectedUserToShow._id);
         formData.append("tempMsgId", tempMsgId);
         formData.append("text", message.trim());
-
         await axios.post("/chat/upload-and-send", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-
+        if (socketRef.current && !socketRef.current.connected) {
+          socketRef.current.connect();
+        }
+        if (socketRef.current && account?.accountID) {
+          socketRef.current.emit("join-room", account.accountID);
+        }
+        setAttachments([]);
         setTimeout(scrollToBottom, 100);
       } else {
         if (currentConversationId) {
+          const tempMsgId = `temp-${Date.now()}`;
+          const receiverId = selectedUserToShow._id;
           const newMsg = {
             senderId: account.accountID,
             conversationId: currentConversationId,
-            receiverId: selectedUserToShow.id,
+            receiverId: receiverId,
             text: message.trim(),
             type: "text",
             tempMsgId: tempMsgId,
+            media: [], // Đảm bảo luôn gửi trường media
           };
+          // Tạo message tạm cho text
+          const tempMsg = {
+            _id: tempMsgId,
+            currentConversationId: currentConversationId,
+            senderId: account.accountID,
+            receiverId: receiverId,
+            text: message.trim(),
+            media: [],
+            type: "text",
+            createdAt: new Date().toISOString(),
+            isPending: true,
+            tempMsgId: tempMsgId,
+          };
+          setMessages((prev) => [...prev, tempMsg]);
+          setTimeout(scrollToBottom, 100);
+          setMessage("");
           socketRef.current.emit("send-message", newMsg);
         }
       }
-
-      setAttachments([]);
     } catch (error) {
       console.error("Error sending message:", error);
       alert("Failed to send message. Please try again.");
@@ -860,15 +907,21 @@ export const ChatBox = () => {
   };
 
   const handleSelectUser = (user) => {
-    setSelectedUserToShow(user);
-    setIsLoading(true);
-    setCurrentConversationId(user.conversationId);
-    setMessages([]);
-
-    if (user?._id) {
-      fetchChatHistory(user?._id).then(() => {
-        setTimeout(scrollToBottom, 300);
+    // Chỉ reset messages nếu chọn user khác
+    if (selectedUserToShow?._id !== user._id) {
+      setSelectedUserToShow({
+        ...user,
+        id: user.id || user._id,
+        _id: user._id,
       });
+      setIsLoading(true);
+      setCurrentConversationId(user.conversationId);
+      setMessages([]);
+      if (user?._id) {
+        fetchChatHistory(user?._id).then(() => {
+          setTimeout(scrollToBottom, 300);
+        });
+      }
     }
   };
 
@@ -950,23 +1003,82 @@ export const ChatBox = () => {
     socket.on("reconnect", handleReconnect);
     socket.on("message-error", handleMessageError);
 
+    // Đăng ký event listener ngay sau khi khởi tạo socket
+    const handleMessageSent = (msg) => {
+      console.log("[FE] message-sent:", msg); // Log để kiểm tra nhận media
+      setMessages((prev) => {
+        // Ưu tiên thay thế message tạm dựa trên tempMsgId
+        if (msg.tempMsgId) {
+          const idx = prev.findIndex((m) => m._id === msg.tempMsgId);
+          if (idx !== -1) {
+            const updated = [...prev];
+            updated[idx] = msg;
+            return updated;
+          }
+        }
+        // Nếu không có tempMsgId, thử thay thế message tạm dựa trên các tiêu chí khác
+        // (ví dụ: cùng senderId, cùng text, cùng thời gian gần nhau, isPending=true)
+        const idx2 = prev.findIndex(
+          (m) =>
+            m.isPending &&
+            m.senderId === msg.senderId &&
+            m.text === msg.text &&
+            Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 60000
+        );
+        if (idx2 !== -1) {
+          const updated = [...prev];
+          updated[idx2] = msg;
+          return updated;
+        }
+        // Nếu không tìm thấy, kiểm tra trùng _id
+        const exists = prev.some((m) => m._id === msg._id);
+        if (exists) return prev;
+        // Nếu không trùng, append vào cuối
+        return [...prev, msg];
+      });
+      updateChatPartnerLastMessage(msg);
+    };
+    const handleReceiveMessage = (msg) => {
+      const accountID = accountRef.current?.accountID;
+      const selectedUser = selectedUserToShowRef.current;
+      if (
+        accountID === msg.receiverId &&
+        selectedUser &&
+        selectedUser.id === msg.senderId
+      ) {
+        setMessages((prev) => {
+          const exists = prev.some((m) => m._id === msg._id);
+          if (exists) return prev;
+          if (msg.conversationId && !currentConversationIdRef.current) {
+            setCurrentConversationId(msg.conversationId);
+          }
+          return [...prev, msg];
+        });
+        updateChatPartnerLastMessage(msg);
+      }
+    };
+    socket.on("message-sent", handleMessageSent);
+    socket.on("receive-message", handleReceiveMessage);
+
     return () => {
       socket.off("connect", handleConnect);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleError);
       socket.off("reconnect", handleReconnect);
       socket.off("message-error", handleMessageError);
+      socket.off("message-sent", handleMessageSent);
+      socket.off("receive-message", handleReceiveMessage);
       socket.disconnect();
     };
   }, [account?.accountID]);
 
   useEffect(() => {
     if (
-      account?.accountID &&
       socketRef.current &&
-      socketRef.current.connected
+      socketRef.current.connected &&
+      account?.accountID
     ) {
-      console.log("[SOCKET] Joining room with ID:", account.accountID);
+      console.log("[SOCKET] FE join-room:", account.accountID);
       socketRef.current.emit("join-room", account.accountID);
     }
   }, [account?.accountID, socketRef.current && socketRef.current.connected]);
@@ -975,72 +1087,54 @@ export const ChatBox = () => {
     if (!account?.accountID) return;
 
     const handleMessageSent = (msg) => {
+      console.log("[FE] message-sent:", msg);
       setMessages((prev) => {
-        const updatedMessages = prev.filter((m) => !m._id.startsWith("temp-"));
-
-        const exists = updatedMessages.some((m) => m._id === msg._id);
-        if (exists) return updatedMessages;
-
-        if (msg.conversationId && !currentConversationId) {
-          setCurrentConversationId(msg.conversationId);
+        // Nếu có tempMsgId, thay thế message tạm bằng message thật
+        if (msg.tempMsgId) {
+          const idx = prev.findIndex((m) => m._id === msg.tempMsgId);
+          if (idx !== -1) {
+            const updated = [...prev];
+            updated[idx] = msg;
+            return updated;
+          }
         }
-
-        return [...updatedMessages, msg];
+        // Nếu không có tempMsgId hoặc không tìm thấy, kiểm tra trùng _id
+        const exists = prev.some((m) => m._id === msg._id);
+        if (exists) return prev;
+        return [...prev, msg];
       });
-
       updateChatPartnerLastMessage(msg);
     };
-
     const handleReceiveMessage = (msg) => {
+      const accountID = accountRef.current?.accountID;
+      const selectedUser = selectedUserToShowRef.current;
       if (
-        account?.accountID === msg.receiverId &&
-        selectedUserToShow &&
-        selectedUserToShow.id === msg.senderId
+        accountID === msg.receiverId &&
+        selectedUser &&
+        selectedUser.id === msg.senderId
       ) {
         setMessages((prev) => {
           const exists = prev.some((m) => m._id === msg._id);
           if (exists) return prev;
-
-          // Store conversationId if it's included
-          if (msg.conversationId && !currentConversationId) {
+          if (msg.conversationId && !currentConversationIdRef.current) {
             setCurrentConversationId(msg.conversationId);
           }
-
-          // Only mark real messages (not temporary or AI ones) as read
-          if (
-            selectedUserToShow &&
-            selectedUserToShow.id === msg.senderId &&
-            openChat &&
-            !msg._id.startsWith("temp-") &&
-            !msg._id.startsWith("ai-") &&
-            msg.senderId !== "ai-assistant"
-          ) {
-            socketRef.current.emit("mark-as-read", {
-              messageId: msg._id,
-              userId: account.accountID,
-            });
-          }
-
           return [...prev, msg];
         });
+        updateChatPartnerLastMessage(msg);
       }
-
-      updateChatPartnerLastMessage(msg);
     };
-
-    socketRef.current.on("message-sent", handleMessageSent);
-    socketRef.current.on("receive-message", handleReceiveMessage);
-
+    if (socketRef.current) {
+      socketRef.current.on("message-sent", handleMessageSent);
+      socketRef.current.on("receive-message", handleReceiveMessage);
+    }
     return () => {
-      socketRef.current.off("message-sent", handleMessageSent);
-      socketRef.current.off("receive-message", handleReceiveMessage);
+      if (socketRef.current) {
+        socketRef.current.off("message-sent", handleMessageSent);
+        socketRef.current.off("receive-message", handleReceiveMessage);
+      }
     };
-  }, [
-    account?.accountID,
-    selectedUserToShow?.id,
-    openChat,
-    currentConversationId,
-  ]);
+  }, []);
 
   const fetchChatHistoryAI = async () => {
     try {
@@ -1244,30 +1338,7 @@ export const ChatBox = () => {
     };
   }, [selectedUserToShow, account?.accountID]);
 
-  useEffect(() => {
-    const markMessagesAsRead = () => {
-      if (selectedUserToShow && messages.length > 0 && openChat) {
-        messages.forEach((msg) => {
-          // Skip temporary messages, AI messages, and validate message ID format
-          if (
-            !msg.isRead &&
-            msg.senderId === selectedUserToShow.id &&
-            !msg._id.startsWith("temp-") &&
-            !msg._id.startsWith("ai-") &&
-            msg.senderId !== "ai-assistant"
-          ) {
-            console.log(`[SOCKET] Marking message as read: ${msg._id}`);
-            socketRef.current.emit("mark-as-read", {
-              messageId: msg._id,
-              userId: account?.accountID,
-            });
-          }
-        });
-      }
-    };
-
-    markMessagesAsRead();
-  }, [messages, selectedUserToShow, openChat, account?.accountID]);
+  // Removed mark-as-read functionality
 
   useEffect(() => {
     socketRef.current.on("new-message-notification", (data) => {
@@ -1292,17 +1363,6 @@ export const ChatBox = () => {
   }, []);
 
   useEffect(() => {
-    socketRef.current.on("message-read", (data) => {
-      setMessages((prev) => {
-        return prev.map((msg) => {
-          if (msg._id === data.messageId) {
-            return { ...msg, status: "read" };
-          }
-          return msg;
-        });
-      });
-    });
-
     socketRef.current.on("message-deleted", (data) => {
       setMessages((prev) => {
         return prev.filter((msg) => msg._id !== data.messageId);
@@ -1310,7 +1370,6 @@ export const ChatBox = () => {
     });
 
     return () => {
-      socketRef.current.off("message-read");
       socketRef.current.off("message-deleted");
     };
   }, []);
@@ -1494,7 +1553,7 @@ export const ChatBox = () => {
   };
 
   // Khôi phục lại function MessageContent
-  const MessageContent = ({ message, setFullscreenImage }) => {
+  const MessageContent = ({ message, setFullscreenImage, isMe }) => {
     if (message.senderId === "ai-assistant") {
       return (
         <Typography
@@ -1510,8 +1569,6 @@ export const ChatBox = () => {
       (message.type === "product" && message.product) ||
       (message.type === "product" && message.productId)
     ) {
-      // Nếu có trường product đã được populate, sử dụng nó
-      // Nếu không có product nhưng có productId, tạo đối tượng product từ productId
       const productData = message.product || {
         id: message.productId,
         _id: message.productId,
@@ -1522,7 +1579,6 @@ export const ChatBox = () => {
             ? message.media[0].url
             : null,
       };
-
       return <ProductMessage product={productData} />;
     } else if (message.type === "order" && message.order) {
       return <OrderMessage order={message.order} />;
@@ -1530,7 +1586,10 @@ export const ChatBox = () => {
       return (
         <>
           {message.text && (
-            <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+            <Typography
+              variant="body2"
+              sx={{ wordBreak: "break-word", color: isMe ? "#fff" : "#000" }}
+            >
               {message.text}
             </Typography>
           )}
@@ -1547,7 +1606,7 @@ export const ChatBox = () => {
                 ) {
                   return (
                     <ImageMessage
-                      key={attachment.id || attachment._id}
+                      key={attachment.url || attachment.name}
                       attachment={attachment}
                       setFullscreenImage={setFullscreenImage}
                     />
@@ -1558,14 +1617,14 @@ export const ChatBox = () => {
                 ) {
                   return (
                     <VideoMessage
-                      key={attachment.id || attachment._id}
+                      key={attachment.url || attachment.name}
                       attachment={attachment}
                     />
                   );
                 } else {
                   return (
                     <FileMessage
-                      key={attachment.id || attachment._id}
+                      key={attachment.url || attachment.name}
                       attachment={attachment}
                     />
                   );
@@ -1732,7 +1791,7 @@ export const ChatBox = () => {
                               senderId: "ai-assistant",
                               text: "Xin chào! Tôi là trợ lý chăm sóc khách hàng. Tôi có thể giúp bạn giải đáp thắc mắc hoặc tìm kiếm sản phẩm phù hợp. Bạn cần hỗ trợ gì?",
                               createdAt: new Date().toISOString(),
-                              isRead: true,
+                              // Removed isRead field
                             },
                           ]);
                         }}
@@ -1926,11 +1985,13 @@ export const ChatBox = () => {
                                       <MessageContent
                                         message={message}
                                         setFullscreenImage={setFullscreenImage}
+                                        isMe={isMe}
                                       />
                                     ) : (
                                       <MessageContent
                                         message={message}
                                         setFullscreenImage={setFullscreenImage}
+                                        isMe={isMe}
                                       />
                                     )}
 
@@ -2017,18 +2078,26 @@ export const ChatBox = () => {
                                     src={attachment.preview}
                                     alt={attachment.name}
                                     style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
+                                      width: 60,
+                                      height: 60,
+                                      objectFit: "contain", // Hiển thị full ảnh, không crop
+                                      borderRadius: 8,
+                                      background: "#fff",
+                                      display: "block",
                                     }}
                                   />
                                 ) : attachment.type.startsWith("video/") ? (
                                   <video
                                     style={{
-                                      width: "100%",
-                                      height: "100%",
-                                      objectFit: "cover",
+                                      width: 60,
+                                      height: 60,
+                                      objectFit: "contain", // Hiển thị full video, không crop
+                                      borderRadius: 8,
+                                      background: "#fff",
+                                      display: "block",
                                     }}
+                                    controls={false}
+                                    preload="metadata"
                                   >
                                     <source
                                       src={attachment.preview}

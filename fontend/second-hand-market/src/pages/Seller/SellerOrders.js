@@ -938,9 +938,7 @@ const SellerOrders = () => {
                                 color="error"
                                 fontWeight={700}
                               >
-                                {formatCurrency(
-                                  order.totalAmount || 0
-                                )}
+                                {formatCurrency(order.totalAmount || 0)}
                               </Typography>
                             </Stack>
                             <Stack

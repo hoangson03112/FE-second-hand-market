@@ -26,11 +26,12 @@ import {
 
 // Custom Hooks
 import { useCheckoutData } from "../../hooks/useCheckoutData";
-import { usePaymentCalculation } from "../../hooks/usePaymentCalculation";
 import { useAddressManagement } from "../../hooks/useAddressManagement";
 import { useOrderPlacement } from "../../hooks/useOrderPlacement";
 import { useShippingCalculation } from "../../hooks/useShippingCalculation";
 import { useOrderTypeCalculation } from "../../hooks/useOrderTypeCalculation";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
 
 // Components
 import AddressSection from "./AddressSection";
@@ -75,21 +76,21 @@ const Checkout = () => {
     updateSelectedShipping,
   } = useShippingCalculation(sellers, products, selectedAddress);
 
-  const {
-    totalAmount,
-    originalTotalAmount,
-    totalProductSavings,
-    platformFee,
-    finalAmount,
-    depositAmount,
-    totalSavings,
-  } = usePaymentCalculation({
-    products,
-    shippingMethod,
-    paymentMethod,
-    selectedShippingMethods: getSelectedShippingMethods(),
-    totalShippingFee: getTotalShippingFee(),
+  const { discounts } = usePersonalDiscount();
+  const productsWithDiscount = applyPersonalDiscountsToProducts(products, discounts);
+
+  // Tính toán tổng tiền hàng, tiết kiệm, tổng sau giảm giá, ...
+  let originalTotalAmount = 0;
+  let totalAmount = 0;
+  let totalProductSavings = 0;
+  productsWithDiscount.forEach(product => {
+    const original = product.originalPrice || product.price;
+    originalTotalAmount += original * product.quantity;
+    totalAmount += product.price * product.quantity;
+    totalProductSavings += (original - product.price) * product.quantity;
   });
+  const totalSavings = totalProductSavings;
+  const finalAmount = totalAmount + (getTotalShippingFee() || 0); 
 
   const {
     showAddressModal,
@@ -115,7 +116,6 @@ const Checkout = () => {
   const { isPlacingOrder, handlePlaceOrder: originalHandlePlaceOrder } =
     useOrderPlacement(products);
 
-  // Order type calculation hook
   const {
     directMeetingCount,
     codShippingCount,
@@ -340,7 +340,7 @@ const Checkout = () => {
               <PaymentMethodSection
                 paymentMethod={paymentMethod}
                 onPaymentMethodChange={setPaymentMethod}
-                shippingFee={getCodShippingFee()}
+                shippingFee={getTotalShippingFee()}
                 finalAmount={finalAmount}
                 codShippingAmount={codShippingAmount}
                 codShippingOriginalAmount={codShippingOriginalAmount}
@@ -352,18 +352,15 @@ const Checkout = () => {
           {/* Payment Summary */}
           <Grid item xs={12}>
             <PaymentSummary
-              totalAmount={totalAmount}
+              products={productsWithDiscount}
               originalTotalAmount={originalTotalAmount}
+              totalAmount={totalAmount}
               totalProductSavings={totalProductSavings}
               totalSavings={totalSavings}
               shippingMethod={shippingMethod}
-              shippingFee={
-                hasMixedOrders ? getCodShippingFee() : getTotalShippingFee()
-              }
-              platformFee={platformFee}
+              shippingFee={getTotalShippingFee()}
               finalAmount={finalAmount}
-              paymentMethod={paymentMethod}
-              depositAmount={depositAmount}
+              voucherDiscount={0} // hoặc giá trị thực tế nếu có
               hasMixedOrders={hasMixedOrders}
               directMeetingCount={directMeetingCount}
               codShippingCount={codShippingCount}
@@ -387,6 +384,7 @@ const Checkout = () => {
               onPlaceOrder={handlePlaceOrder}
               isLoading={isPlacingOrder}
               hasPaymentOrders={hasShipCodOrders()}
+              finalAmount={finalAmount}
             />
           </Grid>
         </Grid>

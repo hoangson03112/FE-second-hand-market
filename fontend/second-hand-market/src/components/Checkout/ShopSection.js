@@ -63,18 +63,14 @@ const ShopSection = ({
             <div className="text-muted small">Tổng đơn hàng</div>
             {shopSavings > 0 ? (
               <div>
-                <div className="text-muted small text-decoration-line-through">
-                  {formatPrice(originalShopTotal)}₫
-                </div>
-                <div className="fw-bold text-primary">
+           
+                <div className="fw-bold text-danger">
                   {formatPrice(shopTotal)}₫
                 </div>
-                <div className="small fw-bold text-muted">
-                  Tiết kiệm: {formatPrice(shopSavings)}₫
-                </div>
+        
               </div>
             ) : (
-              <div className="fw-bold text-primary">
+              <div className="fw-bold text-danger">
                 {formatPrice(shopTotal)}₫
               </div>
             )}

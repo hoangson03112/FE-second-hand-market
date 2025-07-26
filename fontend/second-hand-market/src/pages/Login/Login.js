@@ -145,12 +145,6 @@ function Login() {
                       </div>
                     </div>
                   </div>
-
-                  <div>
-                    <a className="text-muted" href="#!">
-                      Quên mật khẩu?
-                    </a>
-                  </div>
                 </div>
                 <div className="d-flex flex-row align-items-center justify-content-center pb-4 mb-4">
                   <p className="mb-0">Bạn chưa có tài khoản?</p>

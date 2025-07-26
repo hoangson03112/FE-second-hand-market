@@ -24,20 +24,11 @@ import {
   Person,
   Phone,
   EventNote,
-  ReceiptLong,
   CreditCard,
   Assignment,
   ShoppingBag,
 } from "@mui/icons-material";
 import axios from "axios";
-import AccountContext from "../../contexts/AccountContext";
-import { useChat } from "../../contexts/ChatContext";
-import CancelOrderModal from "../Order/components/CancelOrderModal";
-import { useOrder } from "../../contexts/OrderContext";
-import { useNotification } from "../../hooks/useNotification";
-import { ghnService } from "../../services/ghnService";
-import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
-import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
 
 // Custom styled stepper connector
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -111,70 +102,20 @@ function ColorlibStepIcon(props) {
   );
 }
 
-export default function OrderDetails() {
-  const { findOrCreateWithOrder } = useChat();
-  const { updateOrder } = useOrder();
-  const { showError } = useNotification();
+export default function OrderDetailsSeller() {
   const { orderId } = useParams();
-  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const { discounts } = usePersonalDiscount();
+
   const fetchOrder = async () => {
     try {
-      const respone = await axios.get(`/orders/order-details/${orderId}`);
+      const respone = await axios.get(` /orders/order-details/${orderId}`);
 
       setOrder(respone.data.order);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching order:", error);
       setLoading(false);
-    }
-  };
-  const handleCancelOrder = async (orderId, reason, status, bankInfo) => {
-    try {
-      if (bankInfo) {
-        await axios.post(`/bank-info`, {
-          orderId,
-          bankName: bankInfo.bankName,
-          accountNumber: bankInfo.accountNumber,
-          accountHolder: bankInfo.accountHolder,
-        });
-      }
-      await updateOrder(orderId, reason, status);
-      if (order.shippingMethod === "ship-cod") {
-        await ghnService.cancelOrderGHN(order.ghnOrderCode);
-      }
-      fetchOrder();
-      setShowCancelModal(false);
-      setShowToast(true);
-    } catch (error) {
-      console.error("Error cancelling order:", error);
-    }
-  };
-  const handleContactSeller = async (order) => {
-    try {
-      const authData = await AccountContext.Authentication();
-      if (!authData || !authData.data || !authData.data.account) {
-        navigate("/eco-market/login");
-        return;
-      }
-
-      const response = await findOrCreateWithOrder(
-        order._id,
-        order.sellerId._id
-      );
-      if (!response || !response.success) {
-        console.error("Failed to create chat conversation:", response);
-        showError("Không thể kết nối với người bán. Vui lòng thử lại sau.");
-      }
-    } catch (error) {
-      console.error("Error creating chat conversation:", error);
-      showError(
-        "Có lỗi xảy ra khi kết nối với người bán. Vui lòng thử lại sau."
-      );
     }
   };
 
@@ -277,49 +218,6 @@ export default function OrderDetails() {
     }
   };
 
-  const getStatusStep = (status, refundDecision) => {
-    if (status === "refund") {
-      if (refundDecision === "pending") return 5;
-      if (refundDecision === "approved") return 6;
-      if (refundDecision === "rejected") return 7;
-      return 5;
-    }
-    if (status === "refunded" && refundDecision === "approved") {
-      return 8;
-    }
-    if (status === "delivered") {
-      return 5;
-    }
-    switch (status) {
-      case "pending":
-        return 0;
-      case "confirmed":
-        return 1;
-      case "shipped":
-        return 2;
-      case "shipping":
-        return 3;
-      case "completed":
-        return 4;
-      case "cancelled":
-        return -1;
-      case "refunded":
-        return 8;
-      default:
-        return 0;
-    }
-  };
-
-  const handleConfirmReceived = async (orderId) => {
-    try {
-      await updateOrder(orderId, "", "completed");
-      fetchOrder();
-    } catch (error) {
-      showError("Có lỗi khi xác nhận đã nhận hàng");
-    }
-  };
-
-  // Helper: xác định step active cho stepper
   const getActiveStep = (status, refundDecision) => {
     if (status === "refund") {
       if (refundDecision === "pending") return 5;
@@ -365,33 +263,10 @@ export default function OrderDetails() {
     );
   }
 
-  if (!order) {
-    return (
-      <div className="container my-5 text-center">
-        <div className="alert alert-danger" role="alert">
-          Không tìm thấy thông tin đơn hàng!
-        </div>
-        <button
-          className="btn btn-primary mt-3"
-          onClick={() => navigate("/eco-market/customer/orders")}
-        >
-          Quay lại danh sách đơn hàng
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="container py-4 order-details-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold">Chi tiết đơn hàng</h3>
-        <Button
-          variant="outlined"
-          startIcon={<ReceiptLong />}
-          onClick={() => navigate("/eco-market/customer/orders")}
-        >
-          Danh sách đơn hàng
-        </Button>
       </div>
 
       {/* Order Status Tracking */}
@@ -401,8 +276,8 @@ export default function OrderDetails() {
             Trạng thái đơn hàng
           </Typography>
           <Chip
-            label={getStatusText(order.status, order.refundDecision)}
-            color={getStatusColor(order.status, order.refundDecision)}
+            label={getStatusText(order?.status, order?.refundDecision)}
+            color={getStatusColor(order?.status, order?.refundDecision)}
             className="status-chip"
             sx={{
               background:
@@ -736,56 +611,52 @@ export default function OrderDetails() {
             </div>
 
             <div className="product-list">
-              {applyPersonalDiscountsToProducts(order.products, discounts).map(
-                (item) => (
-                  <div key={item.id} className="product-item p-3 border-bottom">
-                    <div className="row align-items-center">
-                      <div className="col-md-2 col-3">
-                        <img
-                          src={item.productId.avatar.url}
-                          alt={item.productId.name}
-                          className="img-fluid rounded product-image"
-                        />
-                      </div>
-                      <div className="col-md-5 col-9">
-                        <Typography variant="body1" className="product-name">
-                          {item.productId.name}
-                        </Typography>
-                        {/* <Typography variant="body2" className="text-muted">
+              {order.products.map((item) => (
+                <div key={item.id} className="product-item p-3 border-bottom">
+                  <div className="row align-items-center">
+                    <div className="col-md-2 col-3">
+                      <img
+                        src={item.productId.avatar.url}
+                        alt={item.productId.name}
+                        className="img-fluid rounded product-image"
+                      />
+                    </div>
+                    <div className="col-md-5 col-9">
+                      <Typography variant="body1" className="product-name">
+                        {item.productId.name}
+                      </Typography>
+                      {/* <Typography variant="body2" className="text-muted">
                         Phân loại: {item?.variation}
                       </Typography> */}
-                        <Typography
-                          variant="body2"
-                          className="d-md-none text-danger fw-bold mt-1"
-                        >
-                          {formatCurrency(item.productId.price)}
-                        </Typography>
-                      </div>
-                      <div className="col-md-2 d-none d-md-block text-center">
-                        <Typography
-                          variant="body1"
-                          className="text-danger fw-bold"
-                        >
-                          {formatCurrency(item.productId.price)}
-                        </Typography>
-                      </div>
-                      <div className="col-md-1 d-none d-md-block text-center">
-                        <Typography variant="body1">
-                          x{item.quantity}
-                        </Typography>
-                      </div>
-                      <div className="col-md-2 d-none d-md-block text-end">
-                        <Typography
-                          variant="body1"
-                          className="text-danger fw-bold"
-                        >
-                          {formatCurrency(item.productId.price * item.quantity)}
-                        </Typography>
-                      </div>
+                      <Typography
+                        variant="body2"
+                        className="d-md-none text-danger fw-bold mt-1"
+                      >
+                        {formatCurrency(item.productId.price)}
+                      </Typography>
+                    </div>
+                    <div className="col-md-2 d-none d-md-block text-center">
+                      <Typography
+                        variant="body1"
+                        className="text-danger fw-bold"
+                      >
+                        {formatCurrency(item.productId.price)}
+                      </Typography>
+                    </div>
+                    <div className="col-md-1 d-none d-md-block text-center">
+                      <Typography variant="body1">x{item.quantity}</Typography>
+                    </div>
+                    <div className="col-md-2 d-none d-md-block text-end">
+                      <Typography
+                        variant="body1"
+                        className="text-danger fw-bold"
+                      >
+                        {formatCurrency(item.productId.price * item.quantity)}
+                      </Typography>
                     </div>
                   </div>
-                )
-              )}
+                </div>
+              ))}
             </div>
           </Paper>
         </div>
@@ -827,125 +698,9 @@ export default function OrderDetails() {
                 {formatCurrency(order.totalAmount)}
               </Typography>
             </div>
-
-            <div className="d-flex flex-column gap-2">
-              {order.status === "completed" && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  onClick={() =>
-                    navigate(`/eco-market/feedback-seller/${order._id}`)
-                  }
-                  startIcon={<CheckCircle />}
-                >
-                  Đánh giá người bán
-                </Button>
-              )}
-              {order.shippingMethod === "direct-meeting" &&
-                order.status === "confirmed" && (
-                  <Button
-                    onClick={() => handleConfirmReceived(order._id)}
-                    variant="contained"
-                    color="success"
-                    fullWidth
-                    startIcon={<CheckCircle />}
-                  >
-                    Hoàn thành
-                  </Button>
-                )}
-              {/* {order.shippingMethod === "direct-meeting" &&
-                order.status === "completed" && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    fullWidth
-                    onClick={() => navigate(`/eco-market/feedback-seller/${order._id}`)}
-                    startIcon={<CheckCircle />}
-                  >
-                    Đánh giá
-                  </Button>
-                )} */}
-              {order.status === "delivered" && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="large"
-                    onClick={() => handleConfirmReceived(order._id)}
-                    startIcon={<CheckCircle />}
-                    sx={{ px: 4, fontWeight: 700 }}
-                  >
-                    Tôi đã nhận được hàng
-                  </Button>
-                </Box>
-              )}
-
-              {order.status === "pending" && (
-                <Button
-                  onClick={() => {
-                    if (order.shippingMethod === "direct-meeting") {
-                      handleCancelOrder(order?._id, "", "cancelled");
-                    } else {
-                      setShowCancelModal(true);
-                    }
-                  }}
-                  variant="outlined"
-                  color="error"
-                  fullWidth
-                >
-                  Hủy đơn hàng
-                </Button>
-              )}
-              {showCancelModal && (
-                <CancelOrderModal
-                  orderId={order?._id}
-                  onConfirm={handleCancelOrder}
-                  onClose={() => setShowCancelModal(false)}
-                  requireBankInfo={
-                    order.statusPayment === true &&
-                    order.shippingMethod === "ship-cod"
-                  }
-                />
-              )}
-              <Button
-                variant="outlined"
-                color="inherit"
-                fullWidth
-                className="mt-2"
-                onClick={() => handleContactSeller(order)}
-              >
-                Liên hệ người bán
-              </Button>
-            </div>
           </Paper>
         </div>
       </div>
-
-      {/* Toast Notification */}
-      <Snackbar
-        open={showToast}
-        autoHideDuration={3000}
-        onClose={() => setShowToast(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        sx={{
-          position: "fixed",
-          bottom: "40px",
-          right: "20px",
-          minWidth: "350px",
-        }}
-      >
-        <Alert
-          onClose={() => setShowToast(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          <Box className="d-flex align-items-center">
-            <i className="bi bi-cart-check text-success fs-4 me-2"></i>
-            <Typography>Cập nhật đơn hàng thành công!</Typography>
-          </Box>
-        </Alert>
-      </Snackbar>
     </div>
   );
 }

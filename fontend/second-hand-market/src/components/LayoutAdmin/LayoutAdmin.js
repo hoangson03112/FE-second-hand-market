@@ -111,11 +111,11 @@ const LayoutAdmin = ({ children }) => {
       path: "/eco-market/admin/orders",
     },
     { text: "Blog", icon: <ArticleIcon />, path: "/eco-market/admin/blogs" },
-    {
-      text: "Voucher",
-      icon: <CardGiftcardIcon />,
-      path: "/eco-market/admin/vouchers",
-    },
+    // {
+    //   text: "Voucher",
+    //   icon: <CardGiftcardIcon />,
+    //   path: "/eco-market/admin/vouchers",
+    // },
     {
       text: "Seller",
       icon: <PersonIcon />,

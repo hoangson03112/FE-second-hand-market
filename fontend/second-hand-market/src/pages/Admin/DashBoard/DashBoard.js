@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   LineChart,
   Line,
@@ -16,37 +17,36 @@ import {
 } from "recharts";
 
 export default function Dashboard() {
-  // Dữ liệu mẫu - thay thế bằng dữ liệu thực tế của bạn
-  const salesData = [
-    { month: "T1", clothing: 4000, electronics: 2400, furniture: 1800 },
-    { month: "T2", clothing: 4200, electronics: 2100, furniture: 2200 },
-    { month: "T3", clothing: 3800, electronics: 2800, furniture: 1900 },
-    { month: "T4", clothing: 4100, electronics: 2700, furniture: 2100 },
-    { month: "T5", clothing: 4600, electronics: 3000, furniture: 2400 },
-    { month: "T6", clothing: 5000, electronics: 3200, furniture: 2300 },
-  ];
 
-  const categoryData = [
-    { name: "Quần áo", value: 35 },
-    { name: "Đồ điện tử", value: 25 },
-    { name: "Nội thất", value: 20 },
-    { name: "Sách", value: 10 },
-    { name: "Khác", value: 10 },
-  ];
-
-  const userActivityData = [
-    { day: "Thứ 2", visits: 120, listings: 15, purchases: 8 },
-    { day: "Thứ 3", visits: 140, listings: 12, purchases: 10 },
-    { day: "Thứ 4", visits: 150, listings: 18, purchases: 12 },
-    { day: "Thứ 5", visits: 180, listings: 20, purchases: 15 },
-    { day: "Thứ 6", visits: 220, listings: 25, purchases: 18 },
-    { day: "Thứ 7", visits: 240, listings: 30, purchases: 25 },
-    { day: "CN", visits: 190, listings: 15, purchases: 12 },
-  ];
-
+  const [salesData, setSalesData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [userActivityData, setUserActivityData] = useState([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [soldProducts, setSoldProducts] = useState(0);
+  const [newUsers, setNewUsers] = useState(0);
+  const [completionRate, setCompletionRate] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState("month");
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
-  const [timeRange, setTimeRange] = useState("month");
+  useEffect(() => {
+    setLoading(true);
+    axios.get(`/admin/dashboard?range=${timeRange}`)
+      .then(res => {
+        const data = res.data;
+        setSalesData(data.salesData || []);
+        setCategoryData(data.categoryData || []);
+        setUserActivityData(data.userActivityData || []);
+        setTotalRevenue(data.totalRevenue || 0);
+        setSoldProducts(data.soldProducts || 0);
+        setNewUsers(data.newUsers || 0);
+        setCompletionRate(data.completionRate || 0);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [timeRange]);
+
+  if (loading) return <div>Đang tải dữ liệu...</div>;
 
   return (
     <div className="p-4 bg-gray-50">
@@ -143,7 +143,7 @@ export default function Dashboard() {
           </h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
-              data={userActivityData}
+            data={userActivityData}
               margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
@@ -167,23 +167,20 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-500 text-sm">Tổng doanh thu</h3>
-          <p className="text-2xl font-bold">120.5M đ</p>
-          <p className="text-green-500 text-sm">+12.5% so với tháng trước</p>
+          <p className="text-2xl font-bold">{(totalRevenue/1e6).toFixed(1)}M đ</p>
+          {/* Có thể thêm % tăng giảm nếu backend trả về */}
         </div>
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-500 text-sm">Sản phẩm đã bán</h3>
-          <p className="text-2xl font-bold">305</p>
-          <p className="text-green-500 text-sm">+8.3% so với tháng trước</p>
+          <p className="text-2xl font-bold">{soldProducts}</p>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-500 text-sm">Người dùng mới</h3>
-          <p className="text-2xl font-bold">87</p>
-          <p className="text-green-500 text-sm">+15.2% so với tháng trước</p>
+          <p className="text-2xl font-bold">{newUsers}</p>
         </div>
         <div className="bg-white p-4 rounded shadow">
           <h3 className="text-gray-500 text-sm">Tỷ lệ hoàn thành giao dịch</h3>
-          <p className="text-2xl font-bold">68%</p>
-          <p className="text-red-500 text-sm">-3.1% so với tháng trước</p>
+          <p className="text-2xl font-bold">{completionRate}%</p>
         </div>
       </div>
     </div>

@@ -102,9 +102,9 @@ const LayoutSeller = ({ children }) => {
       path: "/eco-market/seller/orders",
     },
     {
-      text: "Voucher",
+      text: "Quản lý giảm giá",
       icon: <CardGiftcardIcon />,
-      path: "/eco-market/seller/vouchers",
+      path: "/eco-market/seller/manage-discount",
     },
     // { text: "Thống kê doanh thu", icon: <BarChartIcon />, path: "/eco-market/seller/analytics" },
   ];

@@ -7,6 +7,8 @@ import { useProduct } from "../../contexts/ProductContext";
 import { useCart } from "../../contexts/CartContext";
 import { useChat } from "../../contexts/ChatContext";
 import { useNotification } from "../../hooks/useNotification";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
 import {
   Alert,
   Avatar,
@@ -54,6 +56,7 @@ import {
   VerifiedUser,
   AccessTime,
 } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Constants
 
@@ -68,42 +71,6 @@ const PURCHASE_TIPS = [
   "Kiểm tra kỹ sản phẩm trước khi nhận",
   "Thử nghiệm đầy đủ chức năng",
   "Bảo hành theo chính sách của shop",
-];
-
-// Sample related products data
-const relatedProducts = [
-  {
-    id: 1,
-    image:
-      "https://static.oreka.vn/250-250_8efd61a6-25e2-490f-977f-63bec8c95ca2",
-    name: "(Thanh lý chính hãng) Máy sưởi điện 3 bóng Halogen",
-    price: 399000,
-    location: "Hà Nội",
-  },
-  {
-    id: 2,
-    image:
-      "https://static.oreka.vn/250-250_8efd61a6-25e2-490f-977f-63bec8c95ca2",
-    name: "(Thanh lý chính hãng) Kính UNIQLO chống tia UV nội địa Nhật",
-    price: 119000,
-    location: "Hà Nội",
-  },
-  {
-    id: 3,
-    image:
-      "https://static.oreka.vn/250-250_8efd61a6-25e2-490f-977f-63bec8c95ca2",
-    name: "(Thanh lý chính hãng) Máy rửa mặt Foreo Luna Mini 2",
-    price: 649000,
-    location: "Hà Nội",
-  },
-  {
-    id: 4,
-    image:
-      "https://static.oreka.vn/250-250_8efd61a6-25e2-490f-977f-63bec8c95ca2",
-    name: "(Thanh lý chính hãng) Vòng tay trang sức bạc s925",
-    price: 286000,
-    location: "Hà Nội",
-  },
 ];
 
 // Utility functions
@@ -168,12 +135,12 @@ const useImageGallery = (images = []) => {
   };
 };
 
-// Main component
 export const Product = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { findOrCreateWithProduct } = useChat();
   const { showSuccess, showWarning, showError } = useNotification();
+  const { discounts } = usePersonalDiscount();
 
   const queryParams = new URLSearchParams(location.search);
   const productID = queryParams.get("productID");
@@ -189,9 +156,10 @@ export const Product = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
 
-  // Custom hooks
+  const { currentUser } = useAuth();
+  const { fetchDiscounts } = usePersonalDiscount();
+
   const { currentImageIndex, setCurrentImageIndex, nextImage, prevImage } =
     useImageGallery(product?.images || []);
 
@@ -220,6 +188,11 @@ export const Product = () => {
     product?.subcategory?.name,
     product?.attributes,
   ]);
+
+  // Tìm discount cho sản phẩm này
+  const discount = discounts.find(
+    (d) => d.productId === product?._id || d.productId?._id === product?._id
+  );
 
   // API calls
   const fetchAccount = useCallback(async (accountId) => {
@@ -364,14 +337,12 @@ export const Product = () => {
     showError,
   ]);
 
-  const handleToggleLike = useCallback(() => {
-    setIsLiked((prev) => !prev);
-  }, []);
-
-  // Effects
+  // Bỏ useEffect gọi API lấy discount riêng, chỉ cần fetchProduct và fetchDiscounts khi user/productID thay đổi
   useEffect(() => {
     fetchProduct();
-  }, [fetchProduct]);
+
+    fetchDiscounts();
+  }, [fetchProduct, currentUser, productID, fetchDiscounts]);
 
   // Loading state
   if (loading) {
@@ -608,12 +579,22 @@ export const Product = () => {
                             color="error.main"
                             fontWeight={700}
                           >
-                            {product?.price
+                            {discount
+                              ? formatPrice(discount.price)
+                              : product?.price
                               ? formatPrice(product.price)
                               : "Liên hệ"}
                           </Typography>
+                          {discount && (
+                            <Chip
+                              label="Giá deal riêng cho bạn"
+                              color="success"
+                              size="small"
+                            />
+                          )}
                           {product?.originalPrice &&
-                            product.originalPrice > product.price && (
+                            product.originalPrice >
+                              (discount?.price || product.price) && (
                               <Typography
                                 variant="h6"
                                 color="text.secondary"
@@ -623,10 +604,12 @@ export const Product = () => {
                               </Typography>
                             )}
                           {product?.originalPrice &&
-                            product.originalPrice > product.price && (
+                            product.originalPrice >
+                              (discount?.price || product.price) && (
                               <Chip
                                 label={`-${Math.round(
-                                  ((product.originalPrice - product.price) /
+                                  ((product.originalPrice -
+                                    (discount?.price || product.price)) /
                                     product.originalPrice) *
                                     100
                                 )}%`}
@@ -1077,12 +1060,13 @@ export const Product = () => {
                         sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                       >
                         <Rating
-                          value={product?.seller?.rating || 0}
+                          precision={0.1}
+                          value={product?.seller?.avgRating || 0}
                           readOnly
                           size="small"
                         />
                         <Typography variant="body2" color="text.secondary">
-                          ({product?.seller?.rating || 0})
+                          ({product?.seller?.totalReviews || 0})
                         </Typography>
                       </Box>
                     </Box>
@@ -1100,7 +1084,7 @@ export const Product = () => {
                         }}
                       >
                         <Typography variant="h6" fontWeight={700}>
-                          {product?.seller?.responseRate || 0}%
+                          {product?.seller?.responseRate || 100}%
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           Phản hồi
@@ -1235,99 +1219,6 @@ export const Product = () => {
                 </Typography>
               )}
             </TabPanel>
-          </CardContent>
-        </Card>
-
-        {/* Related Products */}
-        <Card
-          elevation={0}
-          sx={{
-            borderRadius: 3,
-            mt: 5,
-            boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-          }}
-        >
-          <CardContent sx={{ p: 4 }}>
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
-            >
-              <Storefront />
-              Sản phẩm tương tự
-            </Typography>
-
-            <Grid container spacing={3}>
-              {relatedProducts.map((item) => (
-                <Grid key={item.id} item xs={12} sm={6} md={3}>
-                  <Card
-                    elevation={0}
-                    sx={{
-                      height: "100%",
-                      borderRadius: 2,
-                      border: "1px solid #e2e8f0",
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        aspectRatio: "1/1",
-                        bgcolor: "#f1f5f9",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={item.image}
-                        alt={item.name}
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          transition: "transform 0.3s",
-                          "&:hover": { transform: "scale(1.05)" },
-                        }}
-                      />
-                    </Box>
-                    <CardContent>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight={600}
-                        gutterBottom
-                        sx={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {item.name}
-                      </Typography>
-                      <Typography
-                        variant="h6"
-                        color="error.main"
-                        fontWeight={700}
-                        gutterBottom
-                      >
-                        {formatPrice(item.price)}
-                      </Typography>
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                      >
-                        <LocationOn fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          {item.location}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
           </CardContent>
         </Card>
       </Container>

@@ -16,6 +16,8 @@ import NotificationSnackbar from "../../components/common/NotificationSnackbar";
 import { useCartData } from "./hooks/useCartData";
 import { useCartSelection } from "./hooks/useCartSelection";
 import { useCartActions } from "./hooks/useCartActions";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
 
 /**
  * Cart Component - Displays shopping cart with items, selection, and checkout functionality
@@ -24,6 +26,8 @@ import { useCartActions } from "./hooks/useCartActions";
 const Cart = () => {
   // Data management
   const { products, sellers, loading, error } = useCartData();
+  const { discounts } = usePersonalDiscount();
+  const productsWithDiscount = applyPersonalDiscountsToProducts(products, discounts);
 
   // Selection state management
   const {
@@ -37,7 +41,7 @@ const Cart = () => {
     handleItemSelect,
     handleSelectAll,
     clearSelections,
-  } = useCartSelection(products);
+  } = useCartSelection(productsWithDiscount);
 
   // Cart actions
   const {
@@ -94,7 +98,7 @@ const Cart = () => {
     );
   }
 
-  if (products.length === 0) {
+  if (productsWithDiscount.length === 0) {
     return (
       <div className="cart-page">
         <div className="container">
@@ -133,7 +137,7 @@ const Cart = () => {
               />
               <CartItem
                 sellers={sellers}
-                products={products}
+                products={productsWithDiscount}
                 handleUpdateQuantity={handleUpdateQuantity}
                 checkedItems={checkedItems}
                 onCheckboxChange={handleItemSelect}

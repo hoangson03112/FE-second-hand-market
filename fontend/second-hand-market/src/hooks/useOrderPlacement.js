@@ -7,10 +7,14 @@ import { useCart } from "../contexts/CartContext";
 import { useCoin } from "../contexts/CoinProvider";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotification } from "./useNotification";
-import { groupProductsBySeller } from "../utils/checkoutUtils";
+import {
+  applyPersonalDiscountsToProducts,
+  groupProductsBySeller,
+} from "../utils/checkoutUtils";
 import { FORM_VALIDATION_MESSAGES } from "../constants/checkout";
 import { ghnService } from "../services/ghnService";
 import { useCheckoutData } from "./useCheckoutData";
+import { usePersonalDiscount } from "../contexts/PersonalDiscountContext";
 
 export const useOrderPlacement = (selectedItems) => {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -27,8 +31,8 @@ export const useOrderPlacement = (selectedItems) => {
   const { token } = useAuth();
   const { showSuccess, showError } = useNotification();
   const { coinService } = useCoin();
+  const { discounts } = usePersonalDiscount();
 
-  // Handle direct meeting only orders
   const handleDirectMeetingOrder = async (order, selectedAddress, token) => {
     const orderPayload = {
       totalAmount: order.products.reduce(
@@ -41,7 +45,7 @@ export const useOrderPlacement = (selectedItems) => {
       sellerId: order.sellerId,
       products: order.products,
     };
-    console.log(orderPayload);
+
     const orderResponse = await axios.post("/orders", orderPayload, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -51,7 +55,6 @@ export const useOrderPlacement = (selectedItems) => {
     return orderResponse.data;
   };
 
-  // Handle COD with shipping orders
   const handleCodWithShippingOrder = async (
     order,
     selectedAddress,
@@ -80,14 +83,12 @@ export const useOrderPlacement = (selectedItems) => {
     });
 
     const createdOrder = orderResponse.data;
-    // Create GHN shipping order if needed
 
     if (selectedShipping?.id === "ship-cod") {
       try {
         const product = products.find((p) => p.seller._id === order.sellerId);
 
         if (product) {
-          // Get available services from GHN
           const availableServices = await ghnService.getAvailableServices(
             product.seller.from_district_id,
             selectedAddress.districtId
@@ -131,7 +132,10 @@ export const useOrderPlacement = (selectedItems) => {
             payment_type_id: paymentMethod === "cod" ? 2 : 1,
             note: `Đơn hàng #${createdOrder.order?._id || createdOrder._id}`,
             required_note: "CHOTHUHANG",
-            items: order.products.map((product) => ({
+            items: applyPersonalDiscountsToProducts(
+              order.products,
+              discounts
+            ).map((product) => ({
               name: product.name,
               quantity: product.quantity,
               price: product.price,
@@ -168,7 +172,6 @@ export const useOrderPlacement = (selectedItems) => {
     return createdOrder;
   };
 
-  // Handle bank transfer with shipping orders
   const handleBankTransferWithShippingOrder = async (
     order,
     selectedAddress,
@@ -179,8 +182,10 @@ export const useOrderPlacement = (selectedItems) => {
   ) => {
     const orderPayload = {
       totalAmount:
-        order.products.reduce((sum, p) => sum + p.price * p.quantity, 0) +
-        selectedShipping?.fee,
+        applyPersonalDiscountsToProducts(order.products, discounts).reduce(
+          (sum, p) => sum + p.price * p.quantity,
+          0
+        ) + selectedShipping?.fee,
       shippingMethod: "ship-cod",
       paymentMethod: paymentMethod,
       shippingAddress: selectedAddress?._id,
@@ -243,7 +248,10 @@ export const useOrderPlacement = (selectedItems) => {
             payment_type_id: 1,
             note: `Đơn hàng #${createdOrder.order?._id || createdOrder._id}`,
             required_note: "CHOTHUHANG",
-            items: order.products.map((product) => ({
+            items: applyPersonalDiscountsToProducts(
+              order.products,
+              discounts
+            ).map((product) => ({
               name: product.name,
               quantity: product.quantity,
               price: product.price,
@@ -251,7 +259,7 @@ export const useOrderPlacement = (selectedItems) => {
           };
 
           ghnResponse = await ghnService.createOrder(ghnOrderData);
-          console.log(ghnResponse);
+
           if (ghnResponse.code === 200) {
             await axios.put(
               `/orders/${createdOrder.order?._id}/ghn-order`,
@@ -284,7 +292,6 @@ export const useOrderPlacement = (selectedItems) => {
     };
   };
 
-  // Handle QR payment dialog confirm
   const handleQRPaymentConfirm = async () => {
     try {
       await axios.put(
@@ -298,7 +305,6 @@ export const useOrderPlacement = (selectedItems) => {
         }
       );
 
-      // Close dialog
       setQrPaymentDialog({
         open: false,
         qrCodeUrl: "",
@@ -311,7 +317,6 @@ export const useOrderPlacement = (selectedItems) => {
         "Thanh toán thành công! Đơn hàng của bạn đã được xác nhận và sẽ được xử lý sớm nhất."
       );
 
-      // Clear cart and navigate
       clearCart();
       navigate("/user/orders");
     } catch (error) {
@@ -320,10 +325,8 @@ export const useOrderPlacement = (selectedItems) => {
     }
   };
 
-  // Handle QR payment dialog cancel
   const handleQRPaymentCancel = async () => {
     try {
-      // Cancel orders
       await Promise.all(
         qrPaymentDialog.orderIds.map((orderId) =>
           axios.put(
@@ -338,7 +341,6 @@ export const useOrderPlacement = (selectedItems) => {
         )
       );
 
-      // Close dialog
       setQrPaymentDialog({
         open: false,
         qrCodeUrl: "",
@@ -367,7 +369,11 @@ export const useOrderPlacement = (selectedItems) => {
         throw new Error(FORM_VALIDATION_MESSAGES.ADDRESS_REQUIRED);
       }
 
-      const products = Array.isArray(selectedItems) ? selectedItems : [];
+      const products = Array.isArray(
+        applyPersonalDiscountsToProducts(selectedItems, discounts)
+      )
+        ? applyPersonalDiscountsToProducts(selectedItems, discounts)
+        : [];
 
       if (products.length === 0) {
         throw new Error(FORM_VALIDATION_MESSAGES.NO_ITEMS_SELECTED);

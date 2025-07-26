@@ -42,7 +42,6 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
     description: "",
     categoryId: "",
     subcategoryId: "",
-    status: "pending",
   });
 
   // UI states
@@ -401,31 +400,51 @@ const UpdateProductModal = ({ open, onClose, product, onSuccess }) => {
               </Grid>
 
               {/* Status */}
-              {(product?.status === "active" || product?.status === "approved") && (
+              {(product?.status === "active" ||
+                product?.status === "approved" ||
+                product?.status === "inactive") && (
                 <FormControl fullWidth>
                   <InputLabel>Trạng thái</InputLabel>
                   <Select
                     value={formData.status}
-                    onChange={(e) => handleInputChange("status", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("status", e.target.value)
+                    }
                     label="Trạng thái"
                     renderValue={(value) => (
                       <Chip
-                        label={statusOptions.find((opt) => opt.value === value)?.label}
-                        color={statusOptions.find((opt) => opt.value === value)?.color}
+                        label={
+                          statusOptions.find((opt) => opt.value === value)
+                            ?.label
+                        }
+                        color={
+                          statusOptions.find((opt) => opt.value === value)
+                            ?.color
+                        }
                         size="small"
                       />
                     )}
                   >
                     {getAvailableStatusOptions().map((option) => (
                       <MenuItem key={option.value} value={option.value}>
-                        <Chip label={option.label} color={option.color} size="small" />
+                        <Chip
+                          label={option.label}
+                          color={option.color}
+                          size="small"
+                        />
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               )}
-              {!(product?.status === "active" || product?.status === "approved") && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              {!(
+                product?.status === "active" || product?.status === "approved"
+              ) && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
                   Chỉ sản phẩm đang bán mới được phép thay đổi trạng thái.
                 </Typography>
               )}

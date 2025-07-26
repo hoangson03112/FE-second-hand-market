@@ -189,15 +189,13 @@ const PreviewCard = styled(Card)(({ theme }) => ({
 const PostProduct = () => {
   const { getCategories } = useCategory();
   const { postProduct } = useProduct();
-  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const { currentUser } = useAuth();
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { notification, showSuccess, showError, showInfo, hideNotification } =
-    useNotification();
-
+  const { showSuccess, showError } = useNotification();
+  const navigate = useNavigate();
   const [product, setProduct] = useState({
     name: "",
     price: "",
@@ -332,7 +330,7 @@ const PostProduct = () => {
 
       if (response.message) {
         showSuccess(response.message);
-        // navigate("/");
+        navigate("/eco-market/seller/products");
       }
     } catch (error) {
       console.error("Lỗi khi tải sản phẩm lên:", error);

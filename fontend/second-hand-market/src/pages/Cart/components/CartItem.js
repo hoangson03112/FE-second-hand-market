@@ -11,6 +11,7 @@ import {
 } from "react-bootstrap";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import "./CartItem.css";
+import { usePersonalDiscount } from "../../../contexts/PersonalDiscountContext";
 
 // Optimized Image Component with lazy loading and error handling
 const OptimizedImage = memo(({ src, alt, onError, style, ...props }) => {
@@ -97,6 +98,7 @@ const CartItem = React.memo(
     isItemUpdating,
   }) => {
     const [failedImages, setFailedImages] = useState(new Set());
+    const { discounts } = usePersonalDiscount();
 
     const groupedProducts = useMemo(() => {
       return products.reduce((acc, product) => {
@@ -232,86 +234,100 @@ const CartItem = React.memo(
                 </div>
               </td>
             </tr>
-            {sellerData.products.map((product) => (
-              <tr key={product._id}>
-                <td className="text-center align-middle">
-                  <label className="custom-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={!!checkedItems[product._id]}
-                      onChange={(e) =>
-                        handleCheckChange(product._id, e.target.checked)
-                      }
-                    />
-                    <span className="checkmark" />
-                  </label>
-                </td>
-                <td className="text-start align-middle">
-                  <div className="d-flex align-items-center">
-                    <OptimizedImage
-                      src={product.avatar?.url}
-                      alt={product.name}
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        marginRight: "15px",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <div>
-                      <div className="fw-bold">{product.name}</div>
-                      <div className="text-muted small">
-                        {product.category?.name || "Uncategorized"}
+            {sellerData.products.map((product) => {
+              const discount = discounts.find(
+                (d) =>
+                  d.productId === product._id ||
+                  d.productId?._id === product._id
+              );
+              const finalPrice = discount ? discount.price : product.price;
+              return (
+                <tr key={product._id}>
+                  <td className="text-center align-middle">
+                    <label className="custom-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={!!checkedItems[product._id]}
+                        onChange={(e) =>
+                          handleCheckChange(product._id, e.target.checked)
+                        }
+                      />
+                      <span className="checkmark" />
+                    </label>
+                  </td>
+                  <td className="text-start align-middle">
+                    <div className="d-flex align-items-center">
+                      <OptimizedImage
+                        src={product.avatar?.url}
+                        alt={product.name}
+                        style={{
+                          width: "80px",
+                          height: "80px",
+                          marginRight: "15px",
+                          borderRadius: "8px",
+                        }}
+                      />
+                      <div>
+                        <div className="fw-bold">{product.name}</div>
+                        <div className="text-muted small">
+                          {product.category?.name || "Uncategorized"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="text-center fw-semibold align-middle">
-                  {formatPrice(product.price)}
-                </td>
-                <td className="align-middle">
-                  <div className="d-flex align-items-center justify-content-center quantity-container">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      className="p-1 quantity-button"
-                      onClick={() => handleQuantityChange(product._id, -1)}
-                      disabled={product.quantity <= 1}
+                  </td>
+                  <td className="text-center fw-semibold align-middle">
+                    {formatPrice(finalPrice)}
+                  </td>
+                  <td className="align-middle">
+                    <div className="d-flex align-items-center justify-content-center quantity-container">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="p-1 quantity-button"
+                        onClick={() => handleQuantityChange(product._id, -1)}
+                        disabled={product.quantity <= 1}
+                      >
+                        <Remove fontSize="small" />
+                      </Button>
+                      <span
+                        className={`mx-2 fw-bold quantity-display ${
+                          isItemUpdating?.(product._id) ? "updating" : ""
+                        }`}
+                      >
+                        {product.quantity}
+                      </span>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        className="p-1 quantity-button"
+                        onClick={() => handleQuantityChange(product._id, 1)}
+                      >
+                        <Add fontSize="small" />
+                      </Button>
+                    </div>
+                  </td>
+                  <td className="text-center fw-bold align-middle text-danger">
+                    <span
+                      className={`price-display ${
+                        isItemUpdating?.(product._id) ? "updating" : ""
+                      }`}
                     >
-                      <Remove fontSize="small" />
-                    </Button>
-                    <span 
-                      className={`mx-2 fw-bold quantity-display ${isItemUpdating?.(product._id) ? 'updating' : ''}`}
-                    >
-                      {product.quantity}
+                      {formatPrice(finalPrice * product.quantity)}
                     </span>
+                  </td>
+                  <td className="text-center align-middle">
                     <Button
-                      variant="outline-secondary"
+                      variant="outline-danger"
                       size="sm"
-                      className="p-1 quantity-button"
-                      onClick={() => handleQuantityChange(product._id, 1)}
+                      onClick={() => handleDelete(product._id)}
+                      className="d-flex align-items-center"
                     >
-                      <Add fontSize="small" />
+                      <Delete fontSize="small" />
                     </Button>
-                  </div>
-                </td>
-                <td className="text-center fw-bold align-middle text-danger">
-                  <span className={`price-display ${isItemUpdating?.(product._id) ? 'updating' : ''}`}>
-                    {formatPrice(product.price * product.quantity)}
-                  </span>
-                </td>
-                <td className="text-center align-middle">
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => handleDelete(product._id)}
-                    className="d-flex align-items-center"
-                  >
-                    <Delete fontSize="small" />
-                  </Button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </React.Fragment>
         ))}
 

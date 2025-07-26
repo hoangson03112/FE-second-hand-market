@@ -29,6 +29,8 @@ import {
   PAYMENT_METHOD_CONFIG,
 } from "../../constants/checkout";
 import { formatPrice } from "../../utils/checkoutUtils";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
 
 const PaymentOption = ({
   method,
@@ -231,14 +233,28 @@ const PaymentOption = ({
 };
 
 const PaymentMethodSection = ({
+  products,
   paymentMethod,
   onPaymentMethodChange,
   shippingFee,
-  finalAmount,
-  codShippingAmount,
+  finalAmount: finalAmountProp,
+  codShippingAmount: codShippingAmountProp,
   codShippingOriginalAmount,
   hasMixedOrders,
 }) => {
+  const { discounts } = usePersonalDiscount();
+  const productsWithDiscount = applyPersonalDiscountsToProducts(products || [], discounts);
+  // Tính lại tổng tiền hàng, tổng COD, ...
+  let totalAmount = 0;
+  let codShippingAmount = 0;
+  productsWithDiscount.forEach(product => {
+    totalAmount += product.price * product.quantity;
+    // Nếu có logic riêng cho COD, tính ở đây
+    codShippingAmount += product.price * product.quantity; // Giả sử tất cả là COD
+  });
+  const finalAmount = finalAmountProp !== undefined ? finalAmountProp : totalAmount + (shippingFee || 0);
+  const codShippingAmountFinal = codShippingAmountProp !== undefined ? codShippingAmountProp : codShippingAmount;
+
   return (
     <Paper
       elevation={1}
@@ -298,7 +314,7 @@ const PaymentMethodSection = ({
                     onSelect={onPaymentMethodChange}
                     shippingFee={shippingFee}
                     finalAmount={finalAmount}
-                    codShippingAmount={codShippingAmount}
+                    codShippingAmount={codShippingAmountFinal}
                     hasMixedOrders={hasMixedOrders}
                   />
                 }

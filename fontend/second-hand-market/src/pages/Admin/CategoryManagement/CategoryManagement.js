@@ -278,9 +278,15 @@ const CategoryManagement = () => {
         subcategoryId,
         parentCategory._id
       );
-
       if (!response) {
         throw new Error("Lỗi xóa danh mục phụ");
+      }
+      if (response.success === false) {
+        showSnackbar(
+          response.message || "Lỗi không xác định khi xóa danh mục phụ",
+          "error"
+        );
+        return;
       }
 
       setCategories((prev) =>
@@ -292,7 +298,10 @@ const CategoryManagement = () => {
       showSnackbar("Xóa danh mục phụ thành công");
     } catch (error) {
       console.error("Error deleting subcategory:", error);
-      showSnackbar("Lỗi xóa danh mục phụ", "error");
+      showSnackbar(
+        "Không thể xóa danh mục con này vì vẫn còn sản phẩm đang sử dụng. Vui lòng chuyển hoặc xóa các sản phẩm trước khi xóa danh mục con",
+        "error"
+      );
     }
   };
 

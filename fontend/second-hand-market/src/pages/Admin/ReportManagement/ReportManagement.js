@@ -230,7 +230,7 @@ export default function ReportManagement() {
           );
         })}
       </Grid>
-      <Dialog open={!!selected} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={!!selected} onClose={handleClose} maxWidth="xl" fullWidth>
         <DialogTitle
           sx={{
             display: "flex",
@@ -395,15 +395,31 @@ export default function ReportManagement() {
                 <Stack spacing={2}>
                   {selected.type === "order" && selected.targetId && (
                     <Box sx={{ bgcolor: "#f7f7fa", borderRadius: 2, p: 2 }}>
+                      <Stack direction="row" spacing={3} mb={2}>
+                        {/* Người bán */}
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Avatar src={selected.targetId.sellerId?.avatar} />
+                          <Box>
+                            <Typography fontWeight={600}>Người bán: {selected.targetId.sellerId?.fullName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {selected.targetId.sellerId?.email} | {selected.targetId.sellerId?.phoneNumber}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {/* Người mua */}
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Avatar src={selected.targetId.buyerId?.avatar} />
+                          <Box>
+                            <Typography fontWeight={600}>Người mua: {selected.targetId.buyerId?.fullName}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {selected.targetId.buyerId?.email} | {selected.targetId.buyerId?.phoneNumber}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Stack>
+                      <Divider />
                       <Typography fontWeight={600}>
-                        Đơn hàng:{" "}
-                        {selected.targetId.orderId || selected.targetId._id}
-                      </Typography>
-                      <Typography>
-                        Người bán: {selected.targetId.sellerId}
-                      </Typography>
-                      <Typography>
-                        Người mua: {selected.targetId.buyerId}
+                        Đơn hàng: {selected.targetId._id}
                       </Typography>
                       <Typography>
                         Tổng tiền:{" "}
@@ -431,31 +447,34 @@ export default function ReportManagement() {
                           đ
                         </Typography>
                         <Typography variant="body2">
-                          Phương thức ship: {selected.targetId.shippingMethod}
+                          Phương thức ship:{" "}
+                          {selected.targetId.shippingMethod === "ship-cod"
+                            ? "Ship COD"
+                            : "Ship COD"}
                         </Typography>
                         <Typography variant="body2">
                           Phương thức thanh toán:{" "}
-                          {selected.targetId.paymentMethod}
+                          {selected.targetId.paymentMethod === "bank_transfer"
+                            ? "Chuyển khoản"
+                            : "Thanh toán khi nhận hàng"}
                         </Typography>
                         <Typography variant="body2">
                           Đã thanh toán:{" "}
                           {selected.targetId.statusPayment ? "✔️" : "❌"}
                         </Typography>
                         <Typography variant="body2">
-                          Địa chỉ giao: {selected.targetId.shippingAddress}
+                          Địa chỉ giao:{" "}
+                          {selected.targetId.shippingAddress?.fullName} -{" "}
+                          {selected.targetId.shippingAddress?.phoneNumber} -{" "}
+                          {selected.targetId.shippingAddress?.specificAddress},{" "}
+                          {selected.targetId.shippingAddress?.ward},{" "}
+                          {selected.targetId.shippingAddress?.district},{" "}
+                          {selected.targetId.shippingAddress?.province}
                         </Typography>
                         <Typography variant="body2">
                           Mã vận đơn GHN: {selected.targetId.ghnOrderCode}
                         </Typography>
-                        <Typography variant="body2">
-                          Mã kho GHN: {selected.targetId.ghnSortCode}
-                        </Typography>
-                        <Typography variant="body2">
-                          Loại vận chuyển: {selected.targetId.transType}
-                        </Typography>
-                        <Typography variant="body2">
-                          Trạng thái GHN: {selected.targetId.ghnStatus}
-                        </Typography>
+
                         <Typography variant="body2">
                           Link tracking:{" "}
                           {selected.targetId.ghnTrackingUrl ? (
@@ -485,14 +504,19 @@ export default function ReportManagement() {
                       </Typography>
                       <Stack direction="row" spacing={2} flexWrap="wrap" mb={1}>
                         <Typography variant="body2">
-                          Trạng thái: {selected.targetId.status}
+                          Trạng thái:{" "}
+                          {selected.targetId.status === "refund"
+                            ? "Hoàn tiền"
+                            : ""}
                         </Typography>
                         <Typography variant="body2">
                           Lý do: {selected.targetId.reason}
                         </Typography>
                         <Typography variant="body2">
                           Quyết định hoàn tiền:{" "}
-                          {selected.targetId.refundDecision}
+                          {selected.targetId.refundDecision === "approved"
+                            ? "Chấp nhận"
+                            : "Từ chối"}
                         </Typography>
                         <Typography variant="body2">
                           Lý do quyết định:{" "}
@@ -537,13 +561,55 @@ export default function ReportManagement() {
                       </ul>
                       <Divider sx={{ my: 1 }} />
                       <Typography fontWeight={500}>Sản phẩm:</Typography>
-                      <ul style={{ margin: 0, paddingLeft: 18 }}>
+                      <Stack spacing={2}>
                         {selected.targetId.products?.map((p, i) => (
-                          <li key={i}>
-                            {p.productId} x{p.quantity}
-                          </li>
+                          <Box
+                            key={i}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              bgcolor: "#fff",
+                              borderRadius: 2,
+                              boxShadow: 1,
+                              p: 1.5,
+                              mb: 1,
+                              border: "1px solid #ececec",
+                              transition: "box-shadow 0.2s",
+                              "&:hover": { boxShadow: 3 },
+                            }}
+                          >
+                            <Avatar
+                              src={p.productId?.avatar?.url}
+                              alt={p.productId?.name}
+                              sx={{
+                                width: 48,
+                                height: 48,
+                                mr: 2,
+                                border: "1px solid #eee",
+                              }}
+                              variant="rounded"
+                            />
+                            <Box flex={1}>
+                              <Typography fontWeight={600} fontSize={16}>
+                                {p.productId?.name}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                Giá: {p.productId?.price?.toLocaleString()}đ
+                                &nbsp;|&nbsp; Số lượng: {p.quantity}
+                              </Typography>
+                            </Box>
+                            <Typography fontWeight={700} color="error">
+                              {(
+                                p.productId?.price * p.quantity
+                              )?.toLocaleString()}
+                              đ
+                            </Typography>
+                          </Box>
                         ))}
-                      </ul>
+                      </Stack>
                     </Box>
                   )}
                   {selected.type === "product" && selected.targetId && (

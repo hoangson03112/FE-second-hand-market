@@ -10,6 +10,8 @@ import {
 import { AccountBalanceWallet, CreditCard, Savings } from "@mui/icons-material";
 import { SHIPPING_METHODS, PAYMENT_METHODS } from "../../constants/checkout";
 import { formatPrice } from "../../utils/checkoutUtils";
+import { applyPersonalDiscountsToProducts } from "../../utils/checkoutUtils";
+import { usePersonalDiscount } from "../../contexts/PersonalDiscountContext";
 
 const SummaryRow = ({
   label,
@@ -129,14 +131,11 @@ const PaymentMethodSummary = ({
 };
 
 const PaymentSummary = ({
-  totalAmount,
-  originalTotalAmount,
-  totalProductSavings,
-  totalSavings,
+  products,
   voucherDiscount,
   shippingMethod,
   shippingFee,
-  finalAmount,
+  finalAmount: finalAmountProp,
   paymentMethod,
   depositAmount,
   hasMixedOrders,
@@ -154,6 +153,22 @@ const PaymentSummary = ({
   bankTransferSavings,
   codShippingFee,
 }) => {
+  const { discounts } = usePersonalDiscount();
+  const productsWithDiscount = applyPersonalDiscountsToProducts(products || [], discounts);
+  // Tính toán lại tổng tiền hàng, tiết kiệm, ...
+  let originalTotalAmount = 0;
+  let totalAmount = 0;
+  let totalProductSavings = 0;
+  productsWithDiscount.forEach(product => {
+    const original = product.originalPrice || product.price;
+    const price = product.price;
+    originalTotalAmount += original * product.quantity;
+    totalAmount += price * product.quantity;
+    totalProductSavings += (original - price) * product.quantity;
+  });
+  // totalSavings = totalProductSavings + voucherDiscount
+  const totalSavings = totalProductSavings + (voucherDiscount || 0);
+  const finalAmount = finalAmountProp !== undefined ? finalAmountProp : Math.max(0, totalAmount - (voucherDiscount || 0));
 
   return (
     <Paper
@@ -165,79 +180,25 @@ const PaymentSummary = ({
       </Typography>
 
       <Box>
-        {totalProductSavings > 0 && (
-          <SummaryRow
-            label="Tổng tiền hàng (gốc)"
-            amount={originalTotalAmount}
-          />
-        )}
 
-        {totalProductSavings > 0 && (
-          <SummaryRow
-            label="Giảm giá sản phẩm"
-            amount={-totalProductSavings}
-            isPositive={true}
-          />
-        )}
+
+ 
 
         <SummaryRow
           label={
-            totalProductSavings > 0 ? "Tổng sau giảm giá" : "Tổng tiền hàng"
+            totalProductSavings > 0 ? "Tổng tiền hàng" : "Tổng tiền hàng"
           }
           amount={totalAmount}
           isBold={totalProductSavings > 0}
         />
 
-        {voucherDiscount > 0 && (
-          <SummaryRow
-            label="Voucher giảm giá"
-            amount={-voucherDiscount}
-            isPositive={true}
-          />
-        )}
+
 
         {shippingMethod !== SHIPPING_METHODS.DIRECT && (
           <SummaryRow label="Phí vận chuyển" amount={shippingFee} />
         )}
 
-        {totalSavings > 0 && (
-          <Box
-            sx={{
-              my: 2,
-              p: 2,
-              backgroundColor: "primary.50",
-              borderRadius: 1,
-              border: "1px solid",
-              borderColor: "primary.200",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Savings sx={{ mr: 1, color: "primary.main", fontSize: 20 }} />
-                <Typography
-                  variant="subtitle2"
-                  color="primary.main"
-                  fontWeight="600"
-                >
-                  Tổng tiết kiệm
-                </Typography>
-              </Box>
-              <Typography
-                variant="subtitle1"
-                color="primary.main"
-                fontWeight="bold"
-              >
-                {formatPrice(totalSavings)}₫
-              </Typography>
-            </Box>
-          </Box>
-        )}
+   
 
         <Divider sx={{ my: 2 }} />
 

@@ -41,7 +41,6 @@ import FilterSidebar from "../../components/Product/FilterSidebar";
 import SubCategoryContext from "../../contexts/SubCategoryContext";
 import { useCategory } from "../../contexts/CategoryContext";
 import { useProduct } from "../../contexts/ProductContext";
-import { formatPrice } from "../../utils/function";
 import { ProductCard } from "./components/ProductCard";
 import { useAuth } from "./../../contexts/AuthContext";
 
@@ -126,12 +125,7 @@ function ProductList() {
           console.log(currentUser);
 
           if (Array.isArray(productsData)) {
-            setProducts(
-              sortProducts(
-                productsData,
-                sortOption
-              )
-            );
+            setProducts(sortProducts(productsData, sortOption));
           } else {
             console.error("Expected array of products but got:", productsData);
             setProducts([]);
